@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     // Send confirmation email to the user
     await resend.emails.send({
-      from: "Samvriti.Space <onboarding@resend.dev>",
+      from: "Samvriti.Space <hello@samvritispace.com>",
       to: email,
       cc: "Priyankavarma785@gmail.com",
       subject: "We received your message — Samvriti.Space",
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     // Send notification email to Priyanka (admin)
     const adminResend = new Resend(process.env.RESEND_ADMIN_API);
     await adminResend.emails.send({
-      from: "Samvriti.Space <onboarding@resend.dev>",
+      from: "Samvriti.Space <hello@samvritispace.com>",
       to: "Priyankavarma785@gmail.com",
       subject: `New inquiry from ${name} — Samvriti.Space`,
       replyTo: email,
