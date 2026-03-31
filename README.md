@@ -1,28 +1,36 @@
-# Samvriti Space - Mental Health & Therapy
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Welcome to the official repository for **Samvriti Space** (samvritispace.com), a premium mental health and therapist platform by **Priyanka Varma**.
+## Getting Started
 
-## Overview
-Samvriti Space is dedicated to providing a serene, safe, and professional digital environment for mental healing and emotional well-being. This project focuses on building an immersive, animated web experience that reflects the calm and supportive nature of therapy.
+First, run the development server:
 
-## Vision
-To create a high-end, responsive website that utilizes modern web technologies to provide:
-- **Smooth Animations**: Mirroring the fluidity and calm of a peaceful mind.
-- **Minimalist Aesthetic**: Reducing cognitive load for visitors seeking support.
-- **Responsive Design**: Ensuring accessibility across all devices.
-- **Interactive Elements**: Engaging users through gentle micro-interactions.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-## Tech Stack (Planned)
-- **Frontend**: HTML5, Vanilla JavaScript (or Vite/Next.js as needed)
-- **Styling**: Vanilla CSS (Modern CSS features, CSS Grid, Flexbox)
-- **Animations**: CSS Animations, Framer Motion (if using React), or Web Animations API
-- **Design Inspiration**: Modern, premium therapist portfolios with emphasis on typography and whitespace.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Content Strategy
-- **Home**: Introducing Samvriti Space and Priyanka Varma.
-- **Services**: Detailed therapy offerings.
-- **About**: Journey and philosophy of the practice.
-- **Contact**: Seamless booking and inquiry flow.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
----
-*Curated with care for mental wellness.*
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
