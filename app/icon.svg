@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="128" fill="#2c3a2e"/>
+  <!-- Leaf / growth symbol -->
+  <g transform="translate(256,256)">
+    <!-- Main leaf -->
+    <path d="M0,-140 C80,-120 140,-40 140,60 C100,40 60,50 0,80 C-60,50 -100,40 -140,60 C-140,-40 -80,-120 0,-140Z" fill="#8a9e8c" opacity="0.9"/>
+    <!-- Inner vein -->
+    <path d="M0,-120 C0,-120 0,70 0,70" stroke="#f7f3ed" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.6"/>
+    <path d="M0,-60 C30,-40 50,-20 60,10" stroke="#f7f3ed" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.4"/>
+    <path d="M0,-60 C-30,-40 -50,-20 -60,10" stroke="#f7f3ed" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.4"/>
+    <path d="M0,-20 C20,-10 35,5 40,30" stroke="#f7f3ed" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.3"/>
+    <path d="M0,-20 C-20,-10 -35,5 -40,30" stroke="#f7f3ed" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.3"/>
+    <!-- Small dot accent -->
+    <circle cx="0" cy="100" r="8" fill="#c17f5e" opacity="0.8"/>
+    <!-- Stem -->
+    <path d="M0,70 C0,70 0,130 0,130" stroke="#c17f5e" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  </g>
+</svg>
