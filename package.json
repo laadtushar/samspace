@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@motionone/utils": "^10.18.0",
+    "@vercel/blob": "^2.3.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",

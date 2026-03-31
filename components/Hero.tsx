@@ -7,12 +7,12 @@ import TextReveal from "./TextReveal";
 import MagneticButton from "./MagneticButton";
 
 const credentials = [
-  "M.A. Clinical Psychology",
+  "M.Sc. Clinical Psychology",
   "UGC NET-JRF Qualified",
   "GATE (Psychology) Qualified",
 ];
 
-export default function Hero() {
+export default function Hero({ onBookSession }: { onBookSession?: () => void }) {
   const handleScroll = (href: string) => {
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -97,7 +97,7 @@ export default function Hero() {
             >
               <MagneticButton strength={0.15}>
                 <button
-                  onClick={() => handleScroll("#contact")}
+                  onClick={() => onBookSession?.()}
                   className="font-sans text-sm font-medium bg-forest text-cream px-7 py-3.5 rounded-full hover:bg-forest-deep active:scale-[0.97] transition-all duration-300 shadow-xl shadow-forest/20"
                 >
                   Book a Session

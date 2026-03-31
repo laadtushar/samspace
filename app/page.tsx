@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -9,13 +12,16 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
 import MarqueeDivider from "@/components/MarqueeDivider";
+import IntakeFormModal from "@/components/IntakeFormModal";
 
 export default function Home() {
+  const [intakeOpen, setIntakeOpen] = useState(false);
+
   return (
     <main>
-      <Navbar />
+      <Navbar onBookSession={() => setIntakeOpen(true)} />
       <ScrollProgress />
-      <Hero />
+      <Hero onBookSession={() => setIntakeOpen(true)} />
       <MarqueeDivider
         text1="Therapy · Mentoring · Growth · Healing"
         text2="CBT · Humanistic · Trauma-Informed · Care"
@@ -30,8 +36,9 @@ export default function Home() {
       <Issues />
       <Mentoring />
       <SessionInfo />
-      <Contact />
+      <Contact onBookSession={() => setIntakeOpen(true)} />
       <Footer />
+      <IntakeFormModal isOpen={intakeOpen} onClose={() => setIntakeOpen(false)} />
     </main>
   );
 }

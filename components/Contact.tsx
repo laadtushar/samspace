@@ -12,7 +12,7 @@ const infoCards = [
   { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null },
 ];
 
-export default function Contact() {
+export default function Contact({ onBookSession }: { onBookSession?: () => void }) {
   return (
     <section id="contact" className="bg-forest text-cream py-28 relative overflow-hidden">
       {/* Ambient orbs */}
@@ -93,6 +93,21 @@ export default function Contact() {
             </motion.div>
           ))}
         </div>
+
+        {/* Book Session CTA */}
+        <AnimatedSection delay={0.15}>
+          <div className="text-center mb-14">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onBookSession?.()}
+              className="font-sans text-sm font-medium bg-clay text-cream px-8 py-4 rounded-full hover:bg-clay-light transition-all duration-300 shadow-lg shadow-clay/20 mb-3"
+            >
+              Fill Therapy Intake Form
+            </motion.button>
+            <p className="font-sans text-xs text-cream/40">or send a quick message below</p>
+          </div>
+        </AnimatedSection>
 
         {/* Animated Contact Form */}
         <AnimatedContactForm />

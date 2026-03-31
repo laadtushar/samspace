@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       from: "Samvriti.Space <hello@samvritispace.com>",
       to: email,
       cc: "Priyankavarma785@gmail.com",
+      replyTo: "Priyankavarma785@gmail.com",
       subject: "We received your message — Samvriti.Space",
       html: `
         <div style="font-family: 'Georgia', serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #2c3a2e;">

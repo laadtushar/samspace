@@ -10,7 +10,7 @@ const navLinks = [
   { label: "Book a Session", href: "#contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onBookSession }: { onBookSession?: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -65,7 +65,7 @@ export default function Navbar() {
           ))}
           <li>
             <button
-              onClick={() => handleNavClick("#contact")}
+              onClick={() => { onBookSession?.(); setMenuOpen(false); }}
               className="font-sans text-sm bg-forest text-cream px-5 py-2.5 rounded-full hover:bg-forest/90 transition-all duration-200 tracking-wide"
             >
               Book a Session
@@ -111,7 +111,14 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <button
-                    onClick={() => handleNavClick(link.href)}
+                    onClick={() => {
+                      if (link.label === "Book a Session") {
+                        onBookSession?.();
+                        setMenuOpen(false);
+                      } else {
+                        handleNavClick(link.href);
+                      }
+                    }}
                     className={`font-sans text-sm w-full text-left tracking-wide py-1 ${
                       link.label === "Book a Session"
                         ? "text-clay font-medium"

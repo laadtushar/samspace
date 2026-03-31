@@ -19,7 +19,7 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Samvriti.Space — Priyanka Varma | Counselling Psychologist & Academic Mentor",
   description:
-    "Online therapy and academic mentoring for young adults navigating life's most challenging transitions. M.A. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
+    "Online therapy and academic mentoring for young adults navigating life's most challenging transitions. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
   keywords: [
     "counselling psychologist",
     "online therapy",

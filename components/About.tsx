@@ -25,7 +25,7 @@ const features = [
 ];
 
 const credentialCards = [
-  { label: "M.A. Clinical Psychology", icon: "🎓" },
+  { label: "M.Sc. Clinical Psychology", icon: "🎓" },
   { label: "UGC NET-JRF", icon: "📜" },
   { label: "GATE (Psychology)", icon: "🏆" },
   { label: "Lecturer", icon: "📖" },
