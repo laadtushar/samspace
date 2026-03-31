@@ -6,24 +6,6 @@ import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import TextReveal from "./TextReveal";
 
-const features = [
-  {
-    icon: "🌿",
-    title: "Eclectic Approach",
-    desc: "CBT, Humanistic Therapy, Trauma-Informed Care",
-  },
-  {
-    icon: "🛡️",
-    title: "Safe & Ethical",
-    desc: "Sessions under professional supervision, strict confidentiality",
-  },
-  {
-    icon: "🌱",
-    title: "Growth-Focused",
-    desc: "Building insight, emotional regulation, healthier coping strategies",
-  },
-];
-
 const credentialCards = [
   { label: "M.Sc. Clinical Psychology", icon: "🎓" },
   { label: "UGC NET-JRF", icon: "📜" },
@@ -31,7 +13,15 @@ const credentialCards = [
   { label: "Lecturer", icon: "📖" },
 ];
 
-export default function About() {
+interface AboutProps {
+  about: {
+    heading: string;
+    paragraph: string;
+    features: { icon: string; title: string; desc: string }[];
+  };
+}
+
+export default function About({ about }: AboutProps) {
   const sectionRef = useRef(null);
   const headingRef = useRef(null);
   const headingInView = useInView(headingRef, { once: true, margin: "-80px" });
@@ -65,7 +55,7 @@ export default function About() {
             <div ref={headingRef}>
               <h2 className="font-serif text-4xl sm:text-5xl font-semibold mb-8 leading-tight">
                 <TextReveal
-                  text="Qualified. Compassionate. Evidence-based."
+                  text={about.heading}
                   delay={0}
                   staggerDelay={0.05}
                   className="text-cream"
@@ -75,18 +65,12 @@ export default function About() {
 
             <AnimatedSection delay={0.3}>
               <p className="font-sans text-base text-cream/70 leading-relaxed mb-12">
-                I&apos;m Priyanka Varma — a Lecturer, UGC NET-JRF &
-                GATE-qualified psychologist with a Master&apos;s in Clinical
-                Psychology, working under the banner of Samvriti.Space. I work
-                with young adults experiencing emotional distress, academic
-                stress, and personal growth challenges using an eclectic approach
-                drawing from CBT, Humanistic Therapy, and Trauma-Informed Care —
-                tailored to your unique needs and comfort.
+                {about.paragraph}
               </p>
             </AnimatedSection>
 
             <div className="space-y-6">
-              {features.map((f, i) => (
+              {about.features.map((f, i) => (
                 <AnimatedSection key={f.title} delay={0.4 + i * 0.15}>
                   <motion.div
                     whileHover={{ x: 8 }}

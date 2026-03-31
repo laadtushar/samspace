@@ -73,9 +73,15 @@ export default function AdminPage() {
       fetch("/api/admin/submissions", { headers }).then((r) => r.json()),
       fetch("/api/admin/content", { headers }).then((r) => r.json()),
     ])
-      .then(([subs, cont]) => {
+      .then(async ([subs, cont]) => {
         setSubmissions(subs);
         setContent(cont);
+        // Auto-seed: save defaults to Blob so they're editable
+        await fetch("/api/admin/content", {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(cont),
+        }).catch(() => {});
       })
       .finally(() => setLoading(false));
   }, [authed]);
@@ -435,6 +441,101 @@ export default function AdminPage() {
                       onChange={(v) =>
                         setContent({ ...content, contact: { ...(content as any).contact, phone: v } })
                       }
+                    />
+                  </ContentSection>
+
+                  <ContentSection title="Services">
+                    {((content as any).services?.items || []).map((item: any, idx: number) => (
+                      <div key={idx} className="bg-cream rounded-lg p-4 space-y-3">
+                        <p className="font-sans text-xs font-semibold text-forest/60">Service {idx + 1}</p>
+                        <ContentField
+                          label="Title"
+                          value={item.title || ""}
+                          onChange={(v) => {
+                            const items = [...(content as any).services.items];
+                            items[idx] = { ...items[idx], title: v };
+                            setContent({ ...content, services: { ...(content as any).services, items } });
+                          }}
+                        />
+                        <ContentField
+                          label="Price (e.g. ₹500–₹800 or leave empty)"
+                          value={item.price || ""}
+                          onChange={(v) => {
+                            const items = [...(content as any).services.items];
+                            items[idx] = { ...items[idx], price: v || null };
+                            setContent({ ...content, services: { ...(content as any).services, items } });
+                          }}
+                        />
+                        <ContentField
+                          label="Tags (comma-separated)"
+                          value={(item.tags || []).join(", ")}
+                          onChange={(v) => {
+                            const items = [...(content as any).services.items];
+                            items[idx] = { ...items[idx], tags: v.split(",").map((t: string) => t.trim()).filter(Boolean) };
+                            setContent({ ...content, services: { ...(content as any).services, items } });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </ContentSection>
+
+                  <ContentSection title="Mentoring">
+                    <ContentField
+                      label="Heading"
+                      value={(content as any).mentoring?.heading}
+                      onChange={(v) =>
+                        setContent({ ...content, mentoring: { ...(content as any).mentoring, heading: v } })
+                      }
+                    />
+                    <ContentField
+                      label="Subtext"
+                      value={(content as any).mentoring?.subtext}
+                      onChange={(v) =>
+                        setContent({ ...content, mentoring: { ...(content as any).mentoring, subtext: v } })
+                      }
+                      textarea
+                    />
+                    <ContentField
+                      label="Card 1 Title"
+                      value={(content as any).mentoring?.card1Title}
+                      onChange={(v) =>
+                        setContent({ ...content, mentoring: { ...(content as any).mentoring, card1Title: v } })
+                      }
+                    />
+                    <ContentField
+                      label="Card 1 Items (one per line)"
+                      value={(content as any).mentoring?.card1Items?.join("\n") || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          mentoring: {
+                            ...(content as any).mentoring,
+                            card1Items: v.split("\n").filter((x: string) => x.trim()),
+                          },
+                        })
+                      }
+                      textarea
+                    />
+                    <ContentField
+                      label="Card 2 Title"
+                      value={(content as any).mentoring?.card2Title}
+                      onChange={(v) =>
+                        setContent({ ...content, mentoring: { ...(content as any).mentoring, card2Title: v } })
+                      }
+                    />
+                    <ContentField
+                      label="Card 2 Items (one per line)"
+                      value={(content as any).mentoring?.card2Items?.join("\n") || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          mentoring: {
+                            ...(content as any).mentoring,
+                            card2Items: v.split("\n").filter((x: string) => x.trim()),
+                          },
+                        })
+                      }
+                      textarea
                     />
                   </ContentSection>
 

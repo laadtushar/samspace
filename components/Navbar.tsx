@@ -7,7 +7,6 @@ const navLinks = [
   { label: "About", href: "#about" },
   { label: "Services", href: "#services" },
   { label: "Mentoring", href: "#mentoring" },
-  { label: "Book a Session", href: "#contact" },
 ];
 
 export default function Navbar({ onBookSession }: { onBookSession?: () => void }) {
@@ -111,24 +110,21 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <button
-                    onClick={() => {
-                      if (link.label === "Book a Session") {
-                        onBookSession?.();
-                        setMenuOpen(false);
-                      } else {
-                        handleNavClick(link.href);
-                      }
-                    }}
-                    className={`font-sans text-sm w-full text-left tracking-wide py-1 ${
-                      link.label === "Book a Session"
-                        ? "text-clay font-medium"
-                        : "text-forest/80 hover:text-forest"
-                    } transition-colors duration-200`}
+                    onClick={() => handleNavClick(link.href)}
+                    className="font-sans text-sm w-full text-left tracking-wide py-1 text-forest/80 hover:text-forest transition-colors duration-200"
                   >
                     {link.label}
                   </button>
                 </li>
               ))}
+              <li>
+                <button
+                  onClick={() => { onBookSession?.(); setMenuOpen(false); }}
+                  className="font-sans text-sm w-full text-left tracking-wide py-1 text-clay font-medium transition-colors duration-200"
+                >
+                  Book a Session
+                </button>
+              </li>
             </ul>
           </motion.div>
         )}

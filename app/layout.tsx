@@ -31,6 +31,21 @@ export const metadata: Metadata = {
     "Priyanka Varma",
     "Samvriti Space",
   ],
+  openGraph: {
+    title: "Samvriti.Space — Priyanka Varma | Counselling Psychologist",
+    description:
+      "Online therapy and academic mentoring for young adults. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
+    url: "https://samvritispace.com",
+    siteName: "Samvriti.Space",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Samvriti.Space — Counselling Psychologist & Academic Mentor",
+    description:
+      "Online therapy and academic mentoring for young adults navigating life's most challenging transitions.",
+  },
 };
 
 export default function RootLayout({

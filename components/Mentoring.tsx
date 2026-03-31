@@ -5,24 +5,18 @@ import AnimatedSection from "./AnimatedSection";
 import TiltCard from "./TiltCard";
 import TextReveal from "./TextReveal";
 
-const card1Items = [
-  "Exploring career options (psychology & beyond)",
-  "Understanding streams, courses & entrance exams",
-  "Clarifying interests, strengths & suitability",
-  "Reducing confusion, comparison & pressure",
-  "Parental expectation stress (discussion & planning)",
-  "Building realistic short-term academic goals",
-];
+interface MentoringProps {
+  mentoring: {
+    heading: string;
+    subtext: string;
+    card1Title: string;
+    card1Items: string[];
+    card2Title: string;
+    card2Items: string[];
+  };
+}
 
-const card2Items = [
-  "Career options after BA / MA Psychology",
-  "NET-JRF & GATE preparation strategy",
-  "Study planning & time management",
-  "Managing academic stress & burnout",
-  "Research & higher education guidance",
-];
-
-export default function Mentoring() {
+export default function Mentoring({ mentoring }: MentoringProps) {
   return (
     <section
       id="mentoring"
@@ -47,11 +41,10 @@ export default function Mentoring() {
               Academic Mentoring
             </span>
             <h2 className="font-serif text-4xl sm:text-5xl font-semibold text-forest mb-5">
-              <TextReveal text="Clarity for your psychology journey." staggerDelay={0.06} />
+              <TextReveal text={mentoring.heading} staggerDelay={0.06} />
             </h2>
             <p className="font-sans text-base text-forest/55 max-w-2xl mx-auto leading-relaxed mb-4">
-              Evidence-informed mentorship — not therapy — focused on academic
-              direction, exam strategy, and career clarity in psychology.
+              {mentoring.subtext}
             </p>
             <motion.p
               initial={{ opacity: 0 }}
@@ -71,7 +64,7 @@ export default function Mentoring() {
           style={{ perspective: "1000px" }}
         >
           {/* Card 1 */}
-          <AnimatedSection delay={0.1}>
+          <AnimatedSection delay={0.1} className="h-full">
             <TiltCard className="h-full">
               <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-sage/[0.06] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-sage/[0.12] transition-all duration-700" />
@@ -84,10 +77,10 @@ export default function Mentoring() {
                     📚
                   </motion.div>
                   <h3 className="font-serif text-2xl font-semibold text-forest mb-6">
-                    For 11th & 12th Students
+                    {mentoring.card1Title}
                   </h3>
                   <ul className="space-y-3.5">
-                    {card1Items.map((item, i) => (
+                    {mentoring.card1Items.map((item, i) => (
                       <motion.li
                         key={item}
                         initial={{ opacity: 0, x: -15 }}
@@ -109,7 +102,7 @@ export default function Mentoring() {
           </AnimatedSection>
 
           {/* Card 2 */}
-          <AnimatedSection delay={0.25}>
+          <AnimatedSection delay={0.25} className="h-full">
             <TiltCard className="h-full">
               <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-clay/[0.05] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-clay/[0.1] transition-all duration-700" />
@@ -122,10 +115,10 @@ export default function Mentoring() {
                     🎓
                   </motion.div>
                   <h3 className="font-serif text-2xl font-semibold text-forest mb-6">
-                    For Psychology Students (BA/BSc/MA)
+                    {mentoring.card2Title}
                   </h3>
                   <ul className="space-y-3.5">
-                    {card2Items.map((item, i) => (
+                    {mentoring.card2Items.map((item, i) => (
                       <motion.li
                         key={item}
                         initial={{ opacity: 0, x: -15 }}

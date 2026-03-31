@@ -16,7 +16,6 @@ interface IntakeData {
   slidingScale: string;
 }
 
-const slidingScaleOptions = ["₹500", "₹600", "₹700", "₹800"];
 const genderOptions = ["Female", "Male", "Non-binary", "Prefer not to say"];
 const languageOptions = ["English", "Hindi", "Both (English + Hindi)"];
 
@@ -44,9 +43,11 @@ const steps = [
 export default function IntakeFormModal({
   isOpen,
   onClose,
+  slidingScale = ["₹500", "₹600", "₹700", "₹800"],
 }: {
   isOpen: boolean;
   onClose: () => void;
+  slidingScale?: string[];
 }) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<IntakeData>(initialData);
@@ -367,7 +368,7 @@ export default function IntakeFormModal({
                             Sliding Scale Preference <span className="text-clay">*</span>
                           </label>
                           <div className="grid grid-cols-2 gap-3">
-                            {slidingScaleOptions.map((price) => (
+                            {slidingScale.map((price) => (
                               <motion.button
                                 key={price}
                                 type="button"

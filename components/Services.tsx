@@ -4,31 +4,19 @@ import AnimatedSection from "./AnimatedSection";
 import TiltCard from "./TiltCard";
 import TextReveal from "./TextReveal";
 
-const services = [
-  {
-    title: "Therapy Sessions",
-    price: "₹700",
-    unit: "/session",
-    tags: ["CBT", "Humanistic", "Trauma-Informed", "Online"],
-    gradient: "from-sage/20 to-transparent",
-  },
-  {
-    title: "Academic Mentoring",
-    price: "₹1000",
-    unit: "/session",
-    tags: ["Career Guidance", "Psychology Students", "11th–12th Grade"],
-    gradient: "from-clay/15 to-transparent",
-  },
-  {
-    title: "Session Structure",
-    price: null,
-    unit: null,
-    tags: ["45–50 mins", "Online Only", "Supervised", "Confidential"],
-    gradient: "from-forest/10 to-transparent",
-  },
+const gradients = [
+  "from-sage/20 to-transparent",
+  "from-clay/15 to-transparent",
+  "from-forest/10 to-transparent",
 ];
 
-export default function Services() {
+interface ServicesProps {
+  services: {
+    items: { title: string; price: string | null; unit: string | null; tags: string[] }[];
+  };
+}
+
+export default function Services({ services }: ServicesProps) {
   return (
     <section id="services" className="bg-cream py-28 relative overflow-hidden">
       {/* Decorative circles */}
@@ -47,13 +35,13 @@ export default function Services() {
         </AnimatedSection>
 
         <div className="grid md:grid-cols-3 gap-8" style={{ perspective: "1000px" }}>
-          {services.map((s, i) => (
+          {services.items.map((s, i) => (
             <AnimatedSection key={s.title} delay={i * 0.15} className="h-full">
               <TiltCard className="h-full relative">
                 <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full relative overflow-hidden group flex flex-col">
                   {/* Gradient accent top */}
                   <div
-                    className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${s.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                    className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${gradients[i] || gradients[0]} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                   />
 
                   {/* Bottom accent line */}

@@ -12,7 +12,12 @@ const credentials = [
   "GATE (Psychology) Qualified",
 ];
 
-export default function Hero({ onBookSession }: { onBookSession?: () => void }) {
+interface HeroProps {
+  hero: { headline: string; subtext: string; quoteText: string };
+  onBookSession?: () => void;
+}
+
+export default function Hero({ hero, onBookSession }: HeroProps) {
   const handleScroll = (href: string) => {
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -52,7 +57,7 @@ export default function Hero({ onBookSession }: { onBookSession?: () => void }) 
             {/* Headline — word-by-word blur reveal */}
             <h1 className="font-serif text-5xl sm:text-6xl lg:text-[4.5rem] font-semibold text-forest leading-[1.1] mb-6">
               <TextReveal
-                text="A space to feel seen, heard, and supported."
+                text={hero.headline}
                 delay={1.0}
                 staggerDelay={0.06}
               />
@@ -65,8 +70,7 @@ export default function Hero({ onBookSession }: { onBookSession?: () => void }) 
               transition={{ duration: 0.8, delay: 1.8 }}
               className="font-sans text-lg text-forest/60 leading-relaxed mb-8 max-w-lg"
             >
-              Online therapy and academic mentoring for young adults navigating
-              life&apos;s most challenging transitions.
+              {hero.subtext}
             </motion.p>
 
             {/* Credential pills — staggered pop */}
@@ -143,8 +147,7 @@ export default function Hero({ onBookSession }: { onBookSession?: () => void }) 
                     &ldquo;
                   </div>
                   <p className="font-serif text-xl leading-relaxed text-cream/90 mb-6">
-                    You don&apos;t have to navigate this alone. Healing begins with
-                    one honest conversation.
+                    {hero.quoteText}
                   </p>
                   <div className="flex items-center gap-3">
                     <motion.div

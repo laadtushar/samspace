@@ -5,18 +5,11 @@ import AnimatedSection from "./AnimatedSection";
 import MagneticButton from "./MagneticButton";
 import TextReveal from "./TextReveal";
 
-const issues = [
-  "Academic stress & burnout",
-  "Anxiety & overthinking",
-  "Low self-esteem & self-doubt",
-  "Emotional overwhelm",
-  "Relationship concerns & boundaries",
-  "Adjustment issues",
-  "Guilt, shame & identity concerns",
-  "Stress from exams or life transitions",
-];
+interface IssuesProps {
+  issues: { heading: string; intro: string; items: string[] };
+}
 
-export default function Issues() {
+export default function Issues({ issues }: IssuesProps) {
   return (
     <section className="bg-white py-28 relative overflow-hidden">
       {/* Animated background orb */}
@@ -38,20 +31,18 @@ export default function Issues() {
             </span>
             <h2 className="font-serif text-4xl sm:text-5xl font-semibold text-forest mb-6 leading-tight">
               <TextReveal
-                text="What we can work through together"
+                text={issues.heading}
                 staggerDelay={0.05}
               />
             </h2>
             <p className="font-sans text-base text-forest/55 leading-relaxed">
-              These are some of the common concerns I work with. If your
-              experience isn&apos;t listed here, reach out — we can discuss
-              whether my approach is the right fit for you.
+              {issues.intro}
             </p>
           </AnimatedSection>
 
           {/* Right — magnetic pills */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {issues.map((issue, i) => (
+            {issues.items.map((issue, i) => (
               <motion.div
                 key={issue}
                 initial={{ opacity: 0, x: 30, filter: "blur(6px)" }}

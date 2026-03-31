@@ -6,13 +6,23 @@ import MagneticButton from "./MagneticButton";
 import TextReveal from "./TextReveal";
 import AnimatedContactForm from "./AnimatedContactForm";
 
-const infoCards = [
-  { icon: "📧", label: "Email", value: "Priyankavarma785@gmail.com", href: "mailto:Priyankavarma785@gmail.com" },
-  { icon: "📱", label: "WhatsApp / Call", value: "+91 91307 43144", href: "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book%20a%20session%20at%20Samvriti.Space." },
-  { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null },
-];
+interface ContactProps {
+  contact: {
+    heading: string;
+    subtext: string;
+    email: string;
+    phone: string;
+    whatsappLink: string;
+  };
+  onBookSession?: () => void;
+}
 
-export default function Contact({ onBookSession }: { onBookSession?: () => void }) {
+export default function Contact({ contact, onBookSession }: ContactProps) {
+  const infoCards = [
+    { icon: "📧", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
+    { icon: "📱", label: "WhatsApp / Call", value: contact.phone, href: contact.whatsappLink },
+    { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null as string | null },
+  ];
   return (
     <section id="contact" className="bg-forest text-cream py-28 relative overflow-hidden">
       {/* Ambient orbs */}
@@ -32,7 +42,7 @@ export default function Contact({ onBookSession }: { onBookSession?: () => void 
           <div className="text-center mb-16">
             <h2 className="font-serif text-4xl sm:text-5xl font-semibold mb-5">
               <TextReveal
-                text="Ready to take the first step?"
+                text={contact.heading}
                 staggerDelay={0.06}
                 className="text-cream"
               />
@@ -44,8 +54,7 @@ export default function Contact({ onBookSession }: { onBookSession?: () => void 
               transition={{ duration: 0.8, delay: 0.6 }}
               className="font-sans text-base text-cream/55 max-w-md mx-auto"
             >
-              Reach out to schedule your session. I&apos;ll respond within 24
-              hours.
+              {contact.subtext}
             </motion.p>
           </div>
         </AnimatedSection>
