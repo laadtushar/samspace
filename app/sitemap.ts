@@ -5,8 +5,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: "https://samvritispace.com",
       lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "weekly",
       priority: 1,
+    },
+    {
+      url: "https://samvritispace.com/?intake=true",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
   ];
 }
