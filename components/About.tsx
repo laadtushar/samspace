@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import TextReveal from "./TextReveal";
@@ -107,9 +108,26 @@ export default function About() {
             </div>
           </div>
 
-          {/* Right — credential cards with stagger */}
-          <AnimatedSection delay={0.2}>
-            <div className="grid grid-cols-2 gap-4">
+          {/* Right — photo + credential cards */}
+          <div>
+            <AnimatedSection delay={0.15}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="relative w-48 h-48 mx-auto mb-8 rounded-3xl overflow-hidden border-2 border-cream/15 shadow-2xl shadow-black/30"
+              >
+                <Image
+                  src="/priyanka.jpeg"
+                  alt="Priyanka Varma — Counselling Psychologist"
+                  width={192}
+                  height={192}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-forest/40 to-transparent" />
+              </motion.div>
+            </AnimatedSection>
+
+            <AnimatedSection delay={0.2}>
+              <div className="grid grid-cols-2 gap-4">
               {credentialCards.map((c, i) => (
                 <motion.div
                   key={c.label}
@@ -140,8 +158,9 @@ export default function About() {
                   </span>
                 </motion.div>
               ))}
-            </div>
-          </AnimatedSection>
+              </div>
+            </AnimatedSection>
+          </div>
         </div>
       </div>
     </section>

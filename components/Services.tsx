@@ -48,9 +48,9 @@ export default function Services() {
 
         <div className="grid md:grid-cols-3 gap-8" style={{ perspective: "1000px" }}>
           {services.map((s, i) => (
-            <AnimatedSection key={s.title} delay={i * 0.15}>
+            <AnimatedSection key={s.title} delay={i * 0.15} className="h-full">
               <TiltCard className="h-full relative">
-                <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full relative overflow-hidden group">
+                <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full relative overflow-hidden group flex flex-col">
                   {/* Gradient accent top */}
                   <div
                     className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${s.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
@@ -59,21 +59,27 @@ export default function Services() {
                   {/* Bottom accent line */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-clay via-clay to-sage scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
 
-                  <div className="relative">
+                  <div className="relative flex flex-col h-full">
                     <h3 className="font-serif text-2xl font-semibold text-forest mb-3">
                       {s.title}
                     </h3>
-                    {s.price && (
-                      <div className="mb-6">
-                        <span className="font-serif text-4xl font-bold text-clay">
-                          {s.price}
+                    <div className="mb-6 min-h-[3.5rem] flex items-end">
+                      {s.price ? (
+                        <div>
+                          <span className="font-serif text-4xl font-bold text-clay">
+                            {s.price}
+                          </span>
+                          <span className="font-sans text-sm text-forest/50">
+                            {s.unit}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="font-sans text-sm text-forest/45 italic">
+                          Details below
                         </span>
-                        <span className="font-sans text-sm text-forest/50">
-                          {s.unit}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-2 pt-4">
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-4 mt-auto">
                       {s.tags.map((tag) => (
                         <span
                           key={tag}

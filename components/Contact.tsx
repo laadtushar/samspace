@@ -7,9 +7,9 @@ import TextReveal from "./TextReveal";
 import AnimatedContactForm from "./AnimatedContactForm";
 
 const infoCards = [
-  { icon: "📧", label: "Email", value: "Priyankavarma785@gmail.com" },
-  { icon: "📱", label: "WhatsApp / Call", value: "[Add before deploying]" },
-  { icon: "🕐", label: "Response Time", value: "Within 24 hours" },
+  { icon: "📧", label: "Email", value: "Priyankavarma785@gmail.com", href: "mailto:Priyankavarma785@gmail.com" },
+  { icon: "📱", label: "WhatsApp / Call", value: "+91 91307 43144", href: "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book%20a%20session%20at%20Samvriti.Space." },
+  { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null },
 ];
 
 export default function Contact() {
@@ -76,9 +76,20 @@ export default function Contact() {
               <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-cream/40 mb-2">
                 {c.label}
               </p>
-              <p className="font-sans text-sm text-cream/85 font-medium break-all group-hover:text-clay transition-colors duration-300">
-                {c.value}
-              </p>
+              {c.href ? (
+                <a
+                  href={c.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-sans text-sm text-cream/85 font-medium break-all group-hover:text-clay transition-colors duration-300 underline underline-offset-2 decoration-cream/20 hover:decoration-clay/50"
+                >
+                  {c.value}
+                </a>
+              ) : (
+                <p className="font-sans text-sm text-cream/85 font-medium break-all group-hover:text-clay transition-colors duration-300">
+                  {c.value}
+                </p>
+              )}
             </motion.div>
           ))}
         </div>

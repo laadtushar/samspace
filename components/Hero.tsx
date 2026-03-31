@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import FloatingShapes from "./FloatingShapes";
 import TextReveal from "./TextReveal";
@@ -147,17 +148,21 @@ export default function Hero() {
                   </p>
                   <div className="flex items-center gap-3">
                     <motion.div
-                      animate={{ scale: [1, 1.1, 1] }}
+                      animate={{ scale: [1, 1.05, 1] }}
                       transition={{
                         duration: 3,
                         repeat: Infinity,
                         ease: "easeInOut",
                       }}
-                      className="w-10 h-10 rounded-full bg-sage/30 flex items-center justify-center"
+                      className="w-11 h-11 rounded-full overflow-hidden border-2 border-sage/40 flex-shrink-0"
                     >
-                      <span className="font-serif text-sm text-sage font-semibold">
-                        PV
-                      </span>
+                      <Image
+                        src="/priyanka.jpeg"
+                        alt="Priyanka Varma"
+                        width={44}
+                        height={44}
+                        className="w-full h-full object-cover"
+                      />
                     </motion.div>
                     <div>
                       <p className="font-sans text-sm font-medium text-cream">
