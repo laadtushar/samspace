@@ -1,4 +1,4 @@
-import { put, list, head, del } from "@vercel/blob";
+import { put, head } from "@vercel/blob";
 
 // ─── Site Content Schema ──────────────────────────
 export interface SiteContent {
@@ -180,6 +180,7 @@ export async function saveContent(content: SiteContent): Promise<void> {
   await put(CONTENT_KEY, JSON.stringify(content), {
     access: "public",
     addRandomSuffix: false,
+    allowOverwrite: true,
   });
 }
 
@@ -204,5 +205,6 @@ export async function addSubmission(
   await put(SUBMISSIONS_KEY, JSON.stringify(existing), {
     access: "public",
     addRandomSuffix: false,
+    allowOverwrite: true,
   });
 }
