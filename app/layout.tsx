@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s | Samvriti.Space",
   },
   description:
-    "Online therapy and academic mentoring for young adults (18–28) navigating anxiety, stress, self-esteem, and life transitions. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Sessions ₹500–₹800.",
+    "Online therapy and academic mentoring for young adults (18–28) navigating anxiety, stress, self-esteem, and life transitions. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Sessions ₹800–₹1000.",
   keywords: [
     "counselling psychologist",
     "online therapy India",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist Priyanka Varma offers online therapy (₹500–₹800) and academic mentoring for young adults. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
+      "Counselling psychologist Priyanka Varma offers online therapy (₹800–₹1000) and academic mentoring for young adults. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
     url: "https://samvritispace.com",
     siteName: "Samvriti.Space",
     locale: "en_IN",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist for young adults. CBT, Humanistic, Trauma-Informed Care. Sessions ₹500–₹800. Book online.",
+      "Counselling psychologist for young adults. CBT, Humanistic, Trauma-Informed Care. Sessions ₹800–₹1000. Book online.",
   },
   robots: {
     index: true,
@@ -92,7 +92,7 @@ export default function RootLayout({
         description:
           "Online counselling and academic mentoring for young adults by Priyanka Varma, M.Sc. Clinical Psychology.",
         url: "https://samvritispace.com",
-        priceRange: "₹500–₹800",
+        priceRange: "₹800–₹1000",
         areaServed: "IN",
         serviceType: ["Counselling Psychology", "Academic Mentoring"],
         availableChannel: {
@@ -145,7 +145,7 @@ export default function RootLayout({
             name: "How much does a therapy session cost?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Therapy sessions are offered on a sliding scale of ₹500–₹800 per session based on your financial comfort. No judgement.",
+              text: "Therapy sessions are offered on a sliding scale of ₹800–₹1000 per session based on your financial comfort. No judgement.",
             },
           },
           {

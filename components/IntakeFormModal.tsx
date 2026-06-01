@@ -43,7 +43,7 @@ const steps = [
 export default function IntakeFormModal({
   isOpen,
   onClose,
-  slidingScale = ["₹500", "₹600", "₹700", "₹800"],
+  slidingScale = ["₹800", "₹900", "₹1000"],
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -227,7 +227,7 @@ export default function IntakeFormModal({
                         <div className="bg-forest/5 rounded-xl p-4 mb-4">
                           <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
                             🌿 Sessions are conducted online &nbsp;·&nbsp;
-                            💫 Sliding scale: ₹500–₹800/session &nbsp;·&nbsp;
+                            💫 Sliding scale: ₹800–₹1000/session &nbsp;·&nbsp;
                             🔒 All information remains confidential
                           </p>
                         </div>
