@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { addSubmission, type IntakeSubmission } from "@/lib/content";
 
-const resend = new Resend(process.env.RESEND_API);
-
 export async function POST(req: Request) {
   try {
+    const resend = new Resend(process.env.RESEND_API);
     const data = await req.json();
 
     const {

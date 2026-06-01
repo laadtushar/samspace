@@ -78,7 +78,7 @@ export const defaultContent: SiteContent = {
     items: [
       {
         title: "Therapy Sessions",
-        price: "₹500–₹800",
+        price: "₹800–₹1000",
         unit: "/session",
         tags: ["CBT", "Humanistic", "Trauma-Informed", "Online"],
       },
@@ -141,7 +141,7 @@ export const defaultContent: SiteContent = {
     whatsappLink:
       "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book%20a%20session%20at%20Samvriti.Space.",
   },
-  slidingScale: ["₹500", "₹600", "₹700", "₹800"],
+  slidingScale: ["₹800", "₹900", "₹1000"],
 };
 
 // ─── Intake Form Submission Schema ─────────────────

@@ -458,7 +458,7 @@ export default function AdminPage() {
                           }}
                         />
                         <ContentField
-                          label="Price (e.g. ₹500–₹800 or leave empty)"
+                          label="Price (e.g. ₹800–₹1000 or leave empty)"
                           value={item.price || ""}
                           onChange={(v) => {
                             const items = [...(content as any).services.items];
