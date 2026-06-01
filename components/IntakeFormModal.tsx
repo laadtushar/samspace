@@ -227,7 +227,7 @@ export default function IntakeFormModal({
                         <div className="bg-forest/5 rounded-xl p-4 mb-4">
                           <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
                             🌿 Sessions are conducted online &nbsp;·&nbsp;
-                            💫 Sliding scale: ₹800–₹1000/session &nbsp;·&nbsp;
+                            💫 Sliding scale: {slidingScale[0]}–{slidingScale[slidingScale.length - 1]}/session &nbsp;·&nbsp;
                             🔒 All information remains confidential
                           </p>
                         </div>
