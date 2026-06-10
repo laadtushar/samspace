@@ -43,7 +43,7 @@ const steps = [
 export default function IntakeFormModal({
   isOpen,
   onClose,
-  slidingScale = ["₹800", "₹900", "₹1000"],
+  slidingScale = ["₹500 (Student)", "₹800", "₹900", "₹1000"],
 }: {
   isOpen: boolean;
   onClose: () => void;
