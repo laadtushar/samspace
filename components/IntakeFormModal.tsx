@@ -43,18 +43,41 @@ const steps = [
 export default function IntakeFormModal({
   isOpen,
   onClose,
-  slidingScale = ["₹800", "₹900", "₹1000"],
+  slidingScale: rawSlidingScale = ["₹500 (Student)", "₹800", "₹900", "₹1000"],
 }: {
   isOpen: boolean;
   onClose: () => void;
   slidingScale?: string[];
 }) {
+  // Default params only apply to `undefined`; an empty array (e.g. admin cleared
+  // all options) would otherwise leave no price buttons and block submission.
+  const slidingScale =
+    rawSlidingScale.length > 0
+      ? rawSlidingScale
+      : ["₹500 (Student)", "₹800", "₹900", "₹1000"];
   const [step, setStep] = useState(0);
   const [data, setData] = useState<IntakeData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
   const [direction, setDirection] = useState(1);
+
+  // Split an option like "₹500 (Student)" into its amount and optional label
+  const parseOption = (option: string) => {
+    const match = option.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+    return match
+      ? { amount: match[1], label: match[2] }
+      : { amount: option, label: null as string | null };
+  };
+
+  // Derive the headline range from the numeric values so labels never corrupt it
+  const amounts = slidingScale
+    .map((p) => parseInt(p.replace(/[^\d]/g, ""), 10))
+    .filter((n) => !Number.isNaN(n));
+  const priceRange =
+    amounts.length > 0
+      ? `₹${Math.min(...amounts)}–₹${Math.max(...amounts)}`
+      : "";
 
   // Lock body scroll when open
   useEffect(() => {
@@ -227,7 +250,7 @@ export default function IntakeFormModal({
                         <div className="bg-forest/5 rounded-xl p-4 mb-4">
                           <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
                             🌿 Sessions are conducted online &nbsp;·&nbsp;
-                            💫 Sliding scale: {slidingScale[0]}–{slidingScale[slidingScale.length - 1]}/session &nbsp;·&nbsp;
+                            💫 Sliding scale: {priceRange}/session &nbsp;·&nbsp;
                             🔒 All information remains confidential
                           </p>
                         </div>
@@ -368,25 +391,34 @@ export default function IntakeFormModal({
                             Sliding Scale Preference <span className="text-clay">*</span>
                           </label>
                           <div className="grid grid-cols-2 gap-3">
-                            {slidingScale.map((price) => (
-                              <motion.button
-                                key={price}
-                                type="button"
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() => update("slidingScale", price)}
-                                className={`font-serif text-2xl font-semibold py-5 rounded-2xl border-2 transition-all duration-200 ${
-                                  data.slidingScale === price
-                                    ? "border-clay bg-clay/10 text-clay shadow-lg shadow-clay/10"
-                                    : "border-sage/20 text-forest/50 hover:border-sage/40"
-                                }`}
-                              >
-                                {price}
-                                <span className="block font-sans text-xs font-normal mt-1 opacity-60">
-                                  per session
-                                </span>
-                              </motion.button>
-                            ))}
+                            {slidingScale.map((price) => {
+                              const { amount, label } = parseOption(price);
+                              return (
+                                <motion.button
+                                  key={price}
+                                  type="button"
+                                  whileHover={{ scale: 1.03 }}
+                                  whileTap={{ scale: 0.97 }}
+                                  onClick={() => update("slidingScale", price)}
+                                  className={`font-serif text-2xl font-semibold py-5 rounded-2xl border-2 transition-all duration-200 ${
+                                    data.slidingScale === price
+                                      ? "border-clay bg-clay/10 text-clay shadow-lg shadow-clay/10"
+                                      : "border-sage/20 text-forest/50 hover:border-sage/40"
+                                  }`}
+                                >
+                                  {amount}
+                                  <span
+                                    className={`block font-sans text-xs font-normal mt-1 ${
+                                      label
+                                        ? "text-clay font-medium opacity-90"
+                                        : "opacity-60"
+                                    }`}
+                                  >
+                                    {label ?? "per session"}
+                                  </span>
+                                </motion.button>
+                              );
+                            })}
                           </div>
                         </div>
                         <div className="bg-forest/5 rounded-xl p-4 mt-6">
