@@ -920,6 +920,93 @@ export default function AdminPage() {
                         setContent({ ...content, contact: { ...(content as any).contact, phone: v } })
                       }
                     />
+                    <ContentField
+                      label="WhatsApp link (wa.me/… — anything else is discarded on save)"
+                      value={(content as any).contact?.whatsappLink}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          contact: { ...(content as any).contact, whatsappLink: v.trim() },
+                        })
+                      }
+                    />
+                  </ContentSection>
+
+                  <ContentSection title="FAQ">
+                    <p className="font-sans text-[11px] text-forest/45 leading-relaxed">
+                      These appear on the site and are what search engines read as
+                      the page&apos;s FAQ. Keep them true to what you actually
+                      offer — the answers state your rates and confidentiality.
+                    </p>
+                    <ContentField
+                      label="Heading"
+                      value={(content as any).faq?.heading}
+                      onChange={(v) =>
+                        setContent({ ...content, faq: { ...(content as any).faq, heading: v } })
+                      }
+                    />
+                    <ContentField
+                      label="Intro"
+                      value={(content as any).faq?.intro}
+                      onChange={(v) =>
+                        setContent({ ...content, faq: { ...(content as any).faq, intro: v } })
+                      }
+                      textarea
+                      rows={2}
+                    />
+                    {((content as any).faq?.items || []).map((item: any, idx: number) => (
+                      <div key={idx} className="bg-cream rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="font-sans text-xs font-semibold text-forest/60">
+                            Question {idx + 1}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const items = [...((content as any).faq?.items || [])];
+                              items.splice(idx, 1);
+                              setContent({ ...content, faq: { ...(content as any).faq, items } });
+                            }}
+                            className="font-sans text-[11px] text-red-500/70 hover:text-red-500 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <ContentField
+                          label="Question"
+                          value={item.question || ""}
+                          onChange={(v) => {
+                            const items = [...((content as any).faq?.items || [])];
+                            items[idx] = { ...items[idx], question: v };
+                            setContent({ ...content, faq: { ...(content as any).faq, items } });
+                          }}
+                        />
+                        <ContentField
+                          label="Answer"
+                          value={item.answer || ""}
+                          onChange={(v) => {
+                            const items = [...((content as any).faq?.items || [])];
+                            items[idx] = { ...items[idx], answer: v };
+                            setContent({ ...content, faq: { ...(content as any).faq, items } });
+                          }}
+                          textarea
+                          rows={3}
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const items = [
+                          ...((content as any).faq?.items || []),
+                          { question: "", answer: "" },
+                        ];
+                        setContent({ ...content, faq: { ...(content as any).faq, items } });
+                      }}
+                      className="font-sans text-xs text-forest/60 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/25 hover:border-sage/50 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add question
+                    </button>
                   </ContentSection>
 
                   <ContentSection title="Services">
