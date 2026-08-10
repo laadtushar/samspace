@@ -21,3 +21,109 @@ body {
     text-wrap: balance;
   }
 }
+
+/*
+ * Sliding-scale control.
+ *
+ * Native range inputs cannot be styled through utility classes — the track and
+ * thumb are vendor pseudo-elements — so the visual language of the rest of the
+ * form (sage rails, clay accent, cream surfaces) is restated here by hand.
+ * The filled portion is driven by --rate-pct, set inline from React.
+ */
+.rate-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rate-slider:focus {
+  outline: none;
+}
+
+/* Track — a thin rail, filled up to the current stop. */
+.rate-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #c17f5e 0%,
+    #c17f5e var(--rate-pct, 0%),
+    rgba(138, 158, 140, 0.25) var(--rate-pct, 0%),
+    rgba(138, 158, 140, 0.25) 100%
+  );
+}
+
+.rate-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(138, 158, 140, 0.25);
+}
+
+.rate-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #c17f5e;
+}
+
+/* Thumb — cream disc on a clay ring, lifted just enough to feel grabbable. */
+.rate-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border-radius: 999px;
+  background: #f7f3ed;
+  border: 3px solid #c17f5e;
+  box-shadow: 0 2px 8px rgba(44, 58, 46, 0.18);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rate-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #f7f3ed;
+  border: 3px solid #c17f5e;
+  box-shadow: 0 2px 8px rgba(44, 58, 46, 0.18);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rate-slider:hover::-webkit-slider-thumb,
+.rate-slider:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow: 0 4px 14px rgba(44, 58, 46, 0.24);
+}
+
+.rate-slider:hover::-moz-range-thumb,
+.rate-slider:active::-moz-range-thumb {
+  transform: scale(1.12);
+  box-shadow: 0 4px 14px rgba(44, 58, 46, 0.24);
+}
+
+/* Keyboard focus has to be obvious — this control carries a money decision. */
+.rate-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 4px rgba(193, 127, 94, 0.28),
+    0 2px 8px rgba(44, 58, 46, 0.18);
+}
+
+.rate-slider:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 4px rgba(193, 127, 94, 0.28),
+    0 2px 8px rgba(44, 58, 46, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rate-slider::-webkit-slider-thumb,
+  .rate-slider::-moz-range-thumb {
+    transition: none;
+  }
+}

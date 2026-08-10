@@ -130,6 +130,15 @@ export default function IntakeFormModal({
   const needsStudentConfirm =
     !!data.slidingScale && isStudentOption(data.slidingScale);
 
+  // The slider always sits somewhere, so the form opens on the lowest paid rate
+  // rather than pre-selecting the concessional one for someone.
+  const defaultRate = nextRateUp ?? slidingScale[0];
+  const rateIndex = Math.max(
+    0,
+    slidingScale.indexOf(data.slidingScale || defaultRate)
+  );
+  const selectedRate = parseOption(slidingScale[rateIndex]);
+
   // Calendly's embed needs the host domain; build it client-side only.
   useEffect(() => {
     if (!schedulingEnabled) return;
@@ -157,6 +166,15 @@ export default function IntakeFormModal({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [schedulingEnabled]);
+
+  // The slider always displays a rate, so the displayed default is committed
+  // when the step is reached — otherwise submitting would complain that nothing
+  // was chosen while a value is plainly visible.
+  useEffect(() => {
+    if (currentStep === "preferences" && !data.slidingScale && defaultRate) {
+      setData((d) => ({ ...d, slidingScale: defaultRate }));
+    }
+  }, [currentStep, data.slidingScale, defaultRate]);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -372,7 +390,7 @@ export default function IntakeFormModal({
                         <div className="bg-forest/5 rounded-xl p-4 mb-4">
                           <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
                             🌿 Sessions are conducted online &nbsp;·&nbsp;
-                            💫 Sessions {priceRange} — you pick &nbsp;·&nbsp;
+                            💫 Sliding scale {priceRange} &nbsp;·&nbsp;
                             🔒 All information remains confidential
                           </p>
                         </div>
@@ -585,45 +603,78 @@ export default function IntakeFormModal({
                           Almost done!
                         </h3>
                         <p className="font-sans text-xs text-forest/50 mb-6">
-                          Choose based on your financial comfort — no judgement.
+                          Slide to whatever you can genuinely manage — no judgement, and no proof asked for.
                         </p>
                         <div role="group" aria-labelledby="intake-rate-label">
                           <span
                             id="intake-rate-label"
                             className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-3 block"
                           >
-                            Choose your rate <span className="text-clay">*</span>
+                            Sliding scale — choose your rate <span className="text-clay">*</span>
                           </span>
-                          <div className="grid grid-cols-2 gap-3">
-                            {slidingScale.map((price) => {
-                              const { amount, label } = parseOption(price);
-                              return (
-                                <motion.button
-                                  key={price}
-                                  type="button"
-                                  whileHover={{ scale: 1.03 }}
-                                  whileTap={{ scale: 0.97 }}
-                                  aria-pressed={data.slidingScale === price}
-                                  onClick={() => selectRate(price)}
-                                  className={`font-serif text-2xl font-semibold py-5 rounded-2xl border-2 transition-all duration-200 ${
-                                    data.slidingScale === price
-                                      ? "border-clay bg-clay/10 text-clay shadow-lg shadow-clay/10"
-                                      : "border-sage/20 text-forest/50 hover:border-sage/40"
-                                  }`}
-                                >
-                                  {amount}
-                                  <span
-                                    className={`block font-sans text-xs font-normal mt-1 ${
-                                      label
-                                        ? "text-clay font-medium opacity-90"
-                                        : "opacity-60"
+                          {/* A real slider, because "sliding scale" should
+                              slide. Discrete stops keep it to the rates that
+                              are actually configured. */}
+                          <div className="px-1">
+                            <div className="text-center mb-5">
+                              <motion.p
+                                key={selectedRate.amount}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.18 }}
+                                className="font-serif text-4xl font-semibold text-clay"
+                              >
+                                {selectedRate.amount}
+                              </motion.p>
+                              <p className="font-sans text-xs text-forest/50 mt-1">
+                                {selectedRate.label ?? "per session"}
+                              </p>
+                            </div>
+
+                            <input
+                              type="range"
+                              min={0}
+                              max={slidingScale.length - 1}
+                              step={1}
+                              value={rateIndex}
+                              onChange={(e) =>
+                                selectRate(slidingScale[Number(e.target.value)])
+                              }
+                              aria-label="Session rate"
+                              style={
+                                {
+                                  "--rate-pct": `${
+                                    slidingScale.length > 1
+                                      ? (rateIndex / (slidingScale.length - 1)) * 100
+                                      : 100
+                                  }%`,
+                                } as React.CSSProperties
+                              }
+                              aria-valuetext={`${selectedRate.amount}${
+                                selectedRate.label ? `, ${selectedRate.label}` : ""
+                              }`}
+                              className="rate-slider w-full"
+                            />
+
+                            <div className="flex justify-between mt-3">
+                              {slidingScale.map((price, i) => {
+                                const { amount } = parseOption(price);
+                                return (
+                                  <button
+                                    key={price}
+                                    type="button"
+                                    onClick={() => selectRate(price)}
+                                    className={`font-sans text-[11px] transition-colors ${
+                                      i === rateIndex
+                                        ? "text-clay font-medium"
+                                        : "text-forest/35 hover:text-forest/60"
                                     }`}
                                   >
-                                    {label ?? "per session"}
-                                  </span>
-                                </motion.button>
-                              );
-                            })}
+                                    {amount}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
 
