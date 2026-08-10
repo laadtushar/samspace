@@ -94,11 +94,21 @@ export const metadata: Metadata = {
  * Endpoints BotID watches. Both send email to an address the caller supplies,
  * which is exactly what a spam script looks for. Next 14 predates
  * instrumentation-client.ts, so the client is mounted in <head> instead.
+ *
+ * It is mounted only when the server is actually enforcing BotID. The client
+ * replaces window.fetch for these paths and routes it through a challenge; if
+ * that challenge cannot load — blocked script, offline moment, BotID not
+ * provisioned — the request never leaves the browser and the person sees a
+ * generic failure with nothing in the server logs. That was observed happening.
+ * While the server treats a bot verdict as advisory, the challenge buys nothing
+ * and can only cost someone their submission.
  */
 const botProtectedRoutes = [
   { path: "/api/intake", method: "POST" },
   { path: "/api/contact", method: "POST" },
 ];
+
+const botIdEnforced = process.env.BOTID_ENFORCE === "true";
 
 export const viewport: Viewport = {
   themeColor: "#2c3a2e",
@@ -227,7 +237,7 @@ export default function RootLayout({
   return (
     <html lang="en-IN" className="scroll-smooth">
       <head>
-        <BotIdClient protect={botProtectedRoutes} />
+        {botIdEnforced && <BotIdClient protect={botProtectedRoutes} />}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
