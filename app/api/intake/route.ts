@@ -17,11 +17,23 @@ export async function POST(req: Request) {
       preferredLanguage,
       concerns,
       slidingScale,
+      studentConfirmed,
+      scheduling,
     } = data;
 
     if (!name || !email || !gender || !age || !whatsapp || !concerns || !slidingScale) {
       return NextResponse.json(
         { error: "Please fill all required fields" },
+        { status: 400 }
+      );
+    }
+
+    // The concessional rate is only accepted alongside its confirmation, so a
+    // request that bypasses the form can't quietly claim it either.
+    const isStudentRate = /\(([^)]*student[^)]*)\)/i.test(slidingScale);
+    if (isStudentRate && studentConfirmed !== true) {
+      return NextResponse.json(
+        { error: "Please confirm your student status to use the student rate" },
         { status: 400 }
       );
     }
@@ -38,6 +50,8 @@ export async function POST(req: Request) {
       preferredLanguage,
       concerns,
       slidingScale,
+      studentConfirmed: isStudentRate ? true : undefined,
+      scheduling: scheduling || "",
     };
 
     // Save to Blob
@@ -61,7 +75,11 @@ export async function POST(req: Request) {
               Thank you for filling out the therapy intake form. I've received your details and will review them carefully.
             </p>
             <p style="font-size: 15px; line-height: 1.7; opacity: 0.8; margin: 0 0 16px;">
-              I'll reach out to you within <strong>24–48 hours</strong> to discuss next steps and schedule your first session.
+              ${
+                scheduling === "booked"
+                  ? "Your slot is confirmed — you'll find the calendar invite in your inbox. I'll read through your form before we meet."
+                  : "I'll reach out to you within <strong>24–48 hours</strong> to discuss next steps and schedule your first session."
+              }
             </p>
             <p style="font-size: 15px; line-height: 1.7; opacity: 0.8; margin: 0;">
               Taking this step is itself a sign of courage and self-awareness. 🌿
@@ -97,7 +115,16 @@ export async function POST(req: Request) {
               <tr><td style="padding: 6px 0; font-weight: bold;">WhatsApp</td><td>${whatsapp}</td></tr>
               <tr><td style="padding: 6px 0; font-weight: bold;">Education</td><td>${education}</td></tr>
               <tr><td style="padding: 6px 0; font-weight: bold;">Language</td><td>${preferredLanguage}</td></tr>
-              <tr><td style="padding: 6px 0; font-weight: bold;">Sliding Scale</td><td>${slidingScale}</td></tr>
+              <tr><td style="padding: 6px 0; font-weight: bold;">Sliding Scale</td><td>${slidingScale}${
+                isStudentRate ? " — student status self-confirmed ✅" : ""
+              }</td></tr>
+              <tr><td style="padding: 6px 0; font-weight: bold;">Scheduling</td><td>${
+                scheduling === "booked"
+                  ? "Slot booked via Calendly"
+                  : scheduling === "skipped"
+                    ? "Skipped — needs a time"
+                    : "—"
+              }</td></tr>
             </table>
           </div>
           <div style="background: #f7f3ed; border-radius: 12px; padding: 24px;">

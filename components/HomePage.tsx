@@ -62,6 +62,8 @@ export default function HomePage({ content }: { content: SiteContent }) {
         isOpen={intakeOpen}
         onClose={closeIntake}
         slidingScale={content.slidingScale}
+        calendlyUrl={content.calendlyUrl}
+        studentNote={content.studentNote}
       />
     </main>
   );

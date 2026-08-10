@@ -41,6 +41,10 @@ export interface SiteContent {
     whatsappLink: string;
   };
   slidingScale: string[];
+  /** Calendly scheduling link. Empty string hides the optional scheduling step. */
+  calendlyUrl: string;
+  /** Honest note shown when someone picks a student-labelled rate. */
+  studentNote: string;
 }
 
 // ─── Defaults ──────────────────────────────────────
@@ -142,6 +146,9 @@ export const defaultContent: SiteContent = {
       "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book%20a%20session%20at%20Samvriti.Space.",
   },
   slidingScale: ["₹500 (Student)", "₹800", "₹900", "₹1000"],
+  calendlyUrl: "",
+  studentNote:
+    "The student rate is kept low on purpose — so someone still studying, without their own income, never has to choose between therapy and affording the month. It works because the people who can pay a little more do. If you're earning, picking a higher rate quietly keeps this slot open for someone who genuinely can't. No proof is asked for. It runs on trust.",
 };
 
 // ─── Intake Form Submission Schema ─────────────────
@@ -157,6 +164,10 @@ export interface IntakeSubmission {
   preferredLanguage: string;
   concerns: string;
   slidingScale: string;
+  /** Ticked only when a student-labelled rate was chosen. */
+  studentConfirmed?: boolean;
+  /** "booked" | "skipped" | "" (scheduling step not shown) */
+  scheduling?: string;
 }
 
 // ─── Blob helpers ──────────────────────────────────

@@ -28,6 +28,8 @@ interface Submission {
   preferredLanguage: string;
   concerns: string;
   slidingScale: string;
+  studentConfirmed?: boolean;
+  scheduling?: string;
 }
 
 export default function AdminPage() {
@@ -114,6 +116,8 @@ export default function AdminPage() {
       "preferredLanguage",
       "concerns",
       "slidingScale",
+      "studentConfirmed",
+      "scheduling",
     ];
     const csv = [
       fields.join(","),
@@ -311,6 +315,18 @@ export default function AdminPage() {
                                     ["Education", s.education],
                                     ["Language", s.preferredLanguage],
                                     ["Scale", s.slidingScale],
+                                    [
+                                      "Student Confirmed",
+                                      s.studentConfirmed ? "Yes" : "",
+                                    ],
+                                    [
+                                      "Scheduling",
+                                      s.scheduling === "booked"
+                                        ? "Slot booked"
+                                        : s.scheduling === "skipped"
+                                          ? "Skipped"
+                                          : "",
+                                    ],
                                   ].map(([label, val]) => (
                                     <div key={label}>
                                       <p className="font-sans text-[10px] text-forest/40 uppercase tracking-wider">
@@ -551,6 +567,19 @@ export default function AdminPage() {
                       }
                       textarea
                     />
+                    <ContentField
+                      label="Student rate note (shown when a student rate is picked)"
+                      value={(content as any).studentNote || ""}
+                      onChange={(v) => setContent({ ...content, studentNote: v })}
+                      textarea
+                    />
+                  </ContentSection>
+
+                  <ContentSection title="Scheduling (Calendly)">
+                    <CalendlySettings
+                      value={((content as any).calendlyUrl as string) || ""}
+                      onChange={(v) => setContent({ ...content, calendlyUrl: v })}
+                    />
                   </ContentSection>
                 </div>
               </div>
@@ -558,6 +587,86 @@ export default function AdminPage() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Calendly Integration ───────────────────────────
+// A blank link keeps the scheduling step out of the intake form entirely, so
+// this panel doubles as the on/off switch for the whole integration.
+function CalendlySettings({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const trimmed = value.trim();
+  let status: "off" | "valid" | "invalid" = "off";
+  if (trimmed) {
+    try {
+      const url = new URL(trimmed);
+      status = url.protocol === "https:" && /(^|\.)calendly\.com$/.test(url.hostname)
+        ? "valid"
+        : "invalid";
+    } catch {
+      status = "invalid";
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <span
+          className={`w-2 h-2 rounded-full ${
+            status === "valid"
+              ? "bg-green-500"
+              : status === "invalid"
+                ? "bg-red-400"
+                : "bg-sage/40"
+          }`}
+        />
+        <span className="font-sans text-xs text-forest/60">
+          {status === "valid"
+            ? "Connected — the intake form opens with an optional booking step."
+            : status === "invalid"
+              ? "That doesn't look like a Calendly link — the step stays hidden until it's fixed."
+              : "Off — the intake form skips scheduling entirely."}
+        </span>
+      </div>
+
+      <ContentField
+        label="Calendly event link"
+        value={value}
+        onChange={(v) => onChange(v.trim())}
+      />
+
+      <div className="bg-cream rounded-lg p-4 space-y-2">
+        <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
+          Paste the scheduling link for the event you want people to book — from
+          Calendly, open the event and use <strong>Copy link</strong>. It looks
+          like <code className="text-forest/70">https://calendly.com/your-name/50min</code>.
+          Clear this box to turn scheduling off again.
+        </p>
+        <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
+          Booking is always optional — people can skip it and still submit the
+          form. When someone does book, their confirmation email says so and the
+          submission is tagged <strong>Slot booked</strong> below.
+        </p>
+      </div>
+
+      {status === "valid" && (
+        <div className="rounded-xl overflow-hidden border border-sage/20 bg-white">
+          <p className="font-sans text-[10px] text-forest/40 uppercase tracking-wider px-4 pt-3 pb-2">
+            Preview
+          </p>
+          <iframe
+            src={trimmed}
+            title="Calendly preview"
+            className="w-full h-[360px] border-0"
+          />
+        </div>
+      )}
     </div>
   );
 }
