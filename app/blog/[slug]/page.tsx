@@ -7,7 +7,7 @@ import {
   getPublishedPostBySlug,
   readingMinutes,
 } from "@/lib/blog";
-import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { SITE_URL, serializeJsonLd } from "@/lib/site";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Markdown from "@/components/Markdown";
@@ -114,7 +114,7 @@ export default async function BlogPostPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <Navbar />
       <main className="bg-cream min-h-screen">

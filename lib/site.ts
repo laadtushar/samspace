@@ -35,3 +35,19 @@ export function absoluteUrl(path: string): string {
 
 export const SITE_NAME = "Samvriti.Space";
 export const SITE_TAGLINE = "A space to feel seen, heard, and supported";
+
+/**
+ * Serialises a JSON-LD graph for embedding in a <script> tag.
+ *
+ * JSON.stringify escapes quotes and backslashes but not `<`, so a stored value
+ * containing `</script>` would close the block and let whatever follows run as
+ * markup. Escaping the angle brackets keeps the JSON valid while making it
+ * inert to the HTML parser.
+ */
+export function serializeJsonLd(graph: unknown): string {
+  return JSON.stringify(graph)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}

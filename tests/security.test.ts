@@ -10,6 +10,7 @@ import {
 import { rateLimit, isSameOrigin } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/auth";
 import { defaultContent } from "@/lib/content";
+import { serializeJsonLd } from "@/lib/site";
 
 describe("email escaping", () => {
   it("neutralises markup a stranger typed into a name field", () => {
@@ -283,5 +284,34 @@ describe("constant-time comparison", () => {
 
   it("rejects strings of different lengths without throwing", () => {
     expect(safeEqual("short", "considerably longer value")).toBe(false);
+  });
+});
+
+describe("JSON-LD serialisation", () => {
+  it("prevents a stored title from closing the script tag", () => {
+    const out = serializeJsonLd({
+      headline: "</script><script>alert(document.cookie)</script>",
+    });
+    expect(out).not.toContain("</script>");
+    expect(out).not.toContain("<script>");
+    expect(out).toContain("\\u003c");
+  });
+
+  it("stays valid JSON that parses back to the original value", () => {
+    const title = "</script><img src=x onerror=alert(1)>";
+    const parsed = JSON.parse(serializeJsonLd({ headline: title }));
+    expect(parsed.headline).toBe(title);
+  });
+
+  it("does not mangle ordinary text", () => {
+    const parsed = JSON.parse(serializeJsonLd({ a: "hello there — fine" }));
+    expect(parsed.a).toBe("hello there — fine");
+  });
+
+  it("escapes the line separators that break inline scripts", () => {
+    const out = serializeJsonLd({ a: "one two three" });
+    expect(out).not.toContain(" ");
+    expect(out).not.toContain(" ");
+    expect(JSON.parse(out).a).toBe("one two three");
   });
 });

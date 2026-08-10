@@ -1,4 +1,4 @@
-import { put, get, list, del, BlobNotFoundError } from "@vercel/blob";
+import { put, get, head, list, del, BlobNotFoundError } from "@vercel/blob";
 
 /**
  * Thin JSON layer over Vercel Blob.
@@ -27,9 +27,12 @@ function storageConfigured(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
-async function readJson<T>(
+/**
+ * Reads a private JSON blob through the authenticated path. Returns `fallback`
+ * only when the blob genuinely does not exist.
+ */
+export async function readPrivateJson<T>(
   pathname: string,
-  access: "public" | "private",
   fallback: T
 ): Promise<T> {
   if (!storageConfigured()) return fallback;
@@ -37,7 +40,7 @@ async function readJson<T>(
   try {
     // useCache: false — a stale edge copy read back and rewritten silently
     // rolls data back, so reads always go to origin.
-    const result = await get(pathname, { access, useCache: false });
+    const result = await get(pathname, { access: "private", useCache: false });
     if (!result || result.statusCode !== 200) return fallback;
     return JSON.parse(await new Response(result.stream).text()) as T;
   } catch (error) {
@@ -46,14 +49,32 @@ async function readJson<T>(
   }
 }
 
-/** Reads a private JSON blob. Returns `fallback` only when it genuinely does not exist. */
-export function readPrivateJson<T>(pathname: string, fallback: T): Promise<T> {
-  return readJson(pathname, "private", fallback);
-}
+/**
+ * Reads a public JSON blob.
+ *
+ * Public blobs are resolved with `head` and fetched from their own URL rather
+ * than through `get({ access: "public" })`, which the API rejects with a 400.
+ * `no-store` keeps Next's data cache from serving a stale copy after an edit.
+ */
+export async function readPublicJson<T>(
+  pathname: string,
+  fallback: T
+): Promise<T> {
+  if (!storageConfigured()) return fallback;
 
-/** Reads a public JSON blob. Returns `fallback` only when it genuinely does not exist. */
-export function readPublicJson<T>(pathname: string, fallback: T): Promise<T> {
-  return readJson(pathname, "public", fallback);
+  try {
+    const blob = await head(pathname);
+    if (!blob) return fallback;
+    const res = await fetch(blob.url, { cache: "no-store" });
+    if (!res.ok) {
+      if (res.status === 404) return fallback;
+      throw new Error(`Blob fetch failed for ${pathname}: ${res.status}`);
+    }
+    return (await res.json()) as T;
+  } catch (error) {
+    if (error instanceof BlobNotFoundError) return fallback;
+    throw error;
+  }
 }
 
 export async function writePrivateJson(

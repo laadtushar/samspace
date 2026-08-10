@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getPublishedPosts, readingMinutes } from "@/lib/blog";
-import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { SITE_URL, SITE_NAME, serializeJsonLd } from "@/lib/site";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -54,7 +54,7 @@ export default async function BlogIndexPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionJsonLd) }}
       />
       <Navbar />
       <main className="bg-cream min-h-screen">

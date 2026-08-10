@@ -503,11 +503,20 @@ export default function AdminPage() {
       "studentConfirmed",
       "scheduling",
     ];
+    // Anything a stranger typed can land in a spreadsheet cell. A value opening
+    // with =, +, - or @ is read as a formula by Excel and Sheets, so =HYPERLINK(..)
+    // in a name field would execute when Priyanka opens her own export. Prefixing
+    // a quote makes the cell literal text.
+    const cell = (value: unknown) => {
+      const text = String(value ?? "");
+      const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const csv = [
       fields.join(","),
       ...submissions.map((s) =>
         fields
-          .map((f) => `"${String((s as unknown as Record<string, unknown>)[f] || "").replace(/"/g, '""')}"`)
+          .map((f) => cell((s as unknown as Record<string, unknown>)[f]))
           .join(",")
       ),
     ].join("\n");

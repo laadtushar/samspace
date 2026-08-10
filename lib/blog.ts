@@ -1,6 +1,6 @@
 import {
-  readPublicJson,
-  writePublicJson,
+  readPrivateJson,
+  writePrivateJson,
   listBlobs,
   deleteBlob,
 } from "@/lib/blob";
@@ -9,10 +9,14 @@ import type { BlogPostInput } from "@/lib/validation";
 /**
  * Blog storage.
  *
- * Posts are public content, so unlike intake submissions they live in public
- * blobs. Each post is its own object — the same reason as submissions: two
- * edits saved at once must not overwrite one another, and a failed read must
- * never be able to wipe the archive.
+ * Posts are stored privately even though published ones end up on public
+ * pages. A public blob is served from a guessable path on a CDN, so a draft
+ * written there is readable by anyone who guesses its slug — the status field
+ * only hides a post from the site, not from storage. Reading through the
+ * authenticated path means "draft" actually means unpublished.
+ *
+ * Each post is its own object: two edits saved at once must not overwrite one
+ * another, and a failed read must never be able to wipe the archive.
  *
  * The slug is the identity. Renaming a slug creates a new object and removes
  * the old one, which keeps "one post, one URL" true.
@@ -74,7 +78,7 @@ export function deriveExcerpt(markdown: string, max = 200): string {
 }
 
 async function readPost(pathname: string): Promise<BlogPost | null> {
-  return readPublicJson<BlogPost | null>(pathname, null);
+  return readPrivateJson<BlogPost | null>(pathname, null);
 }
 
 /** Every post, drafts included. Admin only. */
@@ -133,7 +137,7 @@ export async function savePost(
     seoDescription: input.seoDescription,
   };
 
-  await writePublicJson(postPath(post.slug), post);
+  await writePrivateJson(postPath(post.slug), post);
 
   // A renamed slug leaves its old object behind, which would serve a stale
   // duplicate at the old URL.

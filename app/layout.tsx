@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BotIdClient } from "botid/client";
-import { SITE_URL, SITE_NAME, IS_PRODUCTION_SITE } from "@/lib/site";
+import {
+  SITE_URL,
+  SITE_NAME,
+  IS_PRODUCTION_SITE,
+  serializeJsonLd,
+} from "@/lib/site";
 import { defaultContent } from "@/lib/content";
 import "./globals.css";
 
@@ -225,7 +230,7 @@ export default function RootLayout({
         <BotIdClient protect={botProtectedRoutes} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       </head>
       <body
