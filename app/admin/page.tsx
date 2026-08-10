@@ -8,6 +8,7 @@ import {
   Users,
   FileText,
   Newspaper,
+  Settings,
   ChevronDown,
   ChevronUp,
   Save,
@@ -127,7 +128,9 @@ export default function AdminPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [tab, setTab] = useState<"submissions" | "content" | "blog">("submissions");
+  const [tab, setTab] = useState<
+    "submissions" | "content" | "blog" | "settings"
+  >("submissions");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [content, setContent] = useState<Record<string, unknown> | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -335,7 +338,7 @@ export default function AdminPage() {
     setPostError("");
   };
 
-  const switchTab = (next: "submissions" | "content" | "blog") => {
+  const switchTab = (next: "submissions" | "content" | "blog" | "settings") => {
     if (tab === "blog" && next !== "blog" && !confirmDiscard()) return;
     if (tab === "blog" && next !== "blog") setBlogView("list");
     setTab(next);
@@ -632,6 +635,7 @@ export default function AdminPage() {
             { id: "submissions" as const, label: "Intake Submissions", icon: Users, count: submissions.length },
             { id: "content" as const, label: "Edit Content", icon: FileText },
             { id: "blog" as const, label: "Blog", icon: Newspaper, count: posts.length },
+            { id: "settings" as const, label: "Settings", icon: Settings },
           ].map((t) => (
             <button
               key={t.id}
@@ -852,30 +856,6 @@ export default function AdminPage() {
                 )}
 
                 {/* Legacy storage cleanup — a one-off, so it stays out of the way. */}
-                <div className="mt-10 pt-6 border-t border-sage/15">
-                  <p className="font-sans text-xs text-forest/40 mb-2 max-w-xl leading-relaxed">
-                    Older submissions were stored in public storage. This moves any
-                    that remain into private storage and removes the public copy.
-                    Safe to run more than once.
-                  </p>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={handleMigrate}
-                      disabled={migrating}
-                      className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors disabled:opacity-60"
-                    >
-                      {migrating ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Upload className="w-3.5 h-3.5" />
-                      )}
-                      Migrate legacy submissions
-                    </button>
-                    {migrateMessage && (
-                      <span className="font-sans text-xs text-forest/50">{migrateMessage}</span>
-                    )}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -974,30 +954,24 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
-                  <ContentSection title="Contact Info">
+                  {/* The address and phone number live under Settings; this is
+                      the wording around them. */}
+                  <ContentSection title="Contact Section">
                     <ContentField
-                      label="Email"
-                      value={(content as any).contact?.email}
+                      label="Heading"
+                      value={(content as any).contact?.heading}
                       onChange={(v) =>
-                        setContent({ ...content, contact: { ...(content as any).contact, email: v } })
+                        setContent({ ...content, contact: { ...(content as any).contact, heading: v } })
                       }
                     />
                     <ContentField
-                      label="Phone"
-                      value={(content as any).contact?.phone}
+                      label="Subtext"
+                      value={(content as any).contact?.subtext}
                       onChange={(v) =>
-                        setContent({ ...content, contact: { ...(content as any).contact, phone: v } })
+                        setContent({ ...content, contact: { ...(content as any).contact, subtext: v } })
                       }
-                    />
-                    <ContentField
-                      label="WhatsApp link (wa.me/… — anything else is discarded on save)"
-                      value={(content as any).contact?.whatsappLink}
-                      onChange={(v) =>
-                        setContent({
-                          ...content,
-                          contact: { ...(content as any).contact, whatsappLink: v.trim() },
-                        })
-                      }
+                      textarea
+                      rows={2}
                     />
                   </ContentSection>
 
@@ -1173,6 +1147,45 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
+                </div>
+              </div>
+            )}
+
+            {/* ─── Blog Tab ─────────────────────── */}
+            {/* ─── Settings Tab ─────────────────── */}
+            {tab === "settings" && content && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-serif text-xl font-semibold text-forest">
+                    Settings
+                  </h2>
+                  <button
+                    onClick={handleSaveContent}
+                    disabled={saving}
+                    className="font-sans text-sm font-medium bg-forest text-cream px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-forest-deep transition-colors disabled:opacity-60"
+                  >
+                    {saved ? (
+                      <><Check className="w-4 h-4" /> Saved!</>
+                    ) : saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <><Save className="w-4 h-4" /> Save Changes</>
+                    )}
+                  </button>
+                </div>
+
+                <p className="font-sans text-xs text-forest/40 mb-6">
+                  How the site behaves — scheduling, what people pay, and how they
+                  reach you. Changes go live within ~60 seconds.
+                </p>
+
+                {saveError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+                    <p className="font-sans text-sm text-red-600">{saveError}</p>
+                  </div>
+                )}
+
+                <div className="space-y-6">
                   <ContentSection title="Session Rates">
                     <ContentField
                       label="Rates, one per line — add (Student) to mark the concessional rate"
@@ -1199,11 +1212,64 @@ export default function AdminPage() {
                       onChange={(v) => setContent({ ...content, calendlyUrl: v })}
                     />
                   </ContentSection>
+
+                  <ContentSection title="Contact Details">
+                    <ContentField
+                      label="Email"
+                      value={(content as any).contact?.email}
+                      onChange={(v) =>
+                        setContent({ ...content, contact: { ...(content as any).contact, email: v } })
+                      }
+                    />
+                    <ContentField
+                      label="Phone"
+                      value={(content as any).contact?.phone}
+                      onChange={(v) =>
+                        setContent({ ...content, contact: { ...(content as any).contact, phone: v } })
+                      }
+                    />
+                    <ContentField
+                      label="WhatsApp link (wa.me/… — anything else is discarded on save)"
+                      value={(content as any).contact?.whatsappLink}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          contact: { ...(content as any).contact, whatsappLink: v.trim() },
+                        })
+                      }
+                    />
+                  </ContentSection>
+
+                  <ContentSection title="Maintenance">
+                <div>
+                  <p className="font-sans text-xs text-forest/40 mb-2 max-w-xl leading-relaxed">
+                    Older submissions were stored in public storage. This moves any
+                    that remain into private storage and removes the public copy.
+                    Safe to run more than once.
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      onClick={handleMigrate}
+                      disabled={migrating}
+                      className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors disabled:opacity-60"
+                    >
+                      {migrating ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      Migrate legacy submissions
+                    </button>
+                    {migrateMessage && (
+                      <span className="font-sans text-xs text-forest/50">{migrateMessage}</span>
+                    )}
+                  </div>
+                </div>
+                  </ContentSection>
                 </div>
               </div>
             )}
 
-            {/* ─── Blog Tab ─────────────────────── */}
             {tab === "blog" && blogView === "list" && (
               <div>
                 <div className="flex items-center justify-between mb-4">
