@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -8,11 +9,13 @@ const navLinks = [
   { label: "Services", href: "#services" },
   { label: "Mentoring", href: "#mentoring" },
   { label: "FAQ", href: "#faq" },
+  { label: "Writing", href: "/blog" },
 ];
 
 export default function Navbar({ onBookSession }: { onBookSession?: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -20,10 +23,21 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // The same nav renders on /blog, where the homepage sections don't exist —
+  // an anchor with nothing to scroll to has to become a navigation instead of
+  // silently doing nothing.
   const handleNavClick = (href: string) => {
     setMenuOpen(false);
+    if (!href.startsWith("#")) {
+      router.push(href);
+      return;
+    }
     const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push(`/${href}`);
+    }
   };
 
   return (
@@ -40,7 +54,13 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
       <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          onClick={() => {
+            if (window.location.pathname === "/") {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } else {
+              router.push("/");
+            }
+          }}
           className="flex flex-col leading-none"
         >
           <span className="font-serif text-2xl font-semibold text-forest tracking-wide">
