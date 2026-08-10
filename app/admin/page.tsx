@@ -1619,18 +1619,113 @@ function CalendlySettings({
         onChange={(v) => onChange(v.trim())}
       />
 
-      <div className="bg-cream rounded-lg p-4 space-y-2">
-        <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
-          Paste the scheduling link for the event you want people to book — from
-          Calendly, open the event and use <strong>Copy link</strong>. It looks
-          like <code className="text-forest/70">https://calendly.com/your-name/50min</code>.
-          Clear this box to turn scheduling off again.
+      {/* Written for someone who has never used Calendly — the field alone
+          assumes she already knows what an "event link" is. */}
+      <div className="bg-cream rounded-lg p-5">
+        <p className="font-sans text-xs font-semibold text-forest/70 mb-3">
+          {status === "valid" ? "Setting this up again?" : "Getting your link"}
         </p>
-        <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
-          Booking is always optional — people can skip it and still submit the
-          form. When someone does book, their confirmation email says so and the
-          submission is tagged <strong>Slot booked</strong> below.
-        </p>
+        <ol className="space-y-3">
+          {[
+            {
+              title: "Make a free Calendly account",
+              body: (
+                <>
+                  Go to{" "}
+                  <a
+                    href="https://calendly.com/signup"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-clay underline underline-offset-2"
+                  >
+                    calendly.com/signup
+                  </a>
+                  . The free plan is enough — it allows one event type, which is
+                  all you need. Connect the calendar you actually keep, so it
+                  never offers a time you&apos;re already busy.
+                </>
+              ),
+            },
+            {
+              title: "Create an event type",
+              body: (
+                <>
+                  In{" "}
+                  <a
+                    href="https://calendly.com/event_types/user/me"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-clay underline underline-offset-2"
+                  >
+                    Event Types
+                  </a>
+                  , add a <strong>One-on-One</strong> event. Name it something a
+                  client will recognise — &ldquo;Therapy Session&rdquo; — and set
+                  the length to <strong>50 minutes</strong> to match your sessions.
+                </>
+              ),
+            },
+            {
+              title: "Set when you're available",
+              body: (
+                <>
+                  Under that event&apos;s availability, choose the hours you want
+                  to be bookable. Worth adding a buffer after each session and a
+                  minimum notice period, so nobody books you in ten minutes&apos;
+                  time.
+                </>
+              ),
+            },
+            {
+              title: "Copy the link",
+              body: (
+                <>
+                  On the event, click <strong>Copy link</strong>. It looks like{" "}
+                  <code className="text-forest/70 break-all">
+                    https://calendly.com/your-name/therapy-session
+                  </code>
+                  .
+                </>
+              ),
+            },
+            {
+              title: "Paste it above and save",
+              body: (
+                <>
+                  Paste it into the box above and press <strong>Save Changes</strong>.
+                  The dot turns green and a preview appears below — that preview is
+                  exactly what people will see.
+                </>
+              ),
+            },
+          ].map((step, i) => (
+            <li key={step.title} className="flex gap-3">
+              <span className="font-sans text-[10px] font-semibold text-clay bg-clay/10 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                {i + 1}
+              </span>
+              <div>
+                <p className="font-sans text-[11px] font-medium text-forest/70">
+                  {step.title}
+                </p>
+                <p className="font-sans text-[11px] text-forest/50 leading-relaxed mt-0.5">
+                  {step.body}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="border-t border-sage/20 mt-4 pt-3 space-y-1.5">
+          <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
+            Booking is never required — people can skip it and still submit the
+            form. When someone does book, their confirmation email says so and
+            their submission is tagged <strong>Slot booked</strong>.
+          </p>
+          <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
+            To turn scheduling off, clear the box above and save. The step
+            disappears from the form entirely.
+          </p>
+        </div>
       </div>
 
       {status === "valid" && (
