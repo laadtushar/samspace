@@ -137,6 +137,9 @@ export default function AdminPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmDeleteSubmission, setConfirmDeleteSubmission] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [migrating, setMigrating] = useState(false);
   const [migrateMessage, setMigrateMessage] = useState("");
 
@@ -487,6 +490,29 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteSubmission = async (id: string) => {
+    setDeletingId(id);
+    setDeleteError(null);
+    try {
+      const res = await apiFetch(`/api/admin/submissions?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await errorMessage(res, "Delete failed"));
+      // Drop it locally rather than refetching — the record is gone either way.
+      setSubmissions((list) => list.filter((s) => s.id !== id));
+      setConfirmDeleteSubmission(null);
+      setExpandedId(null);
+    } catch (err) {
+      if (err instanceof SessionExpired) {
+        endSession();
+        return;
+      }
+      setDeleteError(id);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const exportCSV = () => {
     if (!submissions.length) return;
     const fields = [
@@ -772,6 +798,49 @@ export default function AdminPage() {
                                   <p className="font-sans text-sm text-forest/80 leading-relaxed whitespace-pre-wrap">
                                     {s.concerns}
                                   </p>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-sage/10">
+                                  {deleteError === s.id && (
+                                    <span className="font-sans text-xs text-red-500">
+                                      Could not delete — try again.
+                                    </span>
+                                  )}
+                                  {confirmDeleteSubmission === s.id ? (
+                                    <>
+                                      <span className="font-sans text-xs text-forest/60">
+                                        Delete permanently? This cannot be undone.
+                                      </span>
+                                      <button
+                                        onClick={() => setConfirmDeleteSubmission(null)}
+                                        className="font-sans text-xs text-forest/50 hover:text-forest px-3 py-1.5"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSubmission(s.id)}
+                                        disabled={deletingId === s.id}
+                                        className="font-sans text-xs text-white bg-red-500 hover:bg-red-600 disabled:opacity-60 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                                      >
+                                        {deletingId === s.id ? (
+                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <Trash2 className="w-3 h-3" />
+                                        )}
+                                        Delete
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        setDeleteError(null);
+                                        setConfirmDeleteSubmission(s.id);
+                                      }}
+                                      className="font-sans text-xs text-forest/45 hover:text-red-500 flex items-center gap-1.5 transition-colors"
+                                    >
+                                      <Trash2 className="w-3 h-3" /> Delete submission
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </motion.div>

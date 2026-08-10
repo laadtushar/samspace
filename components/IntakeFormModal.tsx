@@ -43,6 +43,40 @@ const initialData: IntakeData = {
   scheduling: "",
 };
 
+/**
+ * Mirrors the server's schema in lib/validation.ts. The server remains the
+ * authority — this exists so a correctable mistake is caught while the field is
+ * still in front of the person, instead of after a round trip that used to say
+ * only "Failed to submit".
+ */
+const fieldRules: Record<string, (value: string) => string | null> = {
+  name: (v) =>
+    !v.trim()
+      ? "Please enter your name"
+      : v.trim().length > 120
+        ? "That name is too long"
+        : null,
+  age: (v) => {
+    if (!v.trim()) return "Please enter your age";
+    if (!/^\d{1,3}$/.test(v.trim())) return "Age should be a number, e.g. 24";
+    const n = Number(v);
+    if (n < 13 || n > 120) return "Please enter an age between 13 and 120";
+    return null;
+  },
+  email: (v) =>
+    !v.trim()
+      ? "Please enter your email"
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+        ? "That doesn't look like an email address"
+        : null,
+  whatsapp: (v) =>
+    !v.trim()
+      ? "Please enter your WhatsApp number"
+      : !/^[\d+\-\s()]{7,20}$/.test(v.trim())
+        ? "Please enter a valid phone number"
+        : null,
+};
+
 const defaultStudentNote =
   "The student rate is kept low on purpose — so someone still studying, without their own income, never has to choose between therapy and affording the month. It works because the people who can pay a little more do. If you're earning, picking a higher rate quietly keeps this slot open for someone who genuinely can't. No proof is asked for. It runs on trust.";
 
@@ -76,6 +110,7 @@ export default function IntakeFormModal({
   const [error, setError] = useState("");
   const [direction, setDirection] = useState(1);
   const [embedSrc, setEmbedSrc] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Only a real Calendly link switches the scheduling step on — a blank or
   // malformed value in the admin panel simply leaves the flow as it was.
@@ -192,6 +227,19 @@ export default function IntakeFormModal({
   const update = (field: keyof IntakeData, value: string | boolean) => {
     setData((d) => ({ ...d, [field]: value }));
     setError("");
+    setFieldErrors((e) => (e[field] ? { ...e, [field]: "" } : e));
+  };
+
+  /** Runs the rules for one step; returns true when it may be left. */
+  const validateFields = (fields: (keyof IntakeData)[]) => {
+    const found: Record<string, string> = {};
+    for (const field of fields) {
+      const rule = fieldRules[field];
+      const message = rule?.(String(data[field] ?? ""));
+      if (message) found[field] = message;
+    }
+    setFieldErrors(found);
+    return Object.keys(found).length === 0;
   };
 
   // Switching away from a student rate clears the confirmation, so the tick can
@@ -208,15 +256,14 @@ export default function IntakeFormModal({
   const next = () => {
     // Validate current step
     if (currentStep === "personal") {
-      if (!data.name || !data.gender || !data.age) {
-        setError("Please fill all fields");
+      const ok = validateFields(["name", "age"]);
+      if (!data.gender) {
+        setError("Please choose an option for gender");
         return;
       }
+      if (!ok) return;
     } else if (currentStep === "contact") {
-      if (!data.email || !data.whatsapp) {
-        setError("Please fill all fields");
-        return;
-      }
+      if (!validateFields(["email", "whatsapp"])) return;
     } else if (currentStep === "concerns") {
       if (!data.concerns) {
         setError("Please describe your concerns");
@@ -291,6 +338,7 @@ export default function IntakeFormModal({
     if (!isLoading) {
       setStep(0);
       setError("");
+      setFieldErrors({});
       setData(initialData);
       onClose();
     }
@@ -486,6 +534,7 @@ export default function IntakeFormModal({
                         </h3>
                         <div className="space-y-4">
                           <FormInput
+                            error={fieldErrors.name}
                             label="Full Name"
                             value={data.name}
                             onChange={(v) => update("name", v)}
@@ -518,6 +567,7 @@ export default function IntakeFormModal({
                             </div>
                           </div>
                           <FormInput
+                            error={fieldErrors.age}
                             label="Age"
                             value={data.age}
                             onChange={(v) => update("age", v)}
@@ -537,6 +587,7 @@ export default function IntakeFormModal({
                         </h3>
                         <div className="space-y-4">
                           <FormInput
+                            error={fieldErrors.email}
                             label="Email Address"
                             value={data.email}
                             onChange={(v) => update("email", v)}
@@ -546,6 +597,7 @@ export default function IntakeFormModal({
                             required
                           />
                           <FormInput
+                            error={fieldErrors.whatsapp}
                             label="WhatsApp Number"
                             value={data.whatsapp}
                             onChange={(v) => update("whatsapp", v)}
@@ -875,6 +927,7 @@ function FormInput({
   required = false,
   autoComplete,
   inputMode,
+  error,
 }: {
   label: string;
   value: string;
@@ -883,10 +936,12 @@ function FormInput({
   required?: boolean;
   autoComplete?: string;
   inputMode?: "text" | "email" | "tel" | "numeric";
+  error?: string;
 }) {
   // Tying the label to the input keeps screen readers and browser autofill able
   // to name the field — the visual label alone doesn't.
   const id = useId();
+  const errorId = `${id}-error`;
   return (
     <div>
       <label
@@ -902,9 +957,20 @@ function FormInput({
         required={required}
         autoComplete={autoComplete}
         inputMode={inputMode}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-white border-2 border-sage/20 rounded-xl px-4 py-3 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50 transition-colors"
+        className={`w-full bg-white border-2 rounded-xl px-4 py-3 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none transition-colors ${
+          error
+            ? "border-red-300 focus:border-red-400"
+            : "border-sage/20 focus:border-clay/50"
+        }`}
       />
+      {error && (
+        <p id={errorId} className="font-sans text-xs text-red-500 mt-1.5">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -335,6 +335,33 @@ async function readLegacySubmissions(): Promise<IntakeSubmission[]> {
 }
 
 /**
+ * Removes one submission, wherever it lives.
+ *
+ * Records written since the per-submission change are their own object and are
+ * simply deleted. Anything still inside the original combined document has to
+ * be rewritten without it — which is a read-modify-write, and is only safe here
+ * because that document is frozen: nothing appends to it any more.
+ *
+ * Returns false when no record with that id exists, so the caller can answer
+ * honestly rather than reporting a delete that never happened.
+ */
+export async function deleteSubmission(id: string): Promise<boolean> {
+  const blobs = await listBlobs(SUBMISSIONS_PREFIX);
+  const match = blobs.find((b) => b.pathname.includes(id));
+  if (match) {
+    await deleteBlob(match.pathname);
+    return true;
+  }
+
+  const legacy = await readLegacySubmissions();
+  const remaining = legacy.filter((s) => s.id !== id);
+  if (remaining.length === legacy.length) return false;
+
+  await writeConfidentialJson(LEGACY_SUBMISSIONS_KEY, remaining);
+  return true;
+}
+
+/**
  * Moves any records still in the single legacy blob into per-submission private
  * blobs, then deletes the legacy blob. Safe to run more than once.
  *

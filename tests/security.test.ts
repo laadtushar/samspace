@@ -361,3 +361,35 @@ describe("record encryption at rest", () => {
     expect(isEncrypted(JSON.stringify(submission))).toBe(false);
   });
 });
+
+describe("intake field rules (client mirrors the server)", () => {
+  // The form validates before submitting; the server validates regardless.
+  // These assert the two agree, so a value accepted in the browser is not
+  // rejected by the API — the round trip that used to say only "Failed".
+  const cases: Array<[string, Record<string, unknown>, boolean]> = [
+    ["a plausible age", { age: "24" }, true],
+    ["age below the floor", { age: "9" }, false],
+    ["age above the ceiling", { age: "150" }, false],
+    ["a non-numeric age", { age: "twenty" }, false],
+    ["an email without a domain", { email: "someone@" }, false],
+    ["a normal email", { email: "someone@example.com" }, true],
+    ["a phone with spaces and +", { whatsapp: "+91 91307 43144" }, true],
+    ["a phone that is words", { whatsapp: "call me" }, false],
+  ];
+
+  const base = {
+    name: "Test Person",
+    email: "test@example.com",
+    gender: "Female",
+    age: "22",
+    whatsapp: "9999999999",
+    concerns: "Exam stress.",
+    slidingScale: "₹800",
+  };
+
+  for (const [label, patch, shouldPass] of cases) {
+    it(`${shouldPass ? "accepts" : "rejects"} ${label}`, () => {
+      expect(intakeSchema.safeParse({ ...base, ...patch }).success).toBe(shouldPass);
+    });
+  }
+});
