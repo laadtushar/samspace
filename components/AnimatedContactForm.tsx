@@ -339,7 +339,14 @@ export default function AnimatedContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(
+          typeof body?.error === "string"
+            ? body.error
+            : "Something went wrong. Please email me directly."
+        );
+      }
       setIsSuccess(true);
       setTimeout(() => {
         setFormData({ name: "", email: "", message: "" });

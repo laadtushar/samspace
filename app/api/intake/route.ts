@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isLikelyBot } from "@/lib/bot-check";
+import { log, newRef, errorFields } from "@/lib/log";
 import { addSubmission, type IntakeSubmission } from "@/lib/content";
 import { intakeSchema, firstIssue } from "@/lib/validation";
 import { rateLimit, clientKey, isSameOrigin } from "@/lib/rate-limit";
@@ -18,23 +19,57 @@ export const dynamic = "force-dynamic";
 const isStudentRate = (option: string) => /\(([^)]*student[^)]*)\)/i.test(option);
 
 export async function POST(req: Request) {
+  const ref = newRef();
+  const started = Date.now();
+  log.info("intake.received", { ref });
+
   if (!isSameOrigin(req)) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 403 });
+    log.warn("intake.rejected", {
+      ref,
+      reason: "cross_origin",
+      origin: req.headers.get("origin"),
+      host: req.headers.get("host"),
+    });
+    return NextResponse.json(
+      {
+        error: "This request didn't come from the site. Please reload and try again.",
+        ref,
+      },
+      { status: 403 }
+    );
   }
 
   // BotID classifies the caller without asking a real person to solve anything.
   // It fails open when unavailable, so the rate limiter below is the floor.
-  if (await isLikelyBot()) {
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  if (await isLikelyBot(ref)) {
+    log.warn("intake.rejected", { ref, reason: "bot" });
+    return NextResponse.json(
+      {
+        error: "We couldn't verify this request. Please reload the page and try again.",
+        ref,
+      },
+      { status: 403 }
+    );
   }
 
+  // Kept deliberately loose: several people can share one IP, and turning a
+  // real client away from a therapist is worse than accepting some duplicates.
   const limited = rateLimit(`intake:${clientKey(req)}`, {
-    limit: 3,
+    limit: 10,
     windowMs: 60 * 60 * 1000,
   });
   if (!limited.allowed) {
+    log.warn("intake.rejected", {
+      ref,
+      reason: "rate_limited",
+      retryAfter: limited.retryAfter,
+    });
     return NextResponse.json(
-      { error: "You've already submitted recently. Please email me instead." },
+      {
+        error:
+          "You've submitted this form several times just now. If it isn't coming through, email Priyankavarma785@gmail.com directly.",
+        ref,
+      },
       { status: 429, headers: { "Retry-After": String(limited.retryAfter) } }
     );
   }
@@ -43,12 +78,22 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    log.warn("intake.rejected", { ref, reason: "malformed_json" });
+    return NextResponse.json({ error: "Invalid request", ref }, { status: 400 });
   }
 
   const parsed = intakeSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: firstIssue(parsed.error) }, { status: 400 });
+    // Field names only — the values are the person's own words.
+    log.warn("intake.rejected", {
+      ref,
+      reason: "validation",
+      fields: parsed.error.issues.map((i) => i.path.join(".")).join(","),
+    });
+    return NextResponse.json(
+      { error: firstIssue(parsed.error), ref },
+      { status: 400 }
+    );
   }
   const data = parsed.data;
 
@@ -56,8 +101,9 @@ export async function POST(req: Request) {
   // request that bypasses the form cannot quietly claim it either.
   const studentRate = isStudentRate(data.slidingScale);
   if (studentRate && !data.studentConfirmed) {
+    log.warn("intake.rejected", { ref, reason: "student_unconfirmed" });
     return NextResponse.json(
-      { error: "Please confirm your student status to use the student rate" },
+      { error: "Please confirm your student status to use the student rate", ref },
       { status: 400 }
     );
   }
@@ -71,15 +117,20 @@ export async function POST(req: Request) {
 
   try {
     await addSubmission(submission);
+    log.info("intake.stored", { ref, id: submission.id });
   } catch (error) {
     // Storage is the part that must not fail silently — everything else is a
     // notification about a record that now exists.
-    console.error("[intake] failed to store submission", {
+    log.error("intake.store_failed", {
+      ref,
       id: submission.id,
-      error: error instanceof Error ? error.message : "unknown",
+      ...errorFields(error),
     });
     return NextResponse.json(
-      { error: "Something went wrong saving your form. Please try again." },
+      {
+        error: "Something went wrong saving your form. Please try again.",
+        ref,
+      },
       { status: 500 }
     );
   }
@@ -88,7 +139,7 @@ export async function POST(req: Request) {
 
   // Both mails are sent even if one fails; the record is already safe, and the
   // therapist's copy matters more than the acknowledgement.
-  const [, adminResult] = await Promise.all([
+  const [clientResult, adminResult] = await Promise.all([
     sendEmail({
       apiKey: process.env.RESEND_API,
       to: data.email,
@@ -164,10 +215,19 @@ export async function POST(req: Request) {
   if (!adminResult.sent) {
     // The submission is stored and visible in the dashboard, so this is a
     // degraded success rather than a failure the person should retry into.
-    console.error("[intake] stored but therapist notification failed", {
-      id: submission.id,
-    });
+    log.error("intake.therapist_email_failed", { ref, id: submission.id });
+  }
+  if (!clientResult.sent) {
+    log.warn("intake.confirmation_email_failed", { ref, id: submission.id });
   }
 
-  return NextResponse.json({ success: true });
+  log.info("intake.completed", {
+    ref,
+    id: submission.id,
+    ms: Date.now() - started,
+    therapistNotified: adminResult.sent,
+    confirmationSent: clientResult.sent,
+  });
+
+  return NextResponse.json({ success: true, ref });
 }

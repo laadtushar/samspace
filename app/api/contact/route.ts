@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isLikelyBot } from "@/lib/bot-check";
+import { log, newRef } from "@/lib/log";
 import { contactSchema, firstIssue } from "@/lib/validation";
 import { rateLimit, clientKey, isSameOrigin } from "@/lib/rate-limit";
 import {
@@ -14,14 +15,30 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const ref = newRef();
+  log.info("contact.received", { ref });
+
   if (!isSameOrigin(req)) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 403 });
+    log.warn("contact.rejected", {
+      ref,
+      reason: "cross_origin",
+      origin: req.headers.get("origin"),
+      host: req.headers.get("host"),
+    });
+    return NextResponse.json(
+      { error: "This request didn't come from the site. Please reload and try again.", ref },
+      { status: 403 }
+    );
   }
 
   // BotID classifies the caller without asking a real person to solve anything.
   // It fails open when unavailable, so the rate limiter below is the floor.
-  if (await isLikelyBot()) {
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  if (await isLikelyBot(ref)) {
+    log.warn("contact.rejected", { ref, reason: "bot" });
+    return NextResponse.json(
+      { error: "We couldn't verify this request. Please reload the page and try again.", ref },
+      { status: 403 }
+    );
   }
 
   const limited = rateLimit(`contact:${clientKey(req)}`, {
@@ -29,8 +46,9 @@ export async function POST(req: Request) {
     windowMs: 60 * 60 * 1000,
   });
   if (!limited.allowed) {
+    log.warn("contact.rejected", { ref, reason: "rate_limited" });
     return NextResponse.json(
-      { error: "Too many messages sent. Please try again later." },
+      { error: "Too many messages sent. Please try again later.", ref },
       { status: 429, headers: { "Retry-After": String(limited.retryAfter) } }
     );
   }
@@ -39,12 +57,18 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    log.warn("contact.rejected", { ref, reason: "malformed_json" });
+    return NextResponse.json({ error: "Invalid request", ref }, { status: 400 });
   }
 
   const parsed = contactSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: firstIssue(parsed.error) }, { status: 400 });
+    log.warn("contact.rejected", {
+      ref,
+      reason: "validation",
+      fields: parsed.error.issues.map((i) => i.path.join(".")).join(","),
+    });
+    return NextResponse.json({ error: firstIssue(parsed.error), ref }, { status: 400 });
   }
   const { name, email, message } = parsed.data;
 
@@ -73,8 +97,9 @@ export async function POST(req: Request) {
   });
 
   if (!notified.sent) {
+    log.error("contact.therapist_email_failed", { ref });
     return NextResponse.json(
-      { error: "Your message couldn't be sent. Please email me directly." },
+      { error: "Your message couldn't be sent. Please email me directly.", ref },
       { status: 502 }
     );
   }
@@ -117,5 +142,6 @@ export async function POST(req: Request) {
     `),
   });
 
-  return NextResponse.json({ success: true });
+  log.info("contact.completed", { ref });
+  return NextResponse.json({ success: true, ref });
 }

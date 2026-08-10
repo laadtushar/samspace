@@ -127,6 +127,9 @@ export default function IntakeFormModal({
   // who realises the student rate isn't theirs to take.
   const nextRateUp = slidingScale.find((p) => !isStudentOption(p));
 
+  // The concessional stop, if the configured scale has one.
+  const studentRate = slidingScale.find(isStudentOption);
+
   const needsStudentConfirm =
     !!data.slidingScale && isStudentOption(data.slidingScale);
 
@@ -251,7 +254,21 @@ export default function IntakeFormModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        // The server explains precisely what it rejected — a rate limit, a
+        // field that failed validation. Swallowing that leaves someone
+        // retrying a form that will never go through.
+        const body = await res.json().catch(() => null);
+        const message =
+          typeof body?.error === "string"
+            ? body.error
+            : "Something went wrong. Please try again, or email me directly.";
+        // The reference ties this attempt to a specific line in the server log,
+        // so a report of "it failed" can be traced to the check that refused it.
+        throw new Error(
+          body?.ref ? `${message} (ref ${body.ref})` : message
+        );
+      }
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
@@ -259,8 +276,12 @@ export default function IntakeFormModal({
         setStep(0);
         onClose();
       }, 3000);
-    } catch {
-      setError("Failed to submit. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Something went wrong. Please try again, or email me directly."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -656,25 +677,53 @@ export default function IntakeFormModal({
                               className="rate-slider w-full"
                             />
 
-                            <div className="flex justify-between mt-3">
+                            {/* Each stop carries its own label, so the student
+                                rate identifies itself before anyone slides onto
+                                it rather than after. */}
+                            <div className="flex justify-between items-start mt-3 gap-1">
                               {slidingScale.map((price, i) => {
-                                const { amount } = parseOption(price);
+                                const { amount, label } = parseOption(price);
                                 return (
                                   <button
                                     key={price}
                                     type="button"
                                     onClick={() => selectRate(price)}
-                                    className={`font-sans text-[11px] transition-colors ${
+                                    className={`flex flex-col items-center leading-tight transition-colors ${
                                       i === rateIndex
-                                        ? "text-clay font-medium"
+                                        ? "text-clay"
                                         : "text-forest/35 hover:text-forest/60"
                                     }`}
                                   >
-                                    {amount}
+                                    <span
+                                      className={`font-sans text-[11px] ${
+                                        i === rateIndex ? "font-medium" : ""
+                                      }`}
+                                    >
+                                      {amount}
+                                    </span>
+                                    {label && (
+                                      <span
+                                        className={`font-sans text-[10px] mt-0.5 ${
+                                          i === rateIndex
+                                            ? "text-clay/80"
+                                            : "text-clay/50"
+                                        }`}
+                                      >
+                                        {label}
+                                      </span>
+                                    )}
                                   </button>
                                 );
                               })}
                             </div>
+
+                            {studentRate && !needsStudentConfirm && (
+                              <p className="font-sans text-[11px] text-forest/45 leading-relaxed text-center mt-4">
+                                {parseOption(studentRate).amount} is held for
+                                students without their own income — you&apos;ll be
+                                asked to confirm if you slide there.
+                              </p>
+                            )}
                           </div>
                         </div>
 
