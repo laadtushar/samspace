@@ -1,4 +1,11 @@
-import { put, head } from "@vercel/blob";
+import {
+  readPrivateJson,
+  readPublicJson,
+  writePrivateJson,
+  writePublicJson,
+  listBlobs,
+  deleteBlob,
+} from "@/lib/blob";
 
 // ─── Site Content Schema ──────────────────────────
 export interface SiteContent {
@@ -32,6 +39,11 @@ export interface SiteContent {
     card1Items: string[];
     card2Title: string;
     card2Items: string[];
+  };
+  faq: {
+    heading: string;
+    intro: string;
+    items: { question: string; answer: string }[];
   };
   contact: {
     heading: string;
@@ -137,6 +149,43 @@ export const defaultContent: SiteContent = {
       "Research & higher education guidance",
     ],
   },
+  faq: {
+    heading: "Questions people usually ask first",
+    intro:
+      "If something you're wondering about isn't here, ask me directly — no question is too small to bring.",
+    items: [
+      {
+        question: "What type of therapy do you offer?",
+        answer:
+          "I work eclectically, drawing on CBT, Humanistic Therapy, Trauma-Informed Care, and mindfulness-based practices. Rather than fitting you to one method, I adapt the approach to what you're bringing and what you're comfortable with.",
+      },
+      {
+        question: "How much does a session cost?",
+        answer:
+          "Sessions run on a sliding scale of ₹500–₹1000. You choose the rate that matches your financial situation — there's no judgement either way. The ₹500 rate is reserved for students without an independent income, and it's funded by the people who choose to pay more.",
+      },
+      {
+        question: "Are sessions online?",
+        answer:
+          "Yes — all therapy and mentoring sessions are held online. Each session runs 45–50 minutes and is fully confidential.",
+      },
+      {
+        question: "What are your qualifications?",
+        answer:
+          "I hold a Master's in Clinical Psychology and am UGC NET-JRF and GATE qualified. I practise under professional supervision, which means my work is reviewed by a senior clinician — a safeguard for you.",
+      },
+      {
+        question: "What happens after I fill the intake form?",
+        answer:
+          "I read it personally and reach out within 24–48 hours to talk about next steps and find a time. If scheduling is open, you can also book a slot directly while filling the form.",
+      },
+      {
+        question: "Is what I share confidential?",
+        answer:
+          "Yes. What you share stays between us, and is used only for your therapeutic care. The limits to this are the standard ones — situations where there's a serious risk of harm to you or someone else.",
+      },
+    ],
+  },
   contact: {
     heading: "Ready to take the first step?",
     subtext: "Reach out to schedule your session. I'll respond within 24 hours.",
@@ -170,52 +219,148 @@ export interface IntakeSubmission {
   scheduling?: string;
 }
 
-// ─── Blob helpers ──────────────────────────────────
+// ─── Blob keys ─────────────────────────────────────
 const CONTENT_KEY = "site-content.json";
-const SUBMISSIONS_KEY = "intake-submissions.json";
+/** Each submission is its own private blob under this prefix. */
+const SUBMISSIONS_PREFIX = "submissions/";
+/**
+ * The single public JSON that every submission used to be appended to. Still
+ * read so existing records stay visible until they are migrated off it.
+ */
+const LEGACY_SUBMISSIONS_KEY = "intake-submissions.json";
+
+// ─── Site content ──────────────────────────────────
+
+/**
+ * Merges stored content over the defaults one level into each section, so a
+ * partially-saved section (or a newly added field) falls back to its default
+ * instead of rendering `undefined` on the live site.
+ */
+function mergeContent(stored: unknown): SiteContent {
+  if (!stored || typeof stored !== "object") return defaultContent;
+  const isPlainObject = (v: unknown) =>
+    typeof v === "object" && v !== null && !Array.isArray(v);
+
+  const defaults: Record<string, unknown> = { ...defaultContent };
+  const merged: Record<string, unknown> = { ...defaults };
+  for (const [key, value] of Object.entries(stored as Record<string, unknown>)) {
+    // Unknown keys are dropped rather than merged, so a stale or hand-edited
+    // blob cannot introduce fields the site never asked for.
+    if (!(key in defaults)) continue;
+    const fallback = defaults[key];
+    merged[key] =
+      isPlainObject(fallback) && isPlainObject(value)
+        ? { ...(fallback as object), ...(value as object) }
+        : value;
+  }
+  return merged as unknown as SiteContent;
+}
 
 export async function getContent(): Promise<SiteContent> {
-  try {
-    const blob = await head(CONTENT_KEY);
-    if (blob) {
-      const res = await fetch(blob.url);
-      return { ...defaultContent, ...(await res.json()) };
-    }
-  } catch {
-    // blob doesn't exist yet
-  }
-  return defaultContent;
+  const stored = await readPublicJson<unknown>(CONTENT_KEY, null);
+  return mergeContent(stored);
 }
 
 export async function saveContent(content: SiteContent): Promise<void> {
-  await put(CONTENT_KEY, JSON.stringify(content), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-  });
+  await writePublicJson(CONTENT_KEY, content);
 }
 
-export async function getSubmissions(): Promise<IntakeSubmission[]> {
-  try {
-    const blob = await head(SUBMISSIONS_KEY);
-    if (blob) {
-      const res = await fetch(blob.url);
-      return await res.json();
-    }
-  } catch {
-    // no submissions yet
-  }
-  return [];
+// ─── Intake submissions ────────────────────────────
+
+/**
+ * One blob per submission. The previous design appended to a single JSON
+ * document, so two people submitting at once could overwrite each other, and a
+ * transient read failure could replace the whole history with one record. A
+ * write that only ever creates its own object cannot lose anyone else's.
+ *
+ * The timestamp leads the pathname, so the listing sorts newest-first without
+ * opening a single file.
+ */
+function submissionPath(submission: IntakeSubmission): string {
+  return `${SUBMISSIONS_PREFIX}${submission.timestamp}-${submission.id}.json`;
 }
 
 export async function addSubmission(
   submission: IntakeSubmission
 ): Promise<void> {
-  const existing = await getSubmissions();
-  existing.unshift(submission);
-  await put(SUBMISSIONS_KEY, JSON.stringify(existing), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-  });
+  await writePrivateJson(submissionPath(submission), submission);
+}
+
+/** Runs `fn` over items with a bounded number of blob requests in flight. */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    async () => {
+      while (cursor < items.length) {
+        const index = cursor++;
+        results[index] = await fn(items[index]);
+      }
+    }
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+export async function getSubmissions(): Promise<IntakeSubmission[]> {
+  const [perBlob, legacy] = await Promise.all([
+    listBlobs(SUBMISSIONS_PREFIX).then((blobs) =>
+      mapWithConcurrency(
+        blobs.map((b) => b.pathname),
+        8,
+        (pathname) => readPrivateJson<IntakeSubmission | null>(pathname, null)
+      )
+    ),
+    readLegacySubmissions(),
+  ]);
+
+  return [...perBlob.filter((s): s is IntakeSubmission => s !== null), ...legacy].sort(
+    (a, b) => b.timestamp.localeCompare(a.timestamp)
+  );
+}
+
+/**
+ * The legacy blob was written with public access; it may or may not have been
+ * migrated yet, so both access modes are tried before giving up.
+ */
+async function readLegacySubmissions(): Promise<IntakeSubmission[]> {
+  const asPrivate = await readPrivateJson<IntakeSubmission[] | null>(
+    LEGACY_SUBMISSIONS_KEY,
+    null
+  ).catch(() => null);
+  if (asPrivate) return asPrivate;
+
+  return (
+    (await readPublicJson<IntakeSubmission[] | null>(
+      LEGACY_SUBMISSIONS_KEY,
+      null
+    ).catch(() => null)) ?? []
+  );
+}
+
+/**
+ * Moves any records still in the single legacy blob into per-submission private
+ * blobs, then deletes the legacy blob. Safe to run more than once.
+ *
+ * Note for whoever runs this: the legacy blob was stored with public access, so
+ * reading it required no credentials. Treat its contents as disclosed — rotate
+ * BLOB_READ_WRITE_TOKEN afterwards.
+ */
+export async function migrateLegacySubmissions(): Promise<{
+  migrated: number;
+}> {
+  const legacy = await readLegacySubmissions();
+  if (legacy.length === 0) return { migrated: 0 };
+
+  for (const submission of legacy) {
+    await writePrivateJson(submissionPath(submission), submission);
+  }
+  await deleteBlob(LEGACY_SUBMISSIONS_KEY);
+
+  return { migrated: legacy.length };
 }

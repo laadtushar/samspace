@@ -7,6 +7,7 @@ const navLinks = [
   { label: "About", href: "#about" },
   { label: "Services", href: "#services" },
   { label: "Mentoring", href: "#mentoring" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 export default function Navbar({ onBookSession }: { onBookSession?: () => void }) {
@@ -52,7 +53,7 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
 
         {/* Desktop links */}
         <ul className="hidden md:flex items-center gap-8">
-          {navLinks.slice(0, 3).map((link) => (
+          {navLinks.map((link) => (
             <li key={link.href}>
               <button
                 onClick={() => handleNavClick(link.href)}

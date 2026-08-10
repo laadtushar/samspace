@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSubmissions } from "@/lib/content";
+import { requireAdmin } from "@/lib/admin-guard";
 
-export async function GET(req: Request) {
-  const pw = req.headers.get("x-admin-password");
-  if (pw !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const submissions = await getSubmissions();
-  return NextResponse.json(submissions);
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const denied = requireAdmin();
+  if (denied) return denied;
+
+  return NextResponse.json(await getSubmissions());
 }

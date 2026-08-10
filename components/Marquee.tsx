@@ -51,7 +51,10 @@ export default function Marquee({
   });
 
   return (
-    <div className="overflow-hidden whitespace-nowrap flex flex-nowrap py-6">
+    <div
+      aria-hidden="true"
+      className="overflow-hidden whitespace-nowrap flex flex-nowrap py-6"
+    >
       <motion.div
         className="flex whitespace-nowrap gap-12 flex-nowrap"
         style={{ x }}

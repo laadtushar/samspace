@@ -257,6 +257,18 @@ export default function IntakeFormModal({
     }
   };
 
+  // Escape closes the dialog, matching the click-outside affordance. Rebound
+  // every render so it always sees the current `handleClose`, which refuses to
+  // close mid-submit.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   const slideVariants = {
     enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
     center: { x: 0, opacity: 1 },
@@ -280,13 +292,24 @@ export default function IntakeFormModal({
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="intake-title"
             className={`relative w-full max-h-[90vh] overflow-y-auto bg-cream rounded-3xl shadow-2xl shadow-forest/40 transition-[max-width] duration-300 ${
               currentStep === "schedule" ? "max-w-2xl" : "max-w-lg"
             }`}
           >
+            {/* Names the dialog for screen readers on every step — the visible
+                headings change as the flow advances. */}
+            <h2 id="intake-title" className="sr-only">
+              Therapy intake form
+            </h2>
+
             {/* Close button */}
             <button
+              type="button"
               onClick={handleClose}
+              aria-label="Close form"
               className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-forest/10 flex items-center justify-center hover:bg-forest/20 transition-colors"
             >
               <X className="w-4 h-4 text-forest" />
@@ -349,7 +372,7 @@ export default function IntakeFormModal({
                         <div className="bg-forest/5 rounded-xl p-4 mb-4">
                           <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
                             🌿 Sessions are conducted online &nbsp;·&nbsp;
-                            💫 Sliding scale: {priceRange}/session &nbsp;·&nbsp;
+                            💫 Sessions {priceRange} — you pick &nbsp;·&nbsp;
                             🔒 All information remains confidential
                           </p>
                         </div>
@@ -430,15 +453,19 @@ export default function IntakeFormModal({
                             autoComplete="name"
                             required
                           />
-                          <div>
-                            <label className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-2 block">
+                          <div role="group" aria-labelledby="intake-gender-label">
+                            <span
+                              id="intake-gender-label"
+                              className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-2 block"
+                            >
                               Gender <span className="text-clay">*</span>
-                            </label>
+                            </span>
                             <div className="grid grid-cols-2 gap-2">
                               {genderOptions.map((g) => (
                                 <button
                                   key={g}
                                   type="button"
+                                  aria-pressed={data.gender === g}
                                   onClick={() => update("gender", g)}
                                   className={`font-sans text-sm py-2.5 px-4 rounded-xl border-2 transition-all duration-200 ${
                                     data.gender === g
@@ -493,15 +520,19 @@ export default function IntakeFormModal({
                             value={data.education}
                             onChange={(v) => update("education", v)}
                           />
-                          <div>
-                            <label className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-2 block">
+                          <div role="group" aria-labelledby="intake-language-label">
+                            <span
+                              id="intake-language-label"
+                              className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-2 block"
+                            >
                               Preferred Language
-                            </label>
+                            </span>
                             <div className="flex flex-wrap gap-2">
                               {languageOptions.map((l) => (
                                 <button
                                   key={l}
                                   type="button"
+                                  aria-pressed={data.preferredLanguage === l}
                                   onClick={() => update("preferredLanguage", l)}
                                   className={`font-sans text-sm py-2 px-4 rounded-xl border-2 transition-all duration-200 ${
                                     data.preferredLanguage === l
@@ -527,7 +558,14 @@ export default function IntakeFormModal({
                         <p className="font-sans text-xs text-forest/50 mb-6">
                           Please briefly describe your concerns (e.g., stress, anxiety, relationship issues, low mood, self-esteem, etc.)
                         </p>
+                        <label
+                          htmlFor="intake-concerns"
+                          className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-1.5 block"
+                        >
+                          Your Concerns <span className="text-clay">*</span>
+                        </label>
                         <textarea
+                          id="intake-concerns"
                           value={data.concerns}
                           onChange={(e) => update("concerns", e.target.value)}
                           rows={6}
@@ -549,10 +587,13 @@ export default function IntakeFormModal({
                         <p className="font-sans text-xs text-forest/50 mb-6">
                           Choose based on your financial comfort — no judgement.
                         </p>
-                        <div>
-                          <label className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-3 block">
-                            Sliding Scale Preference <span className="text-clay">*</span>
-                          </label>
+                        <div role="group" aria-labelledby="intake-rate-label">
+                          <span
+                            id="intake-rate-label"
+                            className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-3 block"
+                          >
+                            Choose your rate <span className="text-clay">*</span>
+                          </span>
                           <div className="grid grid-cols-2 gap-3">
                             {slidingScale.map((price) => {
                               const { amount, label } = parseOption(price);
@@ -562,6 +603,7 @@ export default function IntakeFormModal({
                                   type="button"
                                   whileHover={{ scale: 1.03 }}
                                   whileTap={{ scale: 0.97 }}
+                                  aria-pressed={data.slidingScale === price}
                                   onClick={() => selectRate(price)}
                                   className={`font-serif text-2xl font-semibold py-5 rounded-2xl border-2 transition-all duration-200 ${
                                     data.slidingScale === price

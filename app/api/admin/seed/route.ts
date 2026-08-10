@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { defaultContent, saveContent } from "@/lib/content";
+import { requireAdmin } from "@/lib/admin-guard";
 
-export async function POST(req: Request) {
-  const pw = req.headers.get("x-admin-password");
-  if (pw !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const dynamic = "force-dynamic";
+
+/** Overwrites the live site content with the built-in defaults. */
+export async function POST() {
+  const denied = requireAdmin();
+  if (denied) return denied;
+
   await saveContent(defaultContent);
-  return NextResponse.json({ success: true, message: "Default content seeded to Blob" });
+  return NextResponse.json({
+    success: true,
+    message: "Default content seeded to Blob",
+  });
 }
