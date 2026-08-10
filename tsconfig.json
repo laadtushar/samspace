@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    // Without this TypeScript assumes ES5 and rejects iterating a Map or Set,
+    // which has nothing to do with what actually ships — Next transpiles output
+    // for the browsers listed in browserslist regardless.
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,

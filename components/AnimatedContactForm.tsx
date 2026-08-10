@@ -111,6 +111,8 @@ function FloatingLabelInput({
       <Tag
         id={id}
         type={isTextarea ? undefined : type}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
         value={value}
         onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
           onChange(e.target.value)
@@ -141,6 +143,7 @@ function FloatingLabelInput({
 
       {error && (
         <motion.p
+          id={`${id}-error`}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           className="text-red-400 text-xs mt-1 ml-1 font-sans flex items-center gap-1"
@@ -158,12 +161,10 @@ function FloatingLabelInput({
    ──────────────────────────────────────────── */
 
 function SubmitButton({
-  onClick,
   disabled,
   isLoading,
   isSuccess,
 }: {
-  onClick: () => void;
   disabled: boolean;
   isLoading: boolean;
   isSuccess: boolean;
@@ -182,6 +183,8 @@ function SubmitButton({
     y.set((e.clientY - rect.top - rect.height / 2) * 0.4);
   };
 
+  // Ripple only — submission runs through the form's onSubmit, so keyboard
+  // "Enter" in a field behaves the same as a click.
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
     const rect = ref.current?.getBoundingClientRect();
@@ -190,13 +193,12 @@ function SubmitButton({
       setRipples((p) => [...p, rip]);
       setTimeout(() => setRipples((p) => p.filter((r) => r.id !== rip.id)), 600);
     }
-    onClick();
   };
 
   return (
     <motion.button
       ref={ref}
-      type="button"
+      type="submit"
       onClick={handleClick}
       disabled={disabled}
       onMouseMove={handleMouseMove}
@@ -322,7 +324,8 @@ export default function AnimatedContactForm() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!validate()) {
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
@@ -397,7 +400,7 @@ export default function AnimatedContactForm() {
       <div className="absolute -top-20 -left-20 w-40 h-40 bg-sage/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-clay/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative space-y-5">
+      <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
         <FloatingLabelInput
           id="name"
           label="Your Name"
@@ -434,13 +437,12 @@ export default function AnimatedContactForm() {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <SubmitButton
-            onClick={handleSubmit}
             disabled={isLoading || isSuccess}
             isLoading={isLoading}
             isSuccess={isSuccess}
           />
         </motion.div>
-      </div>
+      </form>
 
       {isSuccess && (
         <motion.p

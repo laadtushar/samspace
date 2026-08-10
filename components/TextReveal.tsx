@@ -25,6 +25,14 @@ export default function TextReveal({
 
   return (
     <span ref={ref} className={`inline-flex flex-wrap ${className}`}>
+      {/*
+        The animated pieces carry no whitespace between them — the gaps are
+        margins — so the text extracts as "Aspacetofeelseen". Crawlers and
+        screen readers get the real string here instead, and the decorative
+        copy is hidden from the accessibility tree.
+      */}
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true" className="contents">
       {parts.map((part, i) => (
         <motion.span
           key={i}
@@ -44,6 +52,7 @@ export default function TextReveal({
           {part}
         </motion.span>
       ))}
+      </span>
     </span>
   );
 }

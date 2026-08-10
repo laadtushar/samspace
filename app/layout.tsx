@@ -1,5 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { BotIdClient } from "botid/client";
+import {
+  SITE_URL,
+  SITE_NAME,
+  IS_PRODUCTION_SITE,
+  serializeJsonLd,
+} from "@/lib/site";
+import { defaultContent } from "@/lib/content";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -17,7 +25,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://samvritispace.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Samvriti.Space — Priyanka Varma | Counselling Psychologist & Academic Mentor",
     template: "%s | Samvriti.Space",
@@ -43,18 +51,23 @@ export const metadata: Metadata = {
     "sliding scale therapy India",
     "affordable therapy India",
   ],
-  authors: [{ name: "Priyanka Varma", url: "https://samvritispace.com" }],
+  authors: [{ name: "Priyanka Varma", url: SITE_URL }],
   creator: "Priyanka Varma",
   publisher: "Samvriti.Space",
   alternates: {
-    canonical: "https://samvritispace.com",
+    canonical: "/",
+    types: {
+      "application/rss+xml": [
+        { url: "/blog/rss.xml", title: `${SITE_NAME} — Writing` },
+      ],
+    },
   },
   openGraph: {
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
       "Counselling psychologist Priyanka Varma offers online therapy (₹500–₹1000) and academic mentoring for young adults. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
-    url: "https://samvritispace.com",
-    siteName: "Samvriti.Space",
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: "en_IN",
     type: "website",
   },
@@ -65,17 +78,31 @@ export const metadata: Metadata = {
       "Counselling psychologist for young adults. CBT, Humanistic, Trauma-Informed Care. Sessions ₹500–₹1000. Book online.",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: IS_PRODUCTION_SITE,
+    follow: IS_PRODUCTION_SITE,
     googleBot: {
-      index: true,
-      follow: true,
+      index: IS_PRODUCTION_SITE,
+      follow: IS_PRODUCTION_SITE,
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
     },
   },
-  verification: {},
+};
+
+/**
+ * Endpoints BotID watches. Both send email to an address the caller supplies,
+ * which is exactly what a spam script looks for. Next 14 predates
+ * instrumentation-client.ts, so the client is mounted in <head> instead.
+ */
+const botProtectedRoutes = [
+  { path: "/api/intake", method: "POST" },
+  { path: "/api/contact", method: "POST" },
+];
+
+export const viewport: Viewport = {
+  themeColor: "#2c3a2e",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -83,38 +110,91 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Entities are given @ids and cross-referenced, so search engines read one
+  // linked graph — the business, the person behind it, and the site — rather
+  // than three unrelated islands. The FAQ mirrors the section rendered on the
+  // page; markup for questions a visitor cannot see is a policy violation.
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "ProfessionalService",
-        name: "Samvriti.Space",
+        "@type": ["ProfessionalService", "MedicalBusiness"],
+        "@id": `${SITE_URL}#business`,
+        name: SITE_NAME,
         description:
           "Online counselling and academic mentoring for young adults by Priyanka Varma, M.Sc. Clinical Psychology.",
-        url: "https://samvritispace.com",
+        url: SITE_URL,
+        image: `${SITE_URL}/priyanka.jpeg`,
         priceRange: "₹500–₹1000",
-        areaServed: "IN",
+        currenciesAccepted: "INR",
+        areaServed: { "@type": "Country", name: "India" },
+        availableLanguage: ["English", "Hindi"],
         serviceType: ["Counselling Psychology", "Academic Mentoring"],
+        medicalSpecialty: "Psychiatric",
+        email: defaultContent.contact.email,
+        telephone: defaultContent.contact.phone,
+        sameAs: [defaultContent.contact.whatsappLink],
+        founder: { "@id": `${SITE_URL}#priyanka` },
+        provider: { "@id": `${SITE_URL}#priyanka` },
         availableChannel: {
           "@type": "ServiceChannel",
           serviceType: "Online",
+          serviceUrl: `${SITE_URL}/?intake=true`,
+        },
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Sessions",
+          itemListElement: [
+            {
+              "@type": "Offer",
+              name: "Therapy Session",
+              description: "45–50 minute online therapy session, sliding scale.",
+              priceSpecification: {
+                "@type": "PriceSpecification",
+                priceCurrency: "INR",
+                minPrice: 500,
+                maxPrice: 1000,
+              },
+            },
+            {
+              "@type": "Offer",
+              name: "Academic Mentoring Session",
+              description:
+                "Career and exam-strategy mentoring for psychology students.",
+              priceSpecification: {
+                "@type": "PriceSpecification",
+                priceCurrency: "INR",
+                price: 1000,
+              },
+            },
+          ],
         },
       },
       {
         "@type": "Person",
+        "@id": `${SITE_URL}#priyanka`,
         name: "Priyanka Varma",
         jobTitle: "Counselling Psychologist & Academic Mentor",
         description:
           "M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Lecturer and counselling psychologist specializing in young adult mental health.",
-        url: "https://samvritispace.com",
-        worksFor: {
-          "@type": "Organization",
-          name: "Samvriti.Space",
-        },
+        url: SITE_URL,
+        image: `${SITE_URL}/priyanka.jpeg`,
+        email: defaultContent.contact.email,
+        knowsLanguage: ["en", "hi"],
+        worksFor: { "@id": `${SITE_URL}#business` },
         hasCredential: [
-          { "@type": "EducationalOccupationalCredential", credentialCategory: "M.Sc. Clinical Psychology" },
-          { "@type": "EducationalOccupationalCredential", credentialCategory: "UGC NET-JRF" },
-          { "@type": "EducationalOccupationalCredential", credentialCategory: "GATE (Psychology)" },
+          {
+            "@type": "EducationalOccupationalCredential",
+            credentialCategory: "M.Sc. Clinical Psychology",
+          },
+          {
+            "@type": "EducationalOccupationalCredential",
+            credentialCategory: "UGC NET-JRF",
+          },
+          {
+            "@type": "EducationalOccupationalCredential",
+            credentialCategory: "GATE (Psychology)",
+          },
         ],
         knowsAbout: [
           "Cognitive Behavioral Therapy",
@@ -126,55 +206,31 @@ export default function RootLayout({
       },
       {
         "@type": "WebSite",
-        name: "Samvriti.Space",
-        url: "https://samvritispace.com",
+        "@id": `${SITE_URL}#website`,
+        name: SITE_NAME,
+        url: SITE_URL,
+        inLanguage: "en-IN",
+        publisher: { "@id": `${SITE_URL}#business` },
       },
       {
         "@type": "FAQPage",
-        mainEntity: [
-          {
-            "@type": "Question",
-            name: "What type of therapy does Samvriti.Space offer?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "Samvriti.Space offers online therapy using an eclectic approach integrating CBT, Humanistic Therapy, and Trauma-Informed Care, tailored to each individual's needs.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "How much does a therapy session cost?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "Therapy sessions are offered on a sliding scale of ₹500–₹1000 per session. Students can access sessions at ₹500. No judgement.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "Who is Priyanka Varma?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "Priyanka Varma is a UGC NET-JRF & GATE qualified counselling psychologist with an M.Sc. in Clinical Psychology. She works with young adults (18–28) experiencing anxiety, stress, self-esteem issues, and life transitions.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "Are the sessions online?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "Yes, all therapy and mentoring sessions are conducted online. Each session is 45–50 minutes long and fully confidential.",
-            },
-          },
-        ],
+        "@id": `${SITE_URL}#faq`,
+        mainEntity: defaultContent.faq.items.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
       },
     ],
   };
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en-IN" className="scroll-smooth">
       <head>
+        <BotIdClient protect={botProtectedRoutes} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       </head>
       <body

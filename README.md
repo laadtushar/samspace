@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Samvriti.Space
 
-## Getting Started
+Website for Samvriti.Space — Priyanka Varma's online therapy and academic
+mentoring practice. Next.js 14 (App Router), TypeScript, Tailwind, deployed on
+Vercel.
 
-First, run the development server:
+## What's here
+
+| Area | Route | Notes |
+| --- | --- | --- |
+| Marketing site | `/` | Single page; all copy is editable from the dashboard |
+| Intake form | `/?intake=true` | Multi-step, optional Calendly booking, sliding-scale rate |
+| Blog | `/blog`, `/blog/[slug]` | Written and published from the dashboard |
+| RSS | `/blog/rss.xml` | |
+| Admin dashboard | `/admin` | Submissions, site content, blog posts |
+
+## Running locally
 
 ```bash
+npm install
+cp .env.example .env.local   # then fill in the values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. The dashboard is at http://localhost:3000/admin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without `BLOB_READ_WRITE_TOKEN` the site still renders — content falls back to
+the defaults in `lib/content.ts` — but nothing can be saved.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Every variable is documented in [`.env.example`](.env.example). The two that
+must be set for the site to be usable in production:
 
-To learn more about Next.js, take a look at the following resources:
+- `ADMIN_PASSWORD` — guards the dashboard. Long and random; it is the only
+  thing between the internet and stored client records.
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob storage. Set automatically when a Blob
+  store is linked to the project on Vercel.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run typecheck   # tsc --noEmit
+npm run lint        # next lint
+npm test            # vitest — validation, escaping, rate limiting, auth
+npm run build
+```
 
-## Deploy on Vercel
+CI runs all four on every pull request (`.github/workflows/ci.yml`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How data is stored
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Everything lives in Vercel Blob. There is no database.
+
+| What | Where | Access |
+| --- | --- | --- |
+| Site content | `site-content.json` | public |
+| Blog posts | `blog/<slug>.json` | public |
+| Blog images | `blog-images/*` | public |
+| Intake submissions | `submissions/<timestamp>-<id>.json` | **private** |
+
+Two decisions worth knowing about:
+
+**Submissions are private and one-blob-per-record.** They contain
+mental-health information. They are written with `access: "private"`, so
+reading one requires the store token, and each submission is its own object —
+the earlier design appended to a single shared JSON document, which meant two
+people submitting at the same moment could overwrite each other and a transient
+read failure could replace the whole history with one record.
+
+**If you are upgrading an existing deployment**, submissions written before this
+change are still in a public blob at `intake-submissions.json`. Log into
+`/admin`, open the Submissions tab, and use **Migrate legacy submissions** — it
+copies them into private storage and deletes the public copy. That file was
+readable by anyone who knew its URL, so afterwards rotate
+`BLOB_READ_WRITE_TOKEN` in the Vercel dashboard and treat the old contents as
+disclosed.
+
+## Sliding scale and the student rate
+
+Rates are configured in the dashboard, one per line, e.g. `₹500 (Student)`.
+Anything with `(Student)` in the label is treated as the concessional rate: a
+person choosing it is shown a short note explaining who the rate is funded by
+and asked to confirm they're a student. The API enforces the same rule, so a
+request that skips the form cannot claim the rate either. Nobody choosing
+another rate ever sees that step.
+
+## Scheduling
+
+Paste a Calendly event link into **Scheduling (Calendly)** in the dashboard and
+an optional booking step appears as the intake form's first step. Clear the
+field and the step disappears. Booking is never required — people can skip it
+and submit the form regardless.
+
+## Deployment
+
+Push to `main`; Vercel builds and deploys. Set the environment variables in the
+Vercel project settings first.
+
+Recommended, not configured in code:
+
+- Turn on Vercel Firewall rate limiting for `/api/*`. The in-process limiter in
+  `lib/rate-limit.ts` is per-instance, which slows abuse down but is not a hard
+  global ceiling.
+- Put `/admin` behind Vercel Access Protection, so the app password is a second
+  factor rather than the only one.
+- Add error monitoring (Sentry or Vercel log drains) with PII scrubbing on.
