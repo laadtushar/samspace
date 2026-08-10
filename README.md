@@ -55,18 +55,30 @@ Everything lives in Vercel Blob. There is no database.
 | What | Where | Access |
 | --- | --- | --- |
 | Site content | `site-content.json` | public |
-| Blog posts | `blog/<slug>.json` | public |
+| Blog posts | `blog/<slug>.json` | **encrypted** |
 | Blog images | `blog-images/*` | public |
-| Intake submissions | `submissions/<timestamp>-<id>.json` | **private** |
+| Intake submissions | `submissions/<timestamp>-<id>.json` | **encrypted** |
 
 Two decisions worth knowing about:
 
-**Submissions are private and one-blob-per-record.** They contain
-mental-health information. They are written with `access: "private"`, so
-reading one requires the store token, and each submission is its own object —
-the earlier design appended to a single shared JSON document, which meant two
-people submitting at the same moment could overwrite each other and a transient
-read failure could replace the whole history with one record.
+**Submissions are encrypted and one-blob-per-record.** They contain
+mental-health information. Vercel Blob fixes a store's access level when the
+store is created, and this project's store is public — `access: "private"` is
+rejected outright — so every object is fetchable by anyone holding its URL no
+matter what the code asks for. Confidentiality therefore lives in the payload:
+records are encrypted with AES-256-GCM (`lib/crypto.ts`) before being written,
+which makes the URL worthless without `SUBMISSIONS_ENCRYPTION_KEY`. Blog posts
+are encrypted the same way so drafts are not readable from storage.
+
+Each submission is also its own object — the earlier design appended to a
+single shared JSON document, which meant two people submitting at the same
+moment could overwrite each other and a transient read failure could replace
+the whole history with one record.
+
+If you would rather rely on access control than on encryption, create a store
+with `vercel blob create-store <name> --access private` and point the project
+at it. Note that blog cover images would then need to be served through an API
+route, since a private store has no public CDN URLs.
 
 **If you are upgrading an existing deployment**, submissions written before this
 change are still in a public blob at `intake-submissions.json`. Log into

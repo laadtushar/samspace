@@ -1,18 +1,24 @@
-import { put, get, head, list, del, BlobNotFoundError } from "@vercel/blob";
+import { put, head, list, del, BlobNotFoundError } from "@vercel/blob";
+import { encryptJson, decryptJson } from "@/lib/crypto";
 
 /**
  * Thin JSON layer over Vercel Blob.
  *
- * Two rules this module exists to enforce:
+ * Three rules this module exists to enforce:
  *
  * 1. A missing blob and a broken blob store are different things. A bare
  *    `catch { return [] }` reports an expired token as "no data", and any
  *    caller that then writes back what it read destroys the real data. Only a
  *    genuinely absent blob becomes a default; everything else throws.
  *
- * 2. Private data is read through the authenticated `get` path with the CDN
- *    cache bypassed. Public blobs are served from a guessable URL on a public
- *    CDN, which is not somewhere client records can live.
+ * 2. Records that must stay confidential are encrypted before they are written.
+ *    Access level on Vercel Blob is fixed when the store is created and this
+ *    project's store is public, so `access: "private"` is rejected outright —
+ *    the object is fetchable by anyone holding its URL no matter what we pass.
+ *    Encrypting the payload makes that URL worthless without the key.
+ *
+ * 3. Reads bypass the CDN cache. A stale copy read back and rewritten silently
+ *    rolls data back.
  */
 
 /**
@@ -27,81 +33,78 @@ function storageConfigured(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
-/**
- * Reads a private JSON blob through the authenticated path. Returns `fallback`
- * only when the blob genuinely does not exist.
- */
-export async function readPrivateJson<T>(
-  pathname: string,
-  fallback: T
-): Promise<T> {
-  if (!storageConfigured()) return fallback;
-
+async function readRaw(pathname: string): Promise<string | null> {
   try {
-    // useCache: false — a stale edge copy read back and rewritten silently
-    // rolls data back, so reads always go to origin.
-    const result = await get(pathname, { access: "private", useCache: false });
-    if (!result || result.statusCode !== 200) return fallback;
-    return JSON.parse(await new Response(result.stream).text()) as T;
+    const blob = await head(pathname);
+    if (!blob) return null;
+    const res = await fetch(blob.url, { cache: "no-store" });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(`Blob fetch failed for ${pathname}: ${res.status}`);
+    }
+    return await res.text();
   } catch (error) {
-    if (error instanceof BlobNotFoundError) return fallback;
+    if (error instanceof BlobNotFoundError) return null;
     throw error;
   }
 }
 
+async function writeRaw(
+  pathname: string,
+  body: string,
+  cacheControlMaxAge?: number
+): Promise<void> {
+  await put(pathname, body, {
+    access: "public",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json",
+    ...(cacheControlMaxAge === undefined ? {} : { cacheControlMaxAge }),
+  });
+}
+
 /**
- * Reads a public JSON blob.
- *
- * Public blobs are resolved with `head` and fetched from their own URL rather
- * than through `get({ access: "public" })`, which the API rejects with a 400.
- * `no-store` keeps Next's data cache from serving a stale copy after an edit.
+ * Reads a confidential record. Returns `fallback` only when the blob genuinely
+ * does not exist. Records written before encryption existed still read back.
  */
+export async function readConfidentialJson<T>(
+  pathname: string,
+  fallback: T
+): Promise<T> {
+  if (!storageConfigured()) return fallback;
+  const raw = await readRaw(pathname);
+  if (raw === null) return fallback;
+  return decryptJson<T>(raw);
+}
+
+/** Writes a confidential record — encrypted, so the public URL reveals nothing. */
+export async function writeConfidentialJson(
+  pathname: string,
+  data: unknown
+): Promise<void> {
+  // Deliberately not cached at the edge: these are read by the dashboard and by
+  // the migration, both of which need the current value.
+  await writeRaw(pathname, encryptJson(data), 60);
+}
+
+/** Reads a public JSON blob. Returns `fallback` only when it does not exist. */
 export async function readPublicJson<T>(
   pathname: string,
   fallback: T
 ): Promise<T> {
   if (!storageConfigured()) return fallback;
-
-  try {
-    const blob = await head(pathname);
-    if (!blob) return fallback;
-    const res = await fetch(blob.url, { cache: "no-store" });
-    if (!res.ok) {
-      if (res.status === 404) return fallback;
-      throw new Error(`Blob fetch failed for ${pathname}: ${res.status}`);
-    }
-    return (await res.json()) as T;
-  } catch (error) {
-    if (error instanceof BlobNotFoundError) return fallback;
-    throw error;
-  }
-}
-
-export async function writePrivateJson(
-  pathname: string,
-  data: unknown
-): Promise<void> {
-  await put(pathname, JSON.stringify(data), {
-    access: "private",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
+  const raw = await readRaw(pathname);
+  if (raw === null) return fallback;
+  return JSON.parse(raw) as T;
 }
 
 export async function writePublicJson(
   pathname: string,
   data: unknown
 ): Promise<void> {
-  await put(pathname, JSON.stringify(data), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-    // Public site content is edited from the dashboard and must go live
-    // promptly; the SDK's default is a one-month CDN cache.
-    cacheControlMaxAge: 60,
-  });
+  // Public site content is edited from the dashboard and must go live promptly;
+  // the SDK's default is a one-month CDN cache.
+  await writeRaw(pathname, JSON.stringify(data), 60);
 }
 
 export async function listBlobs(prefix: string) {

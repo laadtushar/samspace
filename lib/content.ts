@@ -1,7 +1,7 @@
 import {
-  readPrivateJson,
+  readConfidentialJson,
   readPublicJson,
-  writePrivateJson,
+  writeConfidentialJson,
   writePublicJson,
   listBlobs,
   deleteBlob,
@@ -283,7 +283,7 @@ function submissionPath(submission: IntakeSubmission): string {
 export async function addSubmission(
   submission: IntakeSubmission
 ): Promise<void> {
-  await writePrivateJson(submissionPath(submission), submission);
+  await writeConfidentialJson(submissionPath(submission), submission);
 }
 
 /** Runs `fn` over items with a bounded number of blob requests in flight. */
@@ -313,7 +313,7 @@ export async function getSubmissions(): Promise<IntakeSubmission[]> {
       mapWithConcurrency(
         blobs.map((b) => b.pathname),
         8,
-        (pathname) => readPrivateJson<IntakeSubmission | null>(pathname, null)
+        (pathname) => readConfidentialJson<IntakeSubmission | null>(pathname, null)
       )
     ),
     readLegacySubmissions(),
@@ -324,19 +324,10 @@ export async function getSubmissions(): Promise<IntakeSubmission[]> {
   );
 }
 
-/**
- * The legacy blob was written with public access; it may or may not have been
- * migrated yet, so both access modes are tried before giving up.
- */
+/** The original single document, still plaintext until the migration runs. */
 async function readLegacySubmissions(): Promise<IntakeSubmission[]> {
-  const asPrivate = await readPrivateJson<IntakeSubmission[] | null>(
-    LEGACY_SUBMISSIONS_KEY,
-    null
-  ).catch(() => null);
-  if (asPrivate) return asPrivate;
-
   return (
-    (await readPublicJson<IntakeSubmission[] | null>(
+    (await readConfidentialJson<IntakeSubmission[] | null>(
       LEGACY_SUBMISSIONS_KEY,
       null
     ).catch(() => null)) ?? []
@@ -347,9 +338,8 @@ async function readLegacySubmissions(): Promise<IntakeSubmission[]> {
  * Moves any records still in the single legacy blob into per-submission private
  * blobs, then deletes the legacy blob. Safe to run more than once.
  *
- * Note for whoever runs this: the legacy blob was stored with public access, so
- * reading it required no credentials. Treat its contents as disclosed — rotate
- * BLOB_READ_WRITE_TOKEN afterwards.
+ * Note for whoever runs this: the legacy blob was plaintext in a public store,
+ * so reading it required no credentials. Treat its contents as disclosed.
  */
 export async function migrateLegacySubmissions(): Promise<{
   migrated: number;
@@ -358,7 +348,7 @@ export async function migrateLegacySubmissions(): Promise<{
   if (legacy.length === 0) return { migrated: 0 };
 
   for (const submission of legacy) {
-    await writePrivateJson(submissionPath(submission), submission);
+    await writeConfidentialJson(submissionPath(submission), submission);
   }
   await deleteBlob(LEGACY_SUBMISSIONS_KEY);
 

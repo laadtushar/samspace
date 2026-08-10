@@ -1,6 +1,6 @@
 import {
-  readPrivateJson,
-  writePrivateJson,
+  readConfidentialJson,
+  writeConfidentialJson,
   listBlobs,
   deleteBlob,
 } from "@/lib/blob";
@@ -9,11 +9,10 @@ import type { BlogPostInput } from "@/lib/validation";
 /**
  * Blog storage.
  *
- * Posts are stored privately even though published ones end up on public
- * pages. A public blob is served from a guessable path on a CDN, so a draft
- * written there is readable by anyone who guesses its slug — the status field
- * only hides a post from the site, not from storage. Reading through the
- * authenticated path means "draft" actually means unpublished.
+ * Posts are stored encrypted even though published ones end up on public
+ * pages. The store serves every object from a guessable path on a public CDN,
+ * so a plaintext draft would be readable by anyone who guessed its slug — the
+ * status field hides a post from the site, not from storage.
  *
  * Each post is its own object: two edits saved at once must not overwrite one
  * another, and a failed read must never be able to wipe the archive.
@@ -78,7 +77,7 @@ export function deriveExcerpt(markdown: string, max = 200): string {
 }
 
 async function readPost(pathname: string): Promise<BlogPost | null> {
-  return readPrivateJson<BlogPost | null>(pathname, null);
+  return readConfidentialJson<BlogPost | null>(pathname, null);
 }
 
 /** Every post, drafts included. Admin only. */
@@ -137,7 +136,7 @@ export async function savePost(
     seoDescription: input.seoDescription,
   };
 
-  await writePrivateJson(postPath(post.slug), post);
+  await writeConfidentialJson(postPath(post.slug), post);
 
   // A renamed slug leaves its old object behind, which would serve a stale
   // duplicate at the old URL.

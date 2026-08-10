@@ -11,6 +11,7 @@ import { rateLimit, isSameOrigin } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/auth";
 import { defaultContent } from "@/lib/content";
 import { serializeJsonLd } from "@/lib/site";
+import { encryptJson, decryptJson, isEncrypted } from "@/lib/crypto";
 
 describe("email escaping", () => {
   it("neutralises markup a stranger typed into a name field", () => {
@@ -313,5 +314,50 @@ describe("JSON-LD serialisation", () => {
     expect(out).not.toContain(" ");
     expect(out).not.toContain(" ");
     expect(JSON.parse(out).a).toBe("one two three");
+  });
+});
+
+describe("record encryption at rest", () => {
+  const submission = {
+    id: "abc",
+    name: "Test Person",
+    email: "test@example.com",
+    whatsapp: "9999999999",
+    concerns: "I have been struggling with panic attacks before exams.",
+  };
+
+  it("stores nothing readable — the plaintext does not survive", () => {
+    const stored = encryptJson(submission);
+    expect(stored).not.toContain("Test Person");
+    expect(stored).not.toContain("test@example.com");
+    expect(stored).not.toContain("panic attacks");
+    expect(stored).not.toContain("9999999999");
+  });
+
+  it("round-trips exactly", () => {
+    expect(decryptJson(encryptJson(submission))).toEqual(submission);
+  });
+
+  it("uses a fresh IV, so identical records differ on disk", () => {
+    expect(encryptJson(submission)).not.toBe(encryptJson(submission));
+  });
+
+  it("refuses tampered ciphertext rather than returning altered data", () => {
+    const stored = encryptJson(submission);
+    const [prefix, iv, tag, data] = [
+      stored.slice(0, 7),
+      ...stored.slice(7).split("."),
+    ];
+    const flipped = data.slice(0, -2) + (data.slice(-2) === "AA" ? "BB" : "AA");
+    expect(() => decryptJson(`${prefix}${iv}.${tag}.${flipped}`)).toThrow();
+  });
+
+  it("still reads records written before encryption existed", () => {
+    expect(decryptJson(JSON.stringify(submission))).toEqual(submission);
+  });
+
+  it("marks its own payloads and does not claim plain JSON", () => {
+    expect(isEncrypted(encryptJson(submission))).toBe(true);
+    expect(isEncrypted(JSON.stringify(submission))).toBe(false);
   });
 });
