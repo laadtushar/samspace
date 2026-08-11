@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | Samvriti.Space",
   },
   description:
-    "Online therapy and academic mentoring for young adults (18–28) navigating anxiety, stress, self-esteem, and life transitions. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Sessions ₹500–₹1000.",
+    "Online therapy and academic mentoring for young adults navigating anxiety, academic stress and self-esteem. M.Sc. Clinical Psychology. Sessions ₹500–₹1000.",
   keywords: [
     "counselling psychologist",
     "online therapy India",

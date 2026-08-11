@@ -14,6 +14,16 @@ export default function SessionInfo() {
     <section className="bg-white py-28 relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-6">
         <AnimatedSection>
+          {/* This section carries the crisis-care notice — the single most
+              important thing on the page for someone in trouble — and had no
+              heading, so nothing indexed or announced it. */}
+          <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-forest text-center mb-3">
+            How sessions work
+          </h2>
+          <p className="font-sans text-sm text-forest/55 text-center max-w-xl mx-auto mb-12">
+            Practical details before you book — format, length, and what these
+            sessions are and aren&apos;t for.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
             {stats.map((s, i) => (
               <motion.div
