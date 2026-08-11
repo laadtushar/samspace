@@ -2,8 +2,15 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import SocialLinks from "./SocialLinks";
 
-export default function Footer() {
+export default function Footer({
+  instagram,
+  linkedin,
+}: {
+  instagram?: string;
+  linkedin?: string;
+} = {}) {
   return (
     <footer className="bg-forest-deep text-cream/40 py-10 relative overflow-hidden">
       <motion.div
@@ -34,6 +41,7 @@ export default function Footer() {
             RSS
           </a>
         </nav>
+        <SocialLinks instagram={instagram} linkedin={linkedin} className="mb-5" />
         <p className="font-sans text-xs leading-relaxed">
           © {new Date().getFullYear()} Samvriti.Space · Priyanka Varma ·
           Counselling Psychologist &amp; Academic Mentor · All sessions conducted

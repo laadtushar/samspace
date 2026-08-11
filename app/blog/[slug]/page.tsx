@@ -8,6 +8,7 @@ import {
   readingMinutes,
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
+import { getContent } from "@/lib/content";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Markdown from "@/components/Markdown";
@@ -70,7 +71,10 @@ export default async function BlogPostPage({
 }: {
   params: { slug: string };
 }) {
-  const post = await getPublishedPostBySlug(params.slug);
+  const [post, content] = await Promise.all([
+    getPublishedPostBySlug(params.slug),
+    getContent(),
+  ]);
   if (!post) notFound();
 
   const url = `${SITE_URL}/blog/${post.slug}`;
@@ -196,7 +200,10 @@ export default async function BlogPostPage({
           </aside>
         </article>
       </main>
-      <Footer />
+      <Footer
+        instagram={content.social?.instagram}
+        linkedin={content.social?.linkedin}
+      />
     </>
   );
 }

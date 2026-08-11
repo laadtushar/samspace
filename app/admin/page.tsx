@@ -1240,6 +1240,37 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
+                  <ContentSection title="Social Links">
+                    <p className="font-sans text-[11px] text-forest/45 leading-relaxed">
+                      Shown as small icons in the footer and under the contact
+                      form. Leave one blank to hide it. Share links carry tracking
+                      parameters like <code className="text-forest/60">?igsh=</code>{" "}
+                      or <code className="text-forest/60">?utm_source=</code> —
+                      those are stripped when you save, so paste whatever the app
+                      gives you.
+                    </p>
+                    <ContentField
+                      label="Instagram profile"
+                      value={(content as any).social?.instagram}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          social: { ...(content as any).social, instagram: v.trim() },
+                        })
+                      }
+                    />
+                    <ContentField
+                      label="LinkedIn profile"
+                      value={(content as any).social?.linkedin}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          social: { ...(content as any).social, linkedin: v.trim() },
+                        })
+                      }
+                    />
+                  </ContentSection>
+
                   <ContentSection title="Maintenance">
                 <div>
                   <p className="font-sans text-xs text-forest/40 mb-2 max-w-xl leading-relaxed">

@@ -143,7 +143,11 @@ export default function RootLayout({
         medicalSpecialty: "Psychiatric",
         email: defaultContent.contact.email,
         telephone: defaultContent.contact.phone,
-        sameAs: [defaultContent.contact.whatsappLink],
+        sameAs: [
+          defaultContent.contact.whatsappLink,
+          defaultContent.social.instagram,
+          defaultContent.social.linkedin,
+        ].filter(Boolean),
         founder: { "@id": `${SITE_URL}#priyanka` },
         provider: { "@id": `${SITE_URL}#priyanka` },
         availableChannel: {
@@ -184,6 +188,10 @@ export default function RootLayout({
         "@type": "Person",
         "@id": `${SITE_URL}#priyanka`,
         name: "Priyanka Varma",
+        sameAs: [
+          defaultContent.social.linkedin,
+          defaultContent.social.instagram,
+        ].filter(Boolean),
         jobTitle: "Counselling Psychologist & Academic Mentor",
         description:
           "M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Lecturer and counselling psychologist specializing in young adult mental health.",

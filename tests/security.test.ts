@@ -11,6 +11,7 @@ import { rateLimit, isSameOrigin } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/auth";
 import { defaultContent } from "@/lib/content";
 import { serializeJsonLd } from "@/lib/site";
+import { safeProfileUrl } from "@/lib/validation";
 import { encryptJson, decryptJson, isEncrypted } from "@/lib/crypto";
 
 describe("email escaping", () => {
@@ -392,4 +393,53 @@ describe("intake field rules (client mirrors the server)", () => {
       expect(intakeSchema.safeParse({ ...base, ...patch }).success).toBe(shouldPass);
     });
   }
+});
+
+describe("social profile links", () => {
+  const hosts = ["instagram.com", "linkedin.com"];
+
+  it("strips Instagram's share tracking", () => {
+    expect(
+      safeProfileUrl(
+        "https://www.instagram.com/samvriti.space?igsh=YTdzZGI3MjZ5dTc1",
+        hosts
+      )
+    ).toBe("https://www.instagram.com/samvriti.space");
+  });
+
+  it("strips LinkedIn's utm parameters", () => {
+    expect(
+      safeProfileUrl(
+        "https://www.linkedin.com/in/priyanka-varma-322363216?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+        hosts
+      )
+    ).toBe("https://www.linkedin.com/in/priyanka-varma-322363216");
+  });
+
+  it("keeps the path — the profile is the path, not the query", () => {
+    expect(safeProfileUrl("https://www.instagram.com/samvriti.space", hosts)).toBe(
+      "https://www.instagram.com/samvriti.space"
+    );
+  });
+
+  it("refuses a host that is not on the list", () => {
+    expect(safeProfileUrl("https://evil.example/in/someone", hosts)).toBe("");
+  });
+
+  it("refuses a lookalike host", () => {
+    expect(safeProfileUrl("https://instagram.com.evil.example/x", hosts)).toBe("");
+  });
+
+  it("refuses javascript: dressed as a profile", () => {
+    expect(safeProfileUrl("javascript:alert(1)", hosts)).toBe("");
+  });
+
+  it("refuses plain http", () => {
+    expect(safeProfileUrl("http://www.instagram.com/samvriti.space", hosts)).toBe("");
+  });
+
+  it("treats an empty value as simply unset", () => {
+    expect(safeProfileUrl("", hosts)).toBe("");
+    expect(safeProfileUrl(undefined, hosts)).toBe("");
+  });
 });

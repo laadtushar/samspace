@@ -61,6 +61,35 @@ export function safeExternalUrl(
   }
 }
 
+/**
+ * Profile links, with share-tracking removed.
+ *
+ * Instagram hands out ?igsh= and LinkedIn ?utm_source=share_via when you use
+ * their share sheets; both identify who did the sharing. Keeping them would
+ * pass that on to every visitor who clicks, and the profile resolves
+ * identically without them. WhatsApp and Calendly links keep their query
+ * strings, because there it carries the prefilled message or booking details.
+ */
+export function safeProfileUrl(
+  value: unknown,
+  allowedHosts: string[]
+): string {
+  const url = safeExternalUrl(value, allowedHosts);
+  if (!url) return "";
+  const parsed = new URL(url);
+  parsed.search = "";
+  parsed.hash = "";
+  return parsed.toString();
+}
+
+const instagramUrl = z
+  .unknown()
+  .transform((v) => safeProfileUrl(v, ["instagram.com"]));
+
+const linkedinUrl = z
+  .unknown()
+  .transform((v) => safeProfileUrl(v, ["linkedin.com"]));
+
 const whatsappUrl = z
   .unknown()
   .transform((v) =>
@@ -127,6 +156,10 @@ export const siteContentSchema = z.object({
     email: trimmed(254),
     phone: trimmed(40),
     whatsappLink: whatsappUrl,
+  }),
+  social: z.object({
+    instagram: instagramUrl,
+    linkedin: linkedinUrl,
   }),
   slidingScale: z.array(trimmed(60)).max(12),
   calendlyUrl,

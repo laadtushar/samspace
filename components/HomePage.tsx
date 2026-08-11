@@ -64,9 +64,12 @@ export default function HomePage({ content }: { content: SiteContent }) {
         <Mentoring mentoring={content.mentoring} />
         <Faq faq={content.faq} />
         <SessionInfo />
-        <Contact contact={content.contact} onBookSession={openIntake} />
+        <Contact contact={content.contact} social={content.social} onBookSession={openIntake} />
       </main>
-      <Footer />
+      <Footer
+        instagram={content.social?.instagram}
+        linkedin={content.social?.linkedin}
+      />
       <IntakeFormModal
         isOpen={intakeOpen}
         onClose={closeIntake}

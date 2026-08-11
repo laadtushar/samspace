@@ -52,6 +52,10 @@ export interface SiteContent {
     phone: string;
     whatsappLink: string;
   };
+  social: {
+    instagram: string;
+    linkedin: string;
+  };
   slidingScale: string[];
   /** Calendly scheduling link. Empty string hides the optional scheduling step. */
   calendlyUrl: string;
@@ -193,6 +197,10 @@ export const defaultContent: SiteContent = {
     phone: "+91 91307 43144",
     whatsappLink:
       "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book%20a%20session%20at%20Samvriti.Space.",
+  },
+  social: {
+    instagram: "https://www.instagram.com/samvriti.space",
+    linkedin: "https://www.linkedin.com/in/priyanka-varma-322363216",
   },
   slidingScale: ["₹500 (Student)", "₹800", "₹900", "₹1000"],
   calendlyUrl: "",

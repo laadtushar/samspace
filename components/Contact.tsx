@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import SocialLinks from "./SocialLinks";
 import AnimatedSection from "./AnimatedSection";
 import MagneticButton from "./MagneticButton";
 import TextReveal from "./TextReveal";
@@ -14,10 +15,11 @@ interface ContactProps {
     phone: string;
     whatsappLink: string;
   };
+  social?: { instagram: string; linkedin: string };
   onBookSession?: () => void;
 }
 
-export default function Contact({ contact, onBookSession }: ContactProps) {
+export default function Contact({ contact, social, onBookSession }: ContactProps) {
   const infoCards = [
     { icon: "📧", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
     { icon: "📱", label: "WhatsApp / Call", value: contact.phone, href: contact.whatsappLink },
@@ -120,6 +122,20 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
 
         {/* Animated Contact Form */}
         <AnimatedContactForm />
+
+        {(social?.instagram || social?.linkedin) && (
+          <AnimatedSection>
+            <div className="text-center mt-14">
+              <p className="font-sans text-xs text-cream/40 mb-4">
+                Elsewhere
+              </p>
+              <SocialLinks
+                instagram={social?.instagram}
+                linkedin={social?.linkedin}
+              />
+            </div>
+          </AnimatedSection>
+        )}
       </div>
     </section>
   );
