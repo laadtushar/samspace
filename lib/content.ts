@@ -208,6 +208,24 @@ export const defaultContent: SiteContent = {
     "The student rate is kept low on purpose — so someone still studying, without their own income, never has to choose between therapy and affording the month. It works because the people who can pay a little more do. If you're earning, picking a higher rate quietly keeps this slot open for someone who genuinely can't. No proof is asked for. It runs on trust.",
 };
 
+/**
+ * Site content with the private contact details removed.
+ *
+ * Anything handed to a client component is serialised into the page, so
+ * passing the whole content object put the phone number and the wa.me link
+ * into the HTML whether or not either was rendered — which is exactly what
+ * address harvesters read. The public pages get this shape instead, and the
+ * WhatsApp link is reached through the /whatsapp redirect.
+ */
+export type PublicSiteContent = Omit<SiteContent, "contact"> & {
+  contact: Omit<SiteContent["contact"], "phone" | "whatsappLink">;
+};
+
+export function toPublicContent(content: SiteContent): PublicSiteContent {
+  const { phone: _phone, whatsappLink: _link, ...contact } = content.contact;
+  return { ...content, contact };
+}
+
 // ─── Intake Form Submission Schema ─────────────────
 export interface IntakeSubmission {
   id: string;

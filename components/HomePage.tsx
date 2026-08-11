@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import type { SiteContent } from "@/lib/content";
+import type { PublicSiteContent } from "@/lib/content";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -22,7 +22,7 @@ const IntakeFormModal = dynamic(() => import("@/components/IntakeFormModal"), {
   ssr: false,
 });
 
-export default function HomePage({ content }: { content: SiteContent }) {
+export default function HomePage({ content }: { content: PublicSiteContent }) {
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   // Phase 4 — shareable intake URL. Read from `window` rather than

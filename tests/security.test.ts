@@ -9,7 +9,7 @@ import {
 } from "@/lib/validation";
 import { rateLimit, isSameOrigin } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/auth";
-import { defaultContent } from "@/lib/content";
+import { defaultContent, toPublicContent } from "@/lib/content";
 import { serializeJsonLd } from "@/lib/site";
 import { safeProfileUrl } from "@/lib/validation";
 import { encryptJson, decryptJson, isEncrypted } from "@/lib/crypto";
@@ -441,5 +441,33 @@ describe("social profile links", () => {
   it("treats an empty value as simply unset", () => {
     expect(safeProfileUrl("", hosts)).toBe("");
     expect(safeProfileUrl(undefined, hosts)).toBe("");
+  });
+});
+
+describe("contact details kept out of the browser", () => {
+  // Anything passed to a client component is serialised into the page, so a
+  // field that is merely "not rendered" is still published. These assert the
+  // number never reaches the payload at all.
+  const publicContent = toPublicContent(defaultContent);
+
+  it("drops the phone number", () => {
+    expect("phone" in publicContent.contact).toBe(false);
+  });
+
+  it("drops the wa.me link, which contains the number in its URL", () => {
+    expect("whatsappLink" in publicContent.contact).toBe(false);
+  });
+
+  it("leaves no trace of the number anywhere in the serialised object", () => {
+    const serialised = JSON.stringify(publicContent);
+    const digits = defaultContent.contact.phone.replace(/\D/g, "");
+    expect(serialised).not.toContain(digits);
+    expect(serialised).not.toContain("wa.me");
+  });
+
+  it("keeps the parts the page actually needs", () => {
+    expect(publicContent.contact.email).toBe(defaultContent.contact.email);
+    expect(publicContent.contact.heading).toBeTruthy();
+    expect(publicContent.faq.items.length).toBeGreaterThan(0);
   });
 });

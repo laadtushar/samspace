@@ -1222,7 +1222,7 @@ export default function AdminPage() {
                       }
                     />
                     <ContentField
-                      label="Phone"
+                      label="Phone (kept for your reference — not shown on the site)"
                       value={(content as any).contact?.phone}
                       onChange={(v) =>
                         setContent({ ...content, contact: { ...(content as any).contact, phone: v } })

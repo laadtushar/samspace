@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Samvriti.Space — Online Therapy & Academic Mentoring",
     short_name: "Samvriti.Space",
     description:
-      "Online therapy and academic mentoring for young adults by Priyanka Varma, M.Sc. Clinical Psychology.",
+      "Online therapy and academic mentoring for young adults aged 18–35 by Priyanka Varma, M.Sc. Clinical Psychology.",
     start_url: "/",
     display: "standalone",
     background_color: "#f7f3ed",

@@ -12,8 +12,6 @@ interface ContactProps {
     heading: string;
     subtext: string;
     email: string;
-    phone: string;
-    whatsappLink: string;
   };
   social?: { instagram: string; linkedin: string };
   onBookSession?: () => void;
@@ -22,7 +20,8 @@ interface ContactProps {
 export default function Contact({ contact, social, onBookSession }: ContactProps) {
   const infoCards = [
     { icon: "📧", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
-    { icon: "📱", label: "WhatsApp / Call", value: contact.phone, href: contact.whatsappLink },
+    // Routed through /whatsapp so the number stays out of the markup entirely.
+    { icon: "💬", label: "WhatsApp", value: "Send a message", href: "/whatsapp" },
     { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null as string | null },
   ];
   return (

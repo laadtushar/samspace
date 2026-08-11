@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | Samvriti.Space",
   },
   description:
-    "Online therapy and academic mentoring for young adults navigating anxiety, academic stress and self-esteem. M.Sc. Clinical Psychology. Sessions ₹500–₹1000.",
+    "Online therapy and academic mentoring for young adults (18–35) navigating anxiety, academic stress and self-esteem. M.Sc. Clinical Psychology.",
   keywords: [
     "counselling psychologist",
     "online therapy India",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist Priyanka Varma offers online therapy (₹500–₹1000) and academic mentoring for young adults. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
+      "Counselling psychologist Priyanka Varma offers online therapy (₹500–₹1000) and academic mentoring for young adults aged 18–35. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
     url: SITE_URL,
     siteName: SITE_NAME,
     locale: "en_IN",
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist for young adults. CBT, Humanistic, Trauma-Informed Care. Sessions ₹500–₹1000. Book online.",
+      "Counselling psychologist for young adults 18–35. CBT, Humanistic, Trauma-Informed Care. Sessions ₹500–₹1000. Book online.",
   },
   robots: {
     index: IS_PRODUCTION_SITE,
@@ -132,7 +132,7 @@ export default function RootLayout({
         "@id": `${SITE_URL}#business`,
         name: SITE_NAME,
         description:
-          "Online counselling and academic mentoring for young adults by Priyanka Varma, M.Sc. Clinical Psychology.",
+          "Online counselling and academic mentoring for young adults aged 18–35 by Priyanka Varma, M.Sc. Clinical Psychology.",
         url: SITE_URL,
         image: `${SITE_URL}/priyanka.jpeg`,
         priceRange: "₹500–₹1000",
@@ -142,9 +142,9 @@ export default function RootLayout({
         serviceType: ["Counselling Psychology", "Academic Mentoring"],
         medicalSpecialty: "Psychiatric",
         email: defaultContent.contact.email,
-        telephone: defaultContent.contact.phone,
+        // The wa.me link is deliberately absent: it carries the phone number
+        // in the URL, and sameAs is for profiles rather than contact methods.
         sameAs: [
-          defaultContent.contact.whatsappLink,
           defaultContent.social.instagram,
           defaultContent.social.linkedin,
         ].filter(Boolean),
@@ -194,7 +194,7 @@ export default function RootLayout({
         ].filter(Boolean),
         jobTitle: "Counselling Psychologist & Academic Mentor",
         description:
-          "M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Lecturer and counselling psychologist specializing in young adult mental health.",
+          "M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Lecturer and counselling psychologist specialising in the mental health of young adults aged 18–35.",
         url: SITE_URL,
         image: `${SITE_URL}/priyanka.jpeg`,
         email: defaultContent.contact.email,
@@ -229,16 +229,7 @@ export default function RootLayout({
         url: SITE_URL,
         inLanguage: "en-IN",
         publisher: { "@id": `${SITE_URL}#business` },
-      },
-      {
-        "@type": "FAQPage",
-        "@id": `${SITE_URL}#faq`,
-        mainEntity: defaultContent.faq.items.map((item) => ({
-          "@type": "Question",
-          name: item.question,
-          acceptedAnswer: { "@type": "Answer", text: item.answer },
-        })),
-      },
+      }
     ],
   };
 
