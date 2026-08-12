@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BotIdClient } from "botid/client";
+import { Analytics } from "@vercel/analytics/next";
 import {
   SITE_URL,
   SITE_NAME,
@@ -246,6 +247,7 @@ export default function RootLayout({
         className={`${cormorant.variable} ${dmSans.variable} font-sans bg-cream text-forest antialiased`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
