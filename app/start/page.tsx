@@ -15,7 +15,8 @@ export const revalidate = 60;
  * it points at keep the benefit. It is also kept out of the sitemap.
  */
 export const metadata: Metadata = {
-  title: "Start here — Samvriti.Space",
+  // The layout template appends the site name, so this must not repeat it.
+  title: "Start here",
   description:
     "Book a session, read the writing, or send a message — everything in one place.",
   robots: { index: false, follow: true },
