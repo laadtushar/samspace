@@ -1240,6 +1240,150 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
+                  <ContentSection title="Link-in-bio page (/start)">
+                    <p className="font-sans text-[11px] text-forest/45 leading-relaxed">
+                      The single link to put in your Instagram bio:{" "}
+                      <code className="text-forest/60">samvritispace.com/start</code>.
+                      Built for someone arriving on a phone — one column, big
+                      buttons, and the intake form opens on the page itself
+                      rather than sending them elsewhere first. Your most recent
+                      published article is added automatically.
+                    </p>
+                    <ContentField
+                      label="Heading"
+                      value={(content as any).startPage?.heading}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          startPage: { ...(content as any).startPage, heading: v },
+                        })
+                      }
+                    />
+                    <ContentField
+                      label="Intro line"
+                      value={(content as any).startPage?.subtext}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          startPage: { ...(content as any).startPage, subtext: v },
+                        })
+                      }
+                      textarea
+                      rows={2}
+                    />
+
+                    {((content as any).startPage?.links || []).map(
+                      (link: any, idx: number) => (
+                        <div key={idx} className="bg-cream rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="font-sans text-xs font-semibold text-forest/60">
+                              Button {idx + 1}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => {
+                                  const links = [...((content as any).startPage?.links || [])];
+                                  [links[idx - 1], links[idx]] = [links[idx], links[idx - 1]];
+                                  setContent({
+                                    ...content,
+                                    startPage: { ...(content as any).startPage, links },
+                                  });
+                                }}
+                                className="font-sans text-[11px] text-forest/45 hover:text-forest disabled:opacity-25 transition-colors"
+                              >
+                                Move up
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const links = [...((content as any).startPage?.links || [])];
+                                  links.splice(idx, 1);
+                                  setContent({
+                                    ...content,
+                                    startPage: { ...(content as any).startPage, links },
+                                  });
+                                }}
+                                className="font-sans text-[11px] text-red-500/70 hover:text-red-500 transition-colors"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                          <ContentField
+                            label="Button text"
+                            value={link.label || ""}
+                            onChange={(v) => {
+                              const links = [...((content as any).startPage?.links || [])];
+                              links[idx] = { ...links[idx], label: v };
+                              setContent({
+                                ...content,
+                                startPage: { ...(content as any).startPage, links },
+                              });
+                            }}
+                          />
+                          <ContentField
+                            label="Small print underneath"
+                            value={link.description || ""}
+                            onChange={(v) => {
+                              const links = [...((content as any).startPage?.links || [])];
+                              links[idx] = { ...links[idx], description: v };
+                              setContent({
+                                ...content,
+                                startPage: { ...(content as any).startPage, links },
+                              });
+                            }}
+                          />
+                          <ContentField
+                            label="Where it goes"
+                            value={link.href || ""}
+                            onChange={(v) => {
+                              const links = [...((content as any).startPage?.links || [])];
+                              links[idx] = { ...links[idx], href: v.trim() };
+                              setContent({
+                                ...content,
+                                startPage: { ...(content as any).startPage, links },
+                              });
+                            }}
+                          />
+                        </div>
+                      )
+                    )}
+
+                    <div className="bg-cream rounded-lg p-4">
+                      <p className="font-sans text-[11px] text-forest/45 leading-relaxed">
+                        For &ldquo;where it goes&rdquo;, use a page on this site
+                        or a full https link. The shortcuts:{" "}
+                        <code className="text-forest/60">/?intake=true</code>{" "}
+                        opens the intake form,{" "}
+                        <code className="text-forest/60">/whatsapp</code> starts a
+                        WhatsApp chat without exposing your number,{" "}
+                        <code className="text-forest/60">/blog</code> is the
+                        writing, and <code className="text-forest/60">/#about</code>{" "}
+                        jumps to the About section. Anything that isn&apos;t a
+                        page here or an https link is discarded on save.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const links = [
+                          ...((content as any).startPage?.links || []),
+                          { label: "", description: "", href: "" },
+                        ];
+                        setContent({
+                          ...content,
+                          startPage: { ...(content as any).startPage, links },
+                        });
+                      }}
+                      className="font-sans text-xs text-forest/60 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/25 hover:border-sage/50 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add button
+                    </button>
+                  </ContentSection>
+
                   <ContentSection title="Social Links">
                     <p className="font-sans text-[11px] text-forest/45 leading-relaxed">
                       Shown as small icons in the footer and under the contact

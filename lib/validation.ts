@@ -90,6 +90,29 @@ const linkedinUrl = z
   .unknown()
   .transform((v) => safeProfileUrl(v, ["linkedin.com"]));
 
+/**
+ * A link target for the /start page.
+ *
+ * Accepts a path on this site or an https URL, and nothing else — these are
+ * rendered as anchors, so a javascript: value pasted into the dashboard would
+ * execute on click for every visitor. Protocol-relative "//host" is rejected
+ * too: it looks internal and is not.
+ */
+export function safeLinkHref(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const v = value.trim();
+  if (!v) return "";
+  if (v.startsWith("//")) return "";
+  if (v.startsWith("/") || v.startsWith("#")) return v.slice(0, 300);
+  return safeExternalUrl(v);
+}
+
+const startLinkSchema = z.object({
+  label: trimmed(80),
+  description: trimmed(160),
+  href: z.unknown().transform(safeLinkHref),
+});
+
 const whatsappUrl = z
   .unknown()
   .transform((v) =>
@@ -160,6 +183,11 @@ export const siteContentSchema = z.object({
   social: z.object({
     instagram: instagramUrl,
     linkedin: linkedinUrl,
+  }),
+  startPage: z.object({
+    heading: trimmed(120),
+    subtext: trimmed(600),
+    links: z.array(startLinkSchema).max(10),
   }),
   slidingScale: z.array(trimmed(60)).max(12),
   calendlyUrl,

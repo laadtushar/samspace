@@ -90,7 +90,9 @@ export default function SocialLinks({
           rel="me noopener noreferrer"
           aria-label={`${label} — opens in a new tab`}
           title={label}
-          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors duration-200 ${styles}`}
+          // 44px: the smallest target a thumb hits reliably, and this page is
+          // opened from a phone more often than not.
+          className={`w-11 h-11 rounded-full border flex items-center justify-center transition-colors duration-200 ${styles}`}
         >
           <Mark />
         </a>

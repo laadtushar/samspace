@@ -56,6 +56,12 @@ export interface SiteContent {
     instagram: string;
     linkedin: string;
   };
+  /** The /start page — the one link that goes in an Instagram bio. */
+  startPage: {
+    heading: string;
+    subtext: string;
+    links: { label: string; description: string; href: string }[];
+  };
   slidingScale: string[];
   /** Calendly scheduling link. Empty string hides the optional scheduling step. */
   calendlyUrl: string;
@@ -201,6 +207,33 @@ export const defaultContent: SiteContent = {
   social: {
     instagram: "https://www.instagram.com/samvriti.space",
     linkedin: "https://www.linkedin.com/in/priyanka-varma-322363216",
+  },
+  startPage: {
+    heading: "Start here",
+    subtext:
+      "Whatever brought you here — booking a session, reading something first, or just asking a question — this is where to begin.",
+    links: [
+      {
+        label: "Book a therapy session",
+        description: "Fill the intake form — takes about three minutes",
+        href: "/?intake=true",
+      },
+      {
+        label: "Message on WhatsApp",
+        description: "For a quick question before you book",
+        href: "/whatsapp",
+      },
+      {
+        label: "Read the writing",
+        description: "Notes on anxiety, academic pressure and boundaries",
+        href: "/blog",
+      },
+      {
+        label: "About me and how I work",
+        description: "Qualifications, approach, and what sessions cost",
+        href: "/#about",
+      },
+    ],
   },
   slidingScale: ["₹500 (Student)", "₹800", "₹900", "₹1000"],
   calendlyUrl: "",

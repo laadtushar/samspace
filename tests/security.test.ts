@@ -11,7 +11,7 @@ import { rateLimit, isSameOrigin } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/auth";
 import { defaultContent, toPublicContent } from "@/lib/content";
 import { serializeJsonLd } from "@/lib/site";
-import { safeProfileUrl } from "@/lib/validation";
+import { safeProfileUrl, safeLinkHref } from "@/lib/validation";
 import { encryptJson, decryptJson, isEncrypted } from "@/lib/crypto";
 
 describe("email escaping", () => {
@@ -469,5 +469,90 @@ describe("contact details kept out of the browser", () => {
     expect(publicContent.contact.email).toBe(defaultContent.contact.email);
     expect(publicContent.contact.heading).toBeTruthy();
     expect(publicContent.faq.items.length).toBeGreaterThan(0);
+  });
+});
+
+describe("/start link targets", () => {
+  // These render as anchors from dashboard input, so a hostile value pasted in
+  // would run for every visitor who taps it.
+  it("allows a path on this site", () => {
+    expect(safeLinkHref("/?intake=true")).toBe("/?intake=true");
+    expect(safeLinkHref("/blog")).toBe("/blog");
+    expect(safeLinkHref("/#about")).toBe("/#about");
+  });
+
+  it("allows an https link", () => {
+    expect(safeLinkHref("https://calendly.com/x/50min")).toBe(
+      "https://calendly.com/x/50min"
+    );
+  });
+
+  it("refuses javascript:", () => {
+    expect(safeLinkHref("javascript:alert(document.cookie)")).toBe("");
+  });
+
+  it("refuses data: and vbscript:", () => {
+    expect(safeLinkHref("data:text/html,<script>alert(1)</script>")).toBe("");
+    expect(safeLinkHref("vbscript:msgbox(1)")).toBe("");
+  });
+
+  it("refuses protocol-relative, which looks internal but is not", () => {
+    expect(safeLinkHref("//evil.example/pwned")).toBe("");
+  });
+
+  it("refuses plain http", () => {
+    expect(safeLinkHref("http://example.com")).toBe("");
+  });
+
+  it("treats blank as unset", () => {
+    expect(safeLinkHref("")).toBe("");
+    expect(safeLinkHref(null)).toBe("");
+  });
+});
+
+describe("startPage links survive the real save path", () => {
+  // safeLinkHref is unit-tested above; this asserts the schema actually applies
+  // it, so a hostile value cannot reach storage through the content endpoint.
+  const save = (href: string) =>
+    siteContentSchema.parse({
+      ...defaultContent,
+      startPage: {
+        heading: "Start here",
+        subtext: "Intro",
+        links: [{ label: "Tap me", description: "d", href }],
+      },
+    }).startPage.links[0].href;
+
+  it("strips javascript: while keeping the button", () => {
+    expect(save("javascript:alert(document.cookie)")).toBe("");
+  });
+
+  it("strips protocol-relative links", () => {
+    expect(save("//evil.example/x")).toBe("");
+  });
+
+  it("keeps an internal path", () => {
+    expect(save("/?intake=true")).toBe("/?intake=true");
+  });
+
+  it("keeps an https link", () => {
+    expect(save("https://calendly.com/x")).toBe("https://calendly.com/x");
+  });
+
+  it("caps the number of buttons", () => {
+    expect(() =>
+      siteContentSchema.parse({
+        ...defaultContent,
+        startPage: {
+          heading: "h",
+          subtext: "s",
+          links: Array.from({ length: 11 }, () => ({
+            label: "x",
+            description: "d",
+            href: "/blog",
+          })),
+        },
+      })
+    ).toThrow();
   });
 });
