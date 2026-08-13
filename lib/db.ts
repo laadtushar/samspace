@@ -1,17 +1,33 @@
 import { neon } from "@neondatabase/serverless";
+import { Pool } from "pg";
 
 /**
  * Postgres access.
  *
- * Neon's serverless driver speaks HTTP rather than holding a TCP connection,
- * which is what makes it usable from functions that start and stop constantly —
- * a pooled TCP client would exhaust connections under any real traffic.
+ * Two drivers, chosen by host. Against Neon, the serverless driver speaks HTTP
+ * rather than holding a TCP connection, which is what makes it usable from
+ * functions that start and stop constantly — a pooled TCP client would exhaust
+ * connections under any real traffic. Against anything else, ordinary pg.
+ *
+ * The second path is not decoration: Neon's HTTP driver cannot talk to a plain
+ * Postgres, so without it none of this could be run or tested anywhere except
+ * production. It also means the practice is not locked to one provider.
  *
  * The connection string comes from the Vercel integration, which sets
  * DATABASE_URL. The other names are accepted because different integrations
  * spell it differently, and a mismatch would present as "the database is
  * missing" rather than "the variable has another name".
  */
+
+export type Sql = ((
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+) => Promise<Record<string, unknown>[]>) & {
+  query(
+    text: string,
+    params?: unknown[]
+  ): Promise<Record<string, unknown>[]>;
+};
 
 function connectionString(): string | undefined {
   return (
@@ -33,17 +49,56 @@ export function dbConfigured(): boolean {
   return Boolean(connectionString());
 }
 
-let client: ReturnType<typeof neon> | null = null;
+function isNeon(url: string): boolean {
+  try {
+    return new URL(url).hostname.endsWith(".neon.tech");
+  } catch {
+    return false;
+  }
+}
 
-export function sql() {
+/**
+ * Wraps a pg Pool in the same shape the Neon driver exposes — a tagged template
+ * returning rows, plus .query for text built elsewhere — so callers never need
+ * to know which driver is underneath.
+ */
+function fromPool(pool: Pool): Sql {
+  const tagged = (async (
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ) => {
+    const text = strings.reduce(
+      (acc, part, i) => acc + part + (i < values.length ? `$${i + 1}` : ""),
+      ""
+    );
+    const result = await pool.query(text, values as unknown[]);
+    return result.rows;
+  }) as Sql;
+
+  tagged.query = async (text: string, params: unknown[] = []) =>
+    (await pool.query(text, params)).rows;
+
+  return tagged;
+}
+
+let client: Sql | null = null;
+
+export function sql(): Sql {
   const url = connectionString();
   if (!url) {
     throw new Error(
       "No database configured — set DATABASE_URL (the Vercel Neon integration sets this)."
     );
   }
-  // One client per lambda instance. The driver is stateless over HTTP, so
-  // reusing it costs nothing and avoids re-parsing the URL on every query.
-  if (!client) client = neon(url);
+  // One client per process. Both drivers are safe to reuse, and rebuilding
+  // either on every call would re-parse the URL and, for pg, open a new pool.
+  if (!client) {
+    client = isNeon(url) ? (neon(url) as unknown as Sql) : fromPool(new Pool({ connectionString: url }));
+  }
   return client;
+}
+
+/** Testing seam: forces the next sql() call to reconnect. */
+export function resetClient(): void {
+  client = null;
 }

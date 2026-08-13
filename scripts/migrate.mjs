@@ -19,6 +19,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { neon } from "@neondatabase/serverless";
+import pg from "pg";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "db", "migrations");
 
@@ -78,8 +79,41 @@ export function splitStatements(text) {
   return statements.filter((s) => !/^(--[^\n]*\n?)*$/.test(s));
 }
 
+/**
+ * Neon's HTTP driver cannot talk to a plain Postgres, so migrations would only
+ * ever be runnable against production. Choosing by host means the same runner
+ * applies the same files to a local database, which is the only way to find out
+ * whether the SQL is correct before it reaches real records.
+ */
+function connect(connectionString) {
+  const isNeon = (() => {
+    try {
+      return new URL(connectionString).hostname.endsWith(".neon.tech");
+    } catch {
+      return false;
+    }
+  })();
+
+  if (isNeon) {
+    const sql = neon(connectionString);
+    return { sql, end: async () => {} };
+  }
+
+  const pool = new pg.Pool({ connectionString });
+  const tagged = async (strings, ...values) => {
+    const text = strings.reduce(
+      (acc, part, i) => acc + part + (i < values.length ? `$${i + 1}` : ""),
+      ""
+    );
+    return (await pool.query(text, values)).rows;
+  };
+  tagged.query = async (text, params = []) => (await pool.query(text, params)).rows;
+  return { sql: tagged, end: () => pool.end() };
+}
+
 export async function migrate(connectionString) {
-  const sql = neon(connectionString);
+  const { sql, end } = connect(connectionString);
+  try {
 
   await sql`
     create table if not exists _migrations (
@@ -109,7 +143,10 @@ export async function migrate(connectionString) {
     applied.push(file);
     console.log(`  applied ${file}`);
   }
-  return { applied, total: files.length };
+    return { applied, total: files.length };
+  } finally {
+    await end();
+  }
 }
 
 // Only runs when invoked directly, so tests can import the splitter.

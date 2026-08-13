@@ -8,6 +8,26 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    # A real Postgres, because the database tests assert things no amount of
+    # reading the code can confirm: that the migration applies, that a second
+    # enquiry from the same email finds the existing client, that deleting a
+    # client does not take their submission history with it.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: samspace
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: samspace_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,6 +38,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+        env:
+          TEST_DATABASE_URL: postgresql://samspace:ci@localhost:5432/samspace_test
       - run: npm run build
         env:
           # The build only needs these to exist; nothing here reaches a real service.
