@@ -19,8 +19,13 @@ const suite = url ? describe : describe.skip;
 /**
  * A skipped suite is indistinguishable from a passing one at a glance, so CI
  * would happily stay green while never touching a database. This turns that
- * into a failure: on CI the database must be present and answering, and the
- * proof is a query rather than the presence of a variable.
+ * into a failure.
+ *
+ * It asserts only that a database answers — deliberately not that any table
+ * exists. The first version counted tables and broke CI, because the database
+ * there is created empty and this runs before the suite below applies the
+ * migration. Whether the schema is correct is what the other tests are for; all
+ * this one needs to establish is that something real is on the other end.
  */
 describe("database tests are wired up", () => {
   it("is connected to a real database when running in CI", async () => {
@@ -29,12 +34,8 @@ describe("database tests are wired up", () => {
 
     process.env.DATABASE_URL = url;
     const { sql } = await import("@/lib/db");
-    const rows = await sql()`
-      select count(*)::int as n
-      from information_schema.tables
-      where table_schema = 'public'
-    `;
-    expect(Number(rows[0].n)).toBeGreaterThan(0);
+    const rows = await sql()`select 1 as ok`;
+    expect(Number(rows[0].ok)).toBe(1);
   });
 });
 
