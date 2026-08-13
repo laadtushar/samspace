@@ -173,3 +173,116 @@ export async function updateClient(
 
   return rows[0] ?? null;
 }
+
+// ─── Sessions ──────────────────────────────────────
+
+export const SESSION_STATUSES = [
+  "scheduled",
+  "completed",
+  "cancelled",
+  "no_show",
+] as const;
+
+export interface SessionRow {
+  id: string;
+  client_id: string;
+  client_name?: string;
+  starts_at: string;
+  ends_at: string;
+  status: (typeof SESSION_STATUSES)[number];
+  rate_amount: number | null;
+  paid: boolean;
+  google_event_id: string | null;
+  note: string | null;
+}
+
+/** Default length, matching what the site tells people a session is. */
+export const SESSION_MINUTES = 50;
+
+export async function createSession(input: {
+  clientId: string;
+  startsAt: string;
+  minutes?: number;
+  rateAmount?: number | null;
+  note?: string | null;
+}): Promise<SessionRow> {
+  const start = new Date(input.startsAt);
+  if (Number.isNaN(start.getTime())) {
+    throw new Error("That is not a valid date and time");
+  }
+  // The end is derived rather than asked for: a session has a known length,
+  // and two fields that can disagree is one more thing to get wrong.
+  const end = new Date(
+    start.getTime() + (input.minutes ?? SESSION_MINUTES) * 60_000
+  );
+
+  const rows = (await sql()`
+    insert into sessions (client_id, starts_at, ends_at, rate_amount, note)
+    values (
+      ${input.clientId}, ${start.toISOString()}, ${end.toISOString()},
+      ${input.rateAmount ?? null}, ${input.note ?? null}
+    )
+    returning *
+  `) as unknown as SessionRow[];
+
+  return rows[0];
+}
+
+/**
+ * Sessions around now — everything still to come, plus a short tail of recent
+ * ones, so an attendance or a payment can be recorded after the fact instead of
+ * vanishing the moment the session is over.
+ */
+export async function listSessions(): Promise<SessionRow[]> {
+  if (!dbConfigured()) return [];
+  return (await sql()`
+    select s.*, c.name as client_name
+    from sessions s
+    join clients c on c.id = s.client_id
+    where s.starts_at > now() - interval '30 days'
+    order by s.starts_at asc
+    limit 500
+  `) as unknown as SessionRow[];
+}
+
+export async function clientSessions(clientId: string): Promise<SessionRow[]> {
+  if (!dbConfigured()) return [];
+  return (await sql()`
+    select * from sessions where client_id = ${clientId}
+    order by starts_at desc
+  `) as unknown as SessionRow[];
+}
+
+export async function updateSession(
+  id: string,
+  fields: {
+    status?: string;
+    paid?: boolean;
+    rate_amount?: number | null;
+    note?: string;
+  }
+): Promise<SessionRow | null> {
+  if (fields.status && !SESSION_STATUSES.includes(fields.status as never)) {
+    throw new Error(`Unknown status: ${fields.status}`);
+  }
+
+  const rows = (await sql()`
+    update sessions set
+      status      = coalesce(${fields.status ?? null}, status),
+      paid        = coalesce(${fields.paid ?? null}, paid),
+      rate_amount = coalesce(${fields.rate_amount ?? null}, rate_amount),
+      note        = coalesce(${fields.note ?? null}, note),
+      updated_at  = now()
+    where id = ${id}
+    returning *
+  `) as unknown as SessionRow[];
+
+  return rows[0] ?? null;
+}
+
+export async function deleteSession(id: string): Promise<boolean> {
+  const rows = (await sql()`
+    delete from sessions where id = ${id} returning id
+  `) as unknown as { id: string }[];
+  return rows.length > 0;
+}

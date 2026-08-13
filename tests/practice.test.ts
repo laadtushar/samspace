@@ -290,3 +290,140 @@ suite("the client list and the fields a practitioner owns", () => {
     );
   });
 });
+
+suite("sessions", () => {
+  let practice: typeof import("@/lib/practice");
+  let sql: typeof import("@/lib/db").sql;
+  let clientId: string;
+
+  beforeAll(async () => {
+    process.env.DATABASE_URL = url;
+    practice = await import("@/lib/practice");
+    ({ sql } = await import("@/lib/db"));
+    const { migrate } = await import("../scripts/migrate.mjs");
+    await migrate(url!);
+  });
+
+  beforeEach(async () => {
+    await sql()`delete from sessions`;
+    await sql()`delete from submissions`;
+    await sql()`delete from clients`;
+    const rows = (await sql()`
+      insert into clients (name, email) values ('Asha Rao', 'asha@example.com')
+      returning id
+    `) as { id: string }[];
+    clientId = rows[0].id;
+  });
+
+  it("derives the end time from the standard session length", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: "2026-09-01T10:00:00.000Z",
+    });
+    const minutes =
+      (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000;
+    expect(minutes).toBe(practice.SESSION_MINUTES);
+    expect(s.status).toBe("scheduled");
+    expect(s.paid).toBe(false);
+  });
+
+  it("honours an explicit length", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: "2026-09-01T10:00:00.000Z",
+      minutes: 90,
+    });
+    const minutes =
+      (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 60000;
+    expect(minutes).toBe(90);
+  });
+
+  it("refuses a date it cannot understand", async () => {
+    await expect(
+      practice.createSession({ clientId, startsAt: "next tuesday-ish" })
+    ).rejects.toThrow(/valid date/);
+  });
+
+  it("lists what is still to come, soonest first", async () => {
+    const soon = new Date(Date.now() + 2 * 86400_000).toISOString();
+    const later = new Date(Date.now() + 9 * 86400_000).toISOString();
+    await practice.createSession({ clientId, startsAt: later });
+    await practice.createSession({ clientId, startsAt: soon });
+
+    const list = await practice.listSessions();
+    expect(list).toHaveLength(2);
+    expect(new Date(list[0].starts_at).getTime()).toBeLessThan(
+      new Date(list[1].starts_at).getTime()
+    );
+    expect(list[0].client_name).toBe("Asha Rao");
+  });
+
+  it("keeps recent sessions visible so attendance can be marked afterwards", async () => {
+    await practice.createSession({
+      clientId,
+      startsAt: new Date(Date.now() - 3 * 86400_000).toISOString(),
+    });
+    expect(await practice.listSessions()).toHaveLength(1);
+  });
+
+  it("drops sessions older than the tail", async () => {
+    await practice.createSession({
+      clientId,
+      startsAt: new Date(Date.now() - 60 * 86400_000).toISOString(),
+    });
+    expect(await practice.listSessions()).toHaveLength(0);
+  });
+
+  it("records attendance and payment", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: new Date().toISOString(),
+    });
+    const done = await practice.updateSession(s.id, {
+      status: "completed",
+      paid: true,
+      rate_amount: 800,
+    });
+    expect(done?.status).toBe("completed");
+    expect(done?.paid).toBe(true);
+    expect(done?.rate_amount).toBe(800);
+  });
+
+  it("can mark a session unpaid again — coalesce must not swallow false", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: new Date().toISOString(),
+    });
+    await practice.updateSession(s.id, { paid: true });
+    const back = await practice.updateSession(s.id, { paid: false });
+    expect(back?.paid).toBe(false);
+  });
+
+  it("refuses a status outside the four", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: new Date().toISOString(),
+    });
+    await expect(
+      practice.updateSession(s.id, { status: "rescheduled" })
+    ).rejects.toThrow(/Unknown status/);
+  });
+
+  it("removes a session and reports honestly when there is none", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: new Date().toISOString(),
+    });
+    expect(await practice.deleteSession(s.id)).toBe(true);
+    expect(await practice.deleteSession(s.id)).toBe(false);
+  });
+
+  it("lists one client's sessions newest first", async () => {
+    await practice.createSession({ clientId, startsAt: "2026-09-01T10:00:00Z" });
+    await practice.createSession({ clientId, startsAt: "2026-10-01T10:00:00Z" });
+    const list = await practice.clientSessions(clientId);
+    expect(new Date(list[0].starts_at).getTime()).toBeGreaterThan(
+      new Date(list[1].starts_at).getTime()
+    );
+  });
+});
