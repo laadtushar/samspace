@@ -386,3 +386,39 @@ export async function deleteSubmissionRow(id: string): Promise<boolean> {
   `) as unknown as { id: string }[];
   return rows.length > 0;
 }
+
+/**
+ * Sessions starting inside the given window that have not been reminded about.
+ *
+ * The window is deliberately wide enough to survive a missed run: a reminder
+ * job that fires hourly and misses one hour should still catch the session,
+ * which is why "have we already sent one" is recorded per session rather than
+ * inferred from the clock.
+ */
+export async function sessionsNeedingReminder(hoursAhead: number): Promise<
+  (SessionRow & { client_email: string; client_name: string })[]
+> {
+  if (!dbConfigured()) return [];
+  return (await sql()`
+    select s.*, c.email as client_email, c.name as client_name
+    from sessions s
+    join clients c on c.id = s.client_id
+    where s.status = 'scheduled'
+      and s.reminder_sent_at is null
+      and s.starts_at > now()
+      and s.starts_at <= now() + (${hoursAhead} || ' hours')::interval
+    order by s.starts_at asc
+  `) as unknown as (SessionRow & {
+    client_email: string;
+    client_name: string;
+  })[];
+}
+
+/**
+ * Marks a reminder as sent. Recorded only after the send succeeds, so a failure
+ * is retried on the next run rather than silently swallowed — the opposite
+ * order would lose a reminder permanently to one bad minute.
+ */
+export async function markReminderSent(id: string): Promise<void> {
+  await sql()`update sessions set reminder_sent_at = now() where id = ${id}`;
+}

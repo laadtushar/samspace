@@ -594,3 +594,79 @@ suite("the dashboard reads submissions from the database", () => {
     expect(await practice.listClients()).toHaveLength(1);
   });
 });
+
+suite("session reminders", () => {
+  let practice: typeof import("@/lib/practice");
+  let sql: typeof import("@/lib/db").sql;
+  let clientId: string;
+
+  beforeAll(async () => {
+    process.env.DATABASE_URL = url;
+    practice = await import("@/lib/practice");
+    ({ sql } = await import("@/lib/db"));
+    const { migrate } = await import("../scripts/migrate.mjs");
+    await migrate(url!);
+  });
+
+  beforeEach(async () => {
+    await sql()`delete from sessions`;
+    await sql()`delete from clients`;
+    const rows = (await sql()`
+      insert into clients (name, email) values ('Asha Rao', 'asha@example.com')
+      returning id
+    `) as { id: string }[];
+    clientId = rows[0].id;
+  });
+
+  const inHours = (h: number) =>
+    new Date(Date.now() + h * 3600_000).toISOString();
+
+  it("finds a session inside the window", async () => {
+    await practice.createSession({ clientId, startsAt: inHours(6) });
+    const due = await practice.sessionsNeedingReminder(24);
+    expect(due).toHaveLength(1);
+    expect(due[0].client_email).toBe("asha@example.com");
+    expect(due[0].client_name).toBe("Asha Rao");
+  });
+
+  it("ignores one beyond the window", async () => {
+    await practice.createSession({ clientId, startsAt: inHours(48) });
+    expect(await practice.sessionsNeedingReminder(24)).toHaveLength(0);
+  });
+
+  it("ignores one that has already started", async () => {
+    await practice.createSession({ clientId, startsAt: inHours(-2) });
+    expect(await practice.sessionsNeedingReminder(24)).toHaveLength(0);
+  });
+
+  it("does not remind about a cancelled session", async () => {
+    const s = await practice.createSession({ clientId, startsAt: inHours(6) });
+    await practice.updateSession(s.id, { status: "cancelled" });
+    expect(await practice.sessionsNeedingReminder(24)).toHaveLength(0);
+  });
+
+  it("does not send twice for the same session", async () => {
+    const s = await practice.createSession({ clientId, startsAt: inHours(6) });
+    await practice.markReminderSent(s.id);
+    expect(await practice.sessionsNeedingReminder(24)).toHaveLength(0);
+  });
+
+  it("still catches a session after a missed run — the window is not the clock", async () => {
+    // Booked for 2 hours away: an hourly job that skipped several runs must
+    // still find it rather than having "missed its slot".
+    await practice.createSession({ clientId, startsAt: inHours(2) });
+    expect(await practice.sessionsNeedingReminder(24)).toHaveLength(1);
+  });
+
+  it("returns them soonest first", async () => {
+    await practice.createSession({ clientId, startsAt: inHours(20) });
+    const other = (await sql()`
+      insert into clients (name, email) values ('Rohan', 'rohan@example.com')
+      returning id
+    `) as { id: string }[];
+    await practice.createSession({ clientId: other[0].id, startsAt: inHours(3) });
+
+    const due = await practice.sessionsNeedingReminder(24);
+    expect(due.map((d) => d.client_name)).toEqual(["Rohan", "Asha Rao"]);
+  });
+});

@@ -117,3 +117,14 @@ Recommended, not configured in code:
 - Put `/admin` behind Vercel Access Protection, so the app password is a second
   factor rather than the only one.
 - Add error monitoring (Sentry or Vercel log drains) with PII scrubbing on.
+
+## Session reminders
+
+`/api/cron/reminders` runs hourly on Vercel Cron and emails anyone whose session
+starts within the next 24 hours. It needs `CRON_SECRET`, which Vercel sets when
+the cron is added; requests without it are refused.
+
+Whether a reminder went out is recorded per session rather than worked out from
+the clock, so a run that is missed still catches the session it skipped, and one
+that already went out is not repeated. The flag is set only after a successful
+send: a failure is retried on the next run rather than silently lost.
