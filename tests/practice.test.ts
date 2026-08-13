@@ -499,3 +499,98 @@ suite("double-booking", () => {
     expect(replacement.id).toBeTruthy();
   });
 });
+
+suite("the dashboard reads submissions from the database", () => {
+  let practice: typeof import("@/lib/practice");
+  let sql: typeof import("@/lib/db").sql;
+
+  const submission = (over: Record<string, unknown> = {}) =>
+    ({
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      name: "Asha Rao",
+      email: "asha@example.com",
+      gender: "Female",
+      age: "24",
+      whatsapp: "9999999999",
+      education: "MA Psychology",
+      preferredLanguage: "English",
+      concerns: "Exam stress.",
+      slidingScale: "₹800",
+      studentConfirmed: false,
+      scheduling: "",
+      ...over,
+    }) as never;
+
+  beforeAll(async () => {
+    process.env.DATABASE_URL = url;
+    practice = await import("@/lib/practice");
+    ({ sql } = await import("@/lib/db"));
+    const { migrate } = await import("../scripts/migrate.mjs");
+    await migrate(url!);
+  });
+
+  beforeEach(async () => {
+    await sql()`delete from sessions`;
+    await sql()`delete from submissions`;
+    await sql()`delete from clients`;
+  });
+
+  it("returns the same shape the dashboard already renders", async () => {
+    await practice.recordSubmission(submission());
+    const [row] = await practice.listSubmissionsForDashboard();
+
+    expect(row.name).toBe("Asha Rao");
+    expect(row.email).toBe("asha@example.com");
+    expect(row.age).toBe("24"); // string, as the form and the CSV expect
+    expect(row.preferredLanguage).toBe("English");
+    expect(row.slidingScale).toBe("₹800");
+    expect(row.studentConfirmed).toBe(false);
+    expect(row.clientId).toBeTruthy();
+    expect(() => new Date(row.timestamp).toISOString()).not.toThrow();
+  });
+
+  it("orders newest first", async () => {
+    await practice.recordSubmission(
+      submission({ email: "a@example.com", concerns: "older" })
+    );
+    await new Promise((r) => setTimeout(r, 10));
+    await practice.recordSubmission(
+      submission({ email: "b@example.com", concerns: "newer" })
+    );
+
+    const rows = await practice.listSubmissionsForDashboard();
+    expect(rows[0].concerns).toBe("newer");
+  });
+
+  it("carries the student confirmation through", async () => {
+    await practice.recordSubmission(
+      submission({ slidingScale: "₹500 (Student)", studentConfirmed: true })
+    );
+    const [row] = await practice.listSubmissionsForDashboard();
+    expect(row.studentConfirmed).toBe(true);
+  });
+
+  it("deletes a submission and says so honestly the second time", async () => {
+    await practice.recordSubmission(submission());
+    const [row] = await practice.listSubmissionsForDashboard();
+    expect(await practice.deleteSubmissionRow(row.id)).toBe(true);
+    expect(await practice.deleteSubmissionRow(row.id)).toBe(false);
+    expect(await practice.listSubmissionsForDashboard()).toHaveLength(0);
+  });
+
+  it("leaves the client behind when their submission is deleted", async () => {
+    await practice.recordSubmission(submission());
+    const [row] = await practice.listSubmissionsForDashboard();
+    await practice.deleteSubmissionRow(row.id);
+    expect(await practice.listClients()).toHaveLength(1);
+  });
+
+  it("backfilling the same records twice does not duplicate them", async () => {
+    const one = submission();
+    await practice.recordSubmission(one);
+    await practice.recordSubmission(one);
+    expect(await practice.listSubmissionsForDashboard()).toHaveLength(1);
+    expect(await practice.listClients()).toHaveLength(1);
+  });
+});

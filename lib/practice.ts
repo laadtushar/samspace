@@ -323,3 +323,66 @@ export async function deleteSession(id: string): Promise<boolean> {
   `) as unknown as { id: string }[];
   return rows.length > 0;
 }
+
+/**
+ * Every submission, newest first, in the shape the dashboard already renders.
+ *
+ * This exists so the submissions view can read the database rather than blob
+ * storage. Two places holding the same records is two places to disagree, and
+ * the one that new writes go to should be the one the screen shows.
+ */
+export interface DashboardSubmission {
+  id: string;
+  timestamp: string;
+  name: string;
+  email: string;
+  gender: string;
+  age: string;
+  whatsapp: string;
+  education: string;
+  preferredLanguage: string;
+  concerns: string;
+  slidingScale: string;
+  studentConfirmed: boolean;
+  scheduling: string;
+  clientId: string | null;
+}
+
+export async function listSubmissionsForDashboard(): Promise<
+  DashboardSubmission[]
+> {
+  if (!dbConfigured()) return [];
+  const rows = (await sql()`
+    select id, client_id, name, email, gender, age, whatsapp, education,
+           preferred_language, concerns, sliding_scale, student_confirmed,
+           scheduling, created_at
+    from submissions
+    order by created_at desc
+    limit 1000
+  `) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    timestamp: new Date(r.created_at as string).toISOString(),
+    name: (r.name as string) ?? "",
+    email: (r.email as string) ?? "",
+    gender: (r.gender as string) ?? "",
+    age: r.age == null ? "" : String(r.age),
+    whatsapp: (r.whatsapp as string) ?? "",
+    education: (r.education as string) ?? "",
+    preferredLanguage: (r.preferred_language as string) ?? "",
+    concerns: (r.concerns as string) ?? "",
+    slidingScale: (r.sliding_scale as string) ?? "",
+    studentConfirmed: Boolean(r.student_confirmed),
+    scheduling: (r.scheduling as string) ?? "",
+    clientId: r.client_id ? String(r.client_id) : null,
+  }));
+}
+
+/** Removes a submission from the database. */
+export async function deleteSubmissionRow(id: string): Promise<boolean> {
+  const rows = (await sql()`
+    delete from submissions where id = ${id} returning id
+  `) as unknown as { id: string }[];
+  return rows.length > 0;
+}

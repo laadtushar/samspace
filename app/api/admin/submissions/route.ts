@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSubmissions, deleteSubmission } from "@/lib/content";
+import { dbConfigured } from "@/lib/db";
+import {
+  listSubmissionsForDashboard,
+  deleteSubmissionRow,
+} from "@/lib/practice";
 import { requireAdmin } from "@/lib/admin-guard";
 import { log, errorFields } from "@/lib/log";
 
@@ -9,6 +14,15 @@ export async function GET() {
   const denied = requireAdmin();
   if (denied) return denied;
 
+  /*
+    The database is the source once one is connected: it is where new
+    submissions are written, and showing blob storage instead would mean the
+    screen and the writes could drift apart. Blob storage remains the source
+    when there is no database, so nothing disappears from view.
+  */
+  if (dbConfigured()) {
+    return NextResponse.json(await listSubmissionsForDashboard());
+  }
   return NextResponse.json(await getSubmissions());
 }
 
@@ -23,7 +37,11 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    const removed = await deleteSubmission(id);
+    // Removed from both, so a delete cannot leave a copy behind in whichever
+    // store the screen is not currently reading.
+    const removedFromDb = dbConfigured() ? await deleteSubmissionRow(id) : false;
+    const removedFromBlob = await deleteSubmission(id).catch(() => false);
+    const removed = removedFromDb || removedFromBlob;
     if (!removed) {
       return NextResponse.json(
         { error: "No submission with that id" },
