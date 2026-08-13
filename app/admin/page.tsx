@@ -7,6 +7,7 @@ import {
   LogOut,
   Users,
   UserCheck,
+  CalendarDays,
   FileText,
   Newspaper,
   Settings,
@@ -97,6 +98,19 @@ const parseTags = (text: string) =>
     .filter(Boolean);
 
 /** Marks a 401 so callers can drop back to the login screen instead of showing an error. */
+const SESSION_MINUTES_LABEL = "50 minutes";
+
+/** One place that decides how a session time reads, so nothing can disagree. */
+function formatWhen(iso: string): string {
+  return new Date(iso).toLocaleString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 class SessionExpired extends Error {}
 
 async function errorMessage(res: Response, fallback: string): Promise<string> {
@@ -130,7 +144,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [tab, setTab] = useState<
-    "submissions" | "clients" | "content" | "blog" | "settings"
+    "submissions" | "clients" | "sessions" | "content" | "blog" | "settings"
   >("submissions");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [content, setContent] = useState<Record<string, unknown> | null>(null);
@@ -150,6 +164,13 @@ export default function AdminPage() {
   const [openClient, setOpenClient] = useState<string | null>(null);
   const [clientHistory, setClientHistory] = useState<Record<string, any[]>>({});
   const [savingClient, setSavingClient] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessionsReady, setSessionsReady] = useState<boolean | null>(null);
+  const [sessionsError, setSessionsError] = useState("");
+  const [booking, setBooking] = useState(false);
+  const [savingSession, setSavingSession] = useState<string | null>(null);
+  const [bookFor, setBookFor] = useState("");
+  const [bookAt, setBookAt] = useState("");
   const [migrating, setMigrating] = useState(false);
   const [migrateMessage, setMigrateMessage] = useState("");
 
@@ -346,11 +367,15 @@ export default function AdminPage() {
   };
 
   const switchTab = (
-    next: "submissions" | "clients" | "content" | "blog" | "settings"
+    next: "submissions" | "clients" | "sessions" | "content" | "blog" | "settings"
   ) => {
     if (tab === "blog" && next !== "blog" && !confirmDiscard()) return;
     if (tab === "blog" && next !== "blog") setBlogView("list");
     if (next === "clients" && clientsReady === null) void loadClients();
+    if (next === "sessions") {
+      if (sessionsReady === null) void loadSessions();
+      if (clientsReady === null) void loadClients();
+    }
     setTab(next);
   };
 
@@ -588,6 +613,98 @@ export default function AdminPage() {
     }
   };
 
+  const loadSessions = async () => {
+    setSessionsError("");
+    try {
+      const res = await apiFetch("/api/admin/sessions");
+      if (!res.ok) throw new Error(await errorMessage(res, "Could not load sessions"));
+      const body = await res.json();
+      setSessionsReady(body.configured);
+      setSessions(body.sessions ?? []);
+    } catch (err) {
+      if (err instanceof SessionExpired) return endSession();
+      setSessionsReady(true);
+      setSessionsError(err instanceof Error ? err.message : "Could not load sessions");
+    }
+  };
+
+  const bookSession = async () => {
+    if (!bookFor || !bookAt) {
+      setSessionsError("Choose a person and a time");
+      return;
+    }
+    setBooking(true);
+    setSessionsError("");
+    try {
+      // datetime-local gives wall-clock time in the browser's zone; the Date
+      // constructor reads it that way, and the server stores an instant.
+      const res = await apiFetch("/api/admin/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: bookFor,
+          startsAt: new Date(bookAt).toISOString(),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        // A clash comes back as an instant, formatted here so it reads in the
+        // same timezone as the sessions listed below it.
+        if (body?.clash) {
+          throw new Error(
+            `That overlaps your session with ${body.clash.clientName} on ${formatWhen(
+              body.clash.startsAt
+            )}.`
+          );
+        }
+        throw new Error(body?.error || "Could not book");
+      }
+      setBookAt("");
+      await loadSessions();
+    } catch (err) {
+      if (err instanceof SessionExpired) return endSession();
+      setSessionsError(err instanceof Error ? err.message : "Could not book");
+    } finally {
+      setBooking(false);
+    }
+  };
+
+  const saveSession = async (id: string, fields: Record<string, unknown>) => {
+    setSessionsError("");
+    // The row shows what the server confirmed, never what was clicked, so a
+    // failed save cannot leave a tick on screen that is not in the database.
+    // That honesty costs a moment of latency, which is what this marks.
+    setSavingSession(id);
+    try {
+      const res = await apiFetch("/api/admin/sessions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...fields }),
+      });
+      if (!res.ok) throw new Error(await errorMessage(res, "Could not save"));
+      const { session } = await res.json();
+      setSessions((list) => list.map((x) => (x.id === id ? { ...x, ...session } : x)));
+    } catch (err) {
+      if (err instanceof SessionExpired) return endSession();
+      setSessionsError(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setSavingSession(null);
+    }
+  };
+
+  const removeSession = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/admin/sessions?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await errorMessage(res, "Could not remove"));
+      setSessions((list) => list.filter((x) => x.id !== id));
+    } catch (err) {
+      if (err instanceof SessionExpired) return endSession();
+      setSessionsError(err instanceof Error ? err.message : "Could not remove");
+    }
+  };
+
   const exportCSV = () => {
     if (!submissions.length) return;
     const fields = [
@@ -706,6 +823,7 @@ export default function AdminPage() {
           {[
             { id: "submissions" as const, label: "Intake Submissions", icon: Users, count: submissions.length },
             { id: "clients" as const, label: "Clients", icon: UserCheck, count: clients.length },
+            { id: "sessions" as const, label: "Sessions", icon: CalendarDays, count: sessions.length },
             { id: "content" as const, label: "Edit Content", icon: FileText },
             { id: "blog" as const, label: "Blog", icon: Newspaper, count: posts.length },
             { id: "settings" as const, label: "Settings", icon: Settings },
@@ -1426,6 +1544,174 @@ export default function AdminPage() {
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── Sessions Tab ─────────────────── */}
+            {tab === "sessions" && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-serif text-xl font-semibold text-forest">
+                    Sessions
+                  </h2>
+                  <button
+                    onClick={loadSessions}
+                    className="font-sans text-xs text-forest/45 hover:text-forest transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {sessionsError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+                    <p className="font-sans text-sm text-red-600">{sessionsError}</p>
+                  </div>
+                )}
+
+                {sessionsReady === false ? (
+                  <div className="bg-white border border-sage/20 rounded-xl px-5 py-8 text-center">
+                    <p className="font-sans text-sm text-forest/60">
+                      No database is connected yet, so sessions cannot be kept here.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Booking */}
+                    <div className="bg-white border border-sage/20 rounded-xl p-5 mb-5">
+                      <p className="font-sans text-xs font-semibold text-forest/60 mb-3">
+                        Book a session
+                      </p>
+                      <div className="flex flex-wrap items-end gap-3">
+                        <div className="flex-1 min-w-[180px]">
+                          <label className="font-sans text-[10px] text-forest/40 uppercase tracking-wider mb-1.5 block">
+                            Who
+                          </label>
+                          <select
+                            value={bookFor}
+                            onChange={(e) => setBookFor(e.target.value)}
+                            className="w-full bg-cream border border-sage/25 rounded-lg px-3 py-2 font-sans text-sm text-forest"
+                          >
+                            <option value="">Choose someone…</option>
+                            {clients.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                          <label className="font-sans text-[10px] text-forest/40 uppercase tracking-wider mb-1.5 block">
+                            When ({SESSION_MINUTES_LABEL})
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={bookAt}
+                            onChange={(e) => setBookAt(e.target.value)}
+                            className="w-full bg-cream border border-sage/25 rounded-lg px-3 py-2 font-sans text-sm text-forest"
+                          />
+                        </div>
+                        <button
+                          onClick={bookSession}
+                          disabled={booking}
+                          className="font-sans text-sm font-medium bg-forest text-cream px-5 py-2.5 rounded-lg hover:bg-forest-deep transition-colors disabled:opacity-60 flex items-center gap-2"
+                        >
+                          {booking ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Plus className="w-4 h-4" />
+                          )}
+                          Book
+                        </button>
+                      </div>
+                      {clients.length === 0 && (
+                        <p className="font-sans text-xs text-forest/40 mt-3">
+                          Nobody to book yet — people appear here once they fill the
+                          intake form.
+                        </p>
+                      )}
+                    </div>
+
+                    {sessions.length === 0 ? (
+                      <div className="bg-white border border-sage/20 rounded-xl px-5 py-10 text-center">
+                        <p className="font-serif text-lg text-forest/70 mb-1">
+                          Nothing booked.
+                        </p>
+                        <p className="font-sans text-sm text-forest/45">
+                          Sessions from the last 30 days onwards show here.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sessions.map((s) => {
+                          const start = new Date(s.starts_at);
+                          const past = start.getTime() < Date.now();
+                          return (
+                            <div
+                              key={s.id}
+                              className={`bg-white border rounded-xl px-5 py-4 transition-opacity ${
+                                past ? "border-sage/15" : "border-sage/25"
+                              } ${savingSession === s.id ? "opacity-60" : ""}`}
+                            >
+                              <div className="flex flex-wrap items-center gap-3">
+                                <span className="flex-1 min-w-[160px]">
+                                  <span className="block font-sans text-sm font-medium text-forest">
+                                    {s.client_name}
+                                  </span>
+                                  <span className="block font-sans text-xs text-forest/45">
+                                    {formatWhen(s.starts_at)}
+                                    {past ? " · past" : ""}
+                                  </span>
+                                </span>
+
+                                <select
+                                  value={s.status}
+                                  disabled={savingSession === s.id}
+                                  onChange={(e) =>
+                                    saveSession(s.id, { status: e.target.value })
+                                  }
+                                  className="bg-cream border border-sage/25 rounded-lg px-2.5 py-1.5 font-sans text-xs text-forest disabled:opacity-50"
+                                >
+                                  {["scheduled", "completed", "cancelled", "no_show"].map(
+                                    (v) => (
+                                      <option key={v} value={v}>
+                                        {v.replace("_", " ")}
+                                      </option>
+                                    )
+                                  )}
+                                </select>
+
+                                <label className="font-sans text-xs text-forest/55 flex items-center gap-1.5 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={s.paid}
+                                    disabled={savingSession === s.id}
+                                    onChange={(e) =>
+                                      saveSession(s.id, { paid: e.target.checked })
+                                    }
+                                    className="w-4 h-4 accent-clay"
+                                  />
+                                  Paid
+                                </label>
+
+                                {savingSession === s.id && (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-forest/40" />
+                                )}
+
+                                <button
+                                  onClick={() => removeSession(s.id)}
+                                  aria-label="Remove session"
+                                  className="text-forest/25 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

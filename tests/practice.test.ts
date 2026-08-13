@@ -427,3 +427,75 @@ suite("sessions", () => {
     );
   });
 });
+
+suite("double-booking", () => {
+  let practice: typeof import("@/lib/practice");
+  let sql: typeof import("@/lib/db").sql;
+  let a: string;
+  let b: string;
+
+  beforeAll(async () => {
+    process.env.DATABASE_URL = url;
+    practice = await import("@/lib/practice");
+    ({ sql } = await import("@/lib/db"));
+    const { migrate } = await import("../scripts/migrate.mjs");
+    await migrate(url!);
+  });
+
+  beforeEach(async () => {
+    await sql()`delete from sessions`;
+    await sql()`delete from clients`;
+    const rows = (await sql()`
+      insert into clients (name, email) values
+        ('Asha Rao', 'asha@example.com'), ('Rohan Mehta', 'rohan@example.com')
+      returning id
+    `) as { id: string }[];
+    [a, b] = rows.map((r) => r.id);
+  });
+
+  const at = "2026-09-15T10:00:00.000Z";
+
+  it("refuses a second session at the same time", async () => {
+    await practice.createSession({ clientId: a, startsAt: at });
+    await expect(
+      practice.createSession({ clientId: b, startsAt: at })
+    ).rejects.toBeInstanceOf(practice.SessionClash);
+  });
+
+  it("refuses one that starts inside another", async () => {
+    await practice.createSession({ clientId: a, startsAt: at });
+    await expect(
+      practice.createSession({ clientId: b, startsAt: "2026-09-15T10:30:00.000Z" })
+    ).rejects.toThrow(/Overlaps/);
+  });
+
+  it("refuses one that ends inside another", async () => {
+    await practice.createSession({ clientId: a, startsAt: at });
+    await expect(
+      practice.createSession({ clientId: b, startsAt: "2026-09-15T09:20:00.000Z" })
+    ).rejects.toThrow(/Overlaps/);
+  });
+
+  it("allows one that starts exactly when the other ends", async () => {
+    await practice.createSession({ clientId: a, startsAt: at });
+    const next = await practice.createSession({
+      clientId: b,
+      startsAt: "2026-09-15T10:50:00.000Z",
+    });
+    expect(next.id).toBeTruthy();
+  });
+
+  it("names who the clash is with, so the message is useful", async () => {
+    await practice.createSession({ clientId: a, startsAt: at });
+    await expect(
+      practice.createSession({ clientId: b, startsAt: at })
+    ).rejects.toMatchObject({ clientName: "Asha Rao" });
+  });
+
+  it("lets a cancelled slot be rebooked", async () => {
+    const first = await practice.createSession({ clientId: a, startsAt: at });
+    await practice.updateSession(first.id, { status: "cancelled" });
+    const replacement = await practice.createSession({ clientId: b, startsAt: at });
+    expect(replacement.id).toBeTruthy();
+  });
+});

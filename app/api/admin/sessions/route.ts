@@ -9,6 +9,7 @@ import {
   updateSession,
   deleteSession,
   SESSION_STATUSES,
+  SessionClash,
 } from "@/lib/practice";
 import { log, errorFields } from "@/lib/log";
 
@@ -59,6 +60,21 @@ export async function POST(req: Request) {
     log.info("session.created", { id: session.id, clientId: parsed.data.clientId });
     return NextResponse.json({ session });
   } catch (error) {
+    // A clash is a normal thing to run into, not a fault — say what it clashes
+    // with so the answer is obvious.
+    if (error instanceof SessionClash) {
+      // The instant is returned rather than a formatted string: the server has
+      // no business deciding which timezone to render in, and a message that
+      // disagrees with the times listed beside it is worse than no message.
+      return NextResponse.json(
+        {
+          error: "That overlaps an existing session.",
+          clash: { clientName: error.clientName, startsAt: error.startsAt },
+        },
+        { status: 409 }
+      );
+    }
+
     log.error("session.create_failed", errorFields(error));
     return NextResponse.json(
       {

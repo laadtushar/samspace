@@ -196,6 +196,21 @@ export interface SessionRow {
   note: string | null;
 }
 
+/**
+ * Raised when a booking would overlap one that already exists. Its own type so
+ * the API can answer with the clash instead of a generic failure — "you already
+ * have Asha then" is actionable; "could not book" is not.
+ */
+export class SessionClash extends Error {
+  constructor(
+    readonly clientName: string,
+    readonly startsAt: string
+  ) {
+    super(`Overlaps an existing session with ${clientName}`);
+    this.name = "SessionClash";
+  }
+}
+
 /** Default length, matching what the site tells people a session is. */
 export const SESSION_MINUTES = 50;
 
@@ -215,6 +230,28 @@ export async function createSession(input: {
   const end = new Date(
     start.getTime() + (input.minutes ?? SESSION_MINUTES) * 60_000
   );
+
+  /*
+    There is one practitioner, so two sessions at overlapping times is not a
+    thing to record — it is a mistake to catch. Cancelled sessions are excluded,
+    since a cancelled slot is exactly the one you would want to rebook.
+
+    Overlap is "starts before the other ends, and ends after it starts", which
+    also catches a session wholly inside another.
+  */
+  const clash = (await sql()`
+    select s.id, s.starts_at, c.name as client_name
+    from sessions s
+    join clients c on c.id = s.client_id
+    where s.status <> 'cancelled'
+      and s.starts_at < ${end.toISOString()}
+      and s.ends_at   > ${start.toISOString()}
+    limit 1
+  `) as unknown as { client_name: string; starts_at: string }[];
+
+  if (clash.length > 0) {
+    throw new SessionClash(clash[0].client_name, clash[0].starts_at);
+  }
 
   const rows = (await sql()`
     insert into sessions (client_id, starts_at, ends_at, rate_amount, note)
