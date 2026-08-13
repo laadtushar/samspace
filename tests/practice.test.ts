@@ -670,3 +670,54 @@ suite("session reminders", () => {
     expect(due.map((d) => d.client_name)).toEqual(["Rohan", "Asha Rao"]);
   });
 });
+
+suite("a submission without an email", () => {
+  let practice: typeof import("@/lib/practice");
+  let sql: typeof import("@/lib/db").sql;
+
+  beforeAll(async () => {
+    process.env.DATABASE_URL = url;
+    practice = await import("@/lib/practice");
+    ({ sql } = await import("@/lib/db"));
+    const { migrate } = await import("../scripts/migrate.mjs");
+    await migrate(url!);
+  });
+
+  beforeEach(async () => {
+    await sql()`delete from sessions`;
+    await sql()`delete from submissions`;
+    await sql()`delete from clients`;
+  });
+
+  const blank = (name: string) =>
+    ({
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      name,
+      email: "   ",
+      gender: "",
+      age: "",
+      whatsapp: "",
+      education: "",
+      preferredLanguage: "",
+      concerns: "x",
+      slidingScale: "₹800",
+      studentConfirmed: false,
+      scheduling: "",
+    }) as never;
+
+  it("is refused rather than stored as an unidentifiable client", async () => {
+    await expect(practice.recordSubmission(blank("Someone"))).rejects.toThrow(
+      /no email/i
+    );
+    expect(await sql()`select id from clients`).toHaveLength(0);
+  });
+
+  it("cannot merge two different people into one client", async () => {
+    // Without the guard both would match the same blank email on the unique
+    // index, and the second would attach to the first.
+    await expect(practice.recordSubmission(blank("Person A"))).rejects.toThrow();
+    await expect(practice.recordSubmission(blank("Person B"))).rejects.toThrow();
+    expect(await sql()`select id from clients`).toHaveLength(0);
+  });
+});

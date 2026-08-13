@@ -52,6 +52,20 @@ export async function recordSubmission(
   const db = sql();
   const email = submission.email.trim();
 
+  /*
+    A client is identified by their email, so a blank one is not a client — it
+    is an unidentifiable record. Letting it through would be worse than losing
+    it: every blank-email submission matches every other on the unique index,
+    so the second one would attach to the first and two unrelated people would
+    become a single client with a merged history.
+
+    The form requires an email, so this only guards records from elsewhere —
+    which is exactly what the backfill reads.
+  */
+  if (!email) {
+    throw new Error("Submission has no email address, so it has no client");
+  }
+
   const existing = (await db`
     select id from clients where lower(email) = lower(${email}) limit 1
   `) as { id: string }[];
