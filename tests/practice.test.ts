@@ -180,3 +180,113 @@ suite("recordSubmission against a real database", () => {
     expect(subs[0].client_id).toBeNull(); // detached, not destroyed
   });
 });
+
+suite("the client list and the fields a practitioner owns", () => {
+  let practice: typeof import("@/lib/practice");
+  let sql: typeof import("@/lib/db").sql;
+
+  const submission = (over: Record<string, unknown> = {}) =>
+    ({
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      name: "Asha Rao",
+      email: "asha@example.com",
+      gender: "Female",
+      age: "24",
+      whatsapp: "9999999999",
+      education: "MA Psychology",
+      preferredLanguage: "English",
+      concerns: "Exam stress.",
+      slidingScale: "₹800",
+      studentConfirmed: false,
+      scheduling: "",
+      ...over,
+    }) as never;
+
+  beforeAll(async () => {
+    process.env.DATABASE_URL = url;
+    practice = await import("@/lib/practice");
+    ({ sql } = await import("@/lib/db"));
+    const { migrate } = await import("../scripts/migrate.mjs");
+    await migrate(url!);
+  });
+
+  beforeEach(async () => {
+    await sql()`delete from sessions`;
+    await sql()`delete from submissions`;
+    await sql()`delete from clients`;
+  });
+
+  it("lists people newest first, with how often each has been in touch", async () => {
+    await practice.recordSubmission(submission({ email: "first@example.com" }));
+    const repeatId = await practice.recordSubmission(
+      submission({ email: "second@example.com" })
+    );
+    await practice.recordSubmission(submission({ email: "second@example.com" }));
+
+    const clients = await practice.listClients();
+    expect(clients).toHaveLength(2);
+    expect(clients[0].email).toBe("second@example.com"); // newest first
+    expect(clients[0].id).toBe(repeatId);
+    expect(clients[0].submission_count).toBe(2);
+    expect(clients[1].submission_count).toBe(1);
+  });
+
+  it("returns one person's submissions, most recent first", async () => {
+    const clientId = await practice.recordSubmission(
+      submission({ concerns: "First time writing in." })
+    );
+    await practice.recordSubmission(submission({ concerns: "Following up." }));
+
+    const subs = await practice.clientSubmissions(clientId);
+    expect(subs).toHaveLength(2);
+    expect(subs[0].concerns).toBe("Following up.");
+  });
+
+  it("saves status, rate and note", async () => {
+    const id = await practice.recordSubmission(submission());
+    const updated = await practice.updateClient(id, {
+      status: "active",
+      agreed_rate: "₹800",
+      admin_note: "Prefers evenings.",
+    });
+
+    expect(updated?.status).toBe("active");
+    expect(updated?.agreed_rate).toBe("₹800");
+    expect(updated?.admin_note).toBe("Prefers evenings.");
+  });
+
+  it("leaves untouched fields alone when only one is changed", async () => {
+    const id = await practice.recordSubmission(submission());
+    await practice.updateClient(id, { admin_note: "Wants Hindi sessions." });
+    const after = await practice.updateClient(id, { status: "active" });
+
+    expect(after?.admin_note).toBe("Wants Hindi sessions.");
+    expect(after?.status).toBe("active");
+  });
+
+  it("refuses a status that is not one of the four", async () => {
+    const id = await practice.recordSubmission(submission());
+    await expect(
+      practice.updateClient(id, { status: "deleted" })
+    ).rejects.toThrow(/Unknown status/);
+  });
+
+  it("reports honestly when the client does not exist", async () => {
+    expect(
+      await practice.updateClient(crypto.randomUUID(), { status: "active" })
+    ).toBeNull();
+  });
+
+  it("moves updated_at forward so a change is visible as recent", async () => {
+    const id = await practice.recordSubmission(submission());
+    const [before] = (await sql()`select updated_at from clients where id = ${id}`) as {
+      updated_at: string;
+    }[];
+    await new Promise((r) => setTimeout(r, 15));
+    const after = await practice.updateClient(id, { status: "active" });
+    expect(new Date(after!.updated_at).getTime()).toBeGreaterThan(
+      new Date(before.updated_at).getTime()
+    );
+  });
+});

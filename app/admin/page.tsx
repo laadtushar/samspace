@@ -6,6 +6,7 @@ import {
   Lock,
   LogOut,
   Users,
+  UserCheck,
   FileText,
   Newspaper,
   Settings,
@@ -129,7 +130,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [tab, setTab] = useState<
-    "submissions" | "content" | "blog" | "settings"
+    "submissions" | "clients" | "content" | "blog" | "settings"
   >("submissions");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [content, setContent] = useState<Record<string, unknown> | null>(null);
@@ -143,6 +144,12 @@ export default function AdminPage() {
   const [confirmDeleteSubmission, setConfirmDeleteSubmission] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [clientsReady, setClientsReady] = useState<boolean | null>(null);
+  const [clientsError, setClientsError] = useState("");
+  const [openClient, setOpenClient] = useState<string | null>(null);
+  const [clientHistory, setClientHistory] = useState<Record<string, any[]>>({});
+  const [savingClient, setSavingClient] = useState<string | null>(null);
   const [migrating, setMigrating] = useState(false);
   const [migrateMessage, setMigrateMessage] = useState("");
 
@@ -338,9 +345,12 @@ export default function AdminPage() {
     setPostError("");
   };
 
-  const switchTab = (next: "submissions" | "content" | "blog" | "settings") => {
+  const switchTab = (
+    next: "submissions" | "clients" | "content" | "blog" | "settings"
+  ) => {
     if (tab === "blog" && next !== "blog" && !confirmDiscard()) return;
     if (tab === "blog" && next !== "blog") setBlogView("list");
+    if (next === "clients" && clientsReady === null) void loadClients();
     setTab(next);
   };
 
@@ -516,6 +526,68 @@ export default function AdminPage() {
     }
   };
 
+  const loadClients = async () => {
+    setClientsError("");
+    try {
+      const res = await apiFetch("/api/admin/clients");
+      if (!res.ok) throw new Error(await errorMessage(res, "Could not load clients"));
+      const body = await res.json();
+      setClientsReady(body.configured);
+      setClients(body.clients ?? []);
+    } catch (err) {
+      if (err instanceof SessionExpired) {
+        endSession();
+        return;
+      }
+      setClientsReady(true);
+      setClientsError(err instanceof Error ? err.message : "Could not load clients");
+    }
+  };
+
+  const openClientHistory = async (id: string) => {
+    if (openClient === id) {
+      setOpenClient(null);
+      return;
+    }
+    setOpenClient(id);
+    if (clientHistory[id]) return;
+    try {
+      const res = await apiFetch(`/api/admin/clients?id=${encodeURIComponent(id)}`);
+      if (!res.ok) return;
+      const body = await res.json();
+      setClientHistory((h) => ({ ...h, [id]: body.submissions ?? [] }));
+    } catch {
+      // The row stays open with no history rather than throwing the page away.
+    }
+  };
+
+  /** Saves one field. The row updates from what the server returns, not from
+   *  what was typed, so the screen always shows what was actually stored. */
+  const saveClient = async (id: string, fields: Record<string, string>) => {
+    setSavingClient(id);
+    setClientsError("");
+    try {
+      const res = await apiFetch("/api/admin/clients", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...fields }),
+      });
+      if (!res.ok) throw new Error(await errorMessage(res, "Could not save"));
+      const { client } = await res.json();
+      setClients((list) =>
+        list.map((c) => (c.id === id ? { ...c, ...client } : c))
+      );
+    } catch (err) {
+      if (err instanceof SessionExpired) {
+        endSession();
+        return;
+      }
+      setClientsError(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setSavingClient(null);
+    }
+  };
+
   const exportCSV = () => {
     if (!submissions.length) return;
     const fields = [
@@ -633,6 +705,7 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-2 mb-6">
           {[
             { id: "submissions" as const, label: "Intake Submissions", icon: Users, count: submissions.length },
+            { id: "clients" as const, label: "Clients", icon: UserCheck, count: clients.length },
             { id: "content" as const, label: "Edit Content", icon: FileText },
             { id: "blog" as const, label: "Blog", icon: Newspaper, count: posts.length },
             { id: "settings" as const, label: "Settings", icon: Settings },
@@ -1152,6 +1225,211 @@ export default function AdminPage() {
             )}
 
             {/* ─── Blog Tab ─────────────────────── */}
+            {/* ─── Clients Tab ──────────────────── */}
+            {tab === "clients" && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-serif text-xl font-semibold text-forest">
+                    Clients
+                  </h2>
+                  <button
+                    onClick={loadClients}
+                    className="font-sans text-xs text-forest/45 hover:text-forest transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {clientsError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+                    <p className="font-sans text-sm text-red-600">{clientsError}</p>
+                  </div>
+                )}
+
+                {clientsReady === null ? (
+                  <p className="font-sans text-sm text-forest/40">Loading…</p>
+                ) : clientsReady === false ? (
+                  <div className="bg-white border border-sage/20 rounded-xl px-5 py-8 text-center">
+                    <p className="font-sans text-sm text-forest/60">
+                      No database is connected yet, so there is nothing to show
+                      here. Intake submissions are still being saved and appear
+                      under Intake Submissions.
+                    </p>
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="bg-white border border-sage/20 rounded-xl px-5 py-10 text-center">
+                    <p className="font-serif text-lg text-forest/70 mb-1">
+                      No-one here yet.
+                    </p>
+                    <p className="font-sans text-sm text-forest/45">
+                      Everyone who fills the intake form appears here
+                      automatically.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {clients.map((c) => (
+                      <div
+                        key={c.id}
+                        className="bg-white border border-sage/20 rounded-xl overflow-hidden"
+                      >
+                        <button
+                          onClick={() => openClientHistory(c.id)}
+                          className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-cream/40 transition-colors"
+                        >
+                          <span className="flex-1 min-w-0">
+                            <span className="block font-sans text-sm font-medium text-forest truncate">
+                              {c.name}
+                            </span>
+                            <span className="block font-sans text-xs text-forest/45 truncate">
+                              {c.email}
+                              {c.whatsapp ? ` · ${c.whatsapp}` : ""}
+                            </span>
+                          </span>
+
+                          <span
+                            className={`font-sans text-[10px] uppercase tracking-wider px-2 py-1 rounded ${
+                              c.status === "active"
+                                ? "bg-green-100 text-green-700"
+                                : c.status === "enquiry"
+                                  ? "bg-clay/15 text-clay"
+                                  : c.status === "paused"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-sage/20 text-forest/50"
+                            }`}
+                          >
+                            {c.status}
+                          </span>
+
+                          {c.submission_count > 1 && (
+                            <span
+                              className="font-sans text-[10px] text-forest/45 bg-sage/15 px-2 py-1 rounded"
+                              title={`${c.submission_count} submissions`}
+                            >
+                              ×{c.submission_count}
+                            </span>
+                          )}
+
+                          {openClient === c.id ? (
+                            <ChevronUp className="w-4 h-4 text-forest/30 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-forest/30 flex-shrink-0" />
+                          )}
+                        </button>
+
+                        {openClient === c.id && (
+                          <div className="px-5 pb-5 pt-1 border-t border-sage/10 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
+                              <div>
+                                <label className="font-sans text-[10px] text-forest/40 uppercase tracking-wider mb-1.5 block">
+                                  Status
+                                </label>
+                                <select
+                                  value={c.status}
+                                  onChange={(e) =>
+                                    saveClient(c.id, { status: e.target.value })
+                                  }
+                                  className="w-full bg-cream border border-sage/25 rounded-lg px-3 py-2 font-sans text-sm text-forest"
+                                >
+                                  {["enquiry", "active", "paused", "ended"].map(
+                                    (v) => (
+                                      <option key={v} value={v}>
+                                        {v}
+                                      </option>
+                                    )
+                                  )}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="font-sans text-[10px] text-forest/40 uppercase tracking-wider mb-1.5 block">
+                                  Agreed rate
+                                </label>
+                                <input
+                                  defaultValue={c.agreed_rate ?? ""}
+                                  placeholder={c.student_rate ? "₹500 (Student)" : "₹800"}
+                                  onBlur={(e) =>
+                                    e.target.value !== (c.agreed_rate ?? "") &&
+                                    saveClient(c.id, { agreed_rate: e.target.value })
+                                  }
+                                  className="w-full bg-cream border border-sage/25 rounded-lg px-3 py-2 font-sans text-sm text-forest"
+                                />
+                              </div>
+
+                              <div className="font-sans text-xs text-forest/45 sm:pt-6">
+                                {c.student_rate && (
+                                  <span className="text-clay">
+                                    Confirmed student ·{" "}
+                                  </span>
+                                )}
+                                First contact{" "}
+                                {new Date(c.created_at).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="font-sans text-[10px] text-forest/40 uppercase tracking-wider mb-1.5 block">
+                                Note (yours — never shown to them)
+                              </label>
+                              <textarea
+                                defaultValue={c.admin_note ?? ""}
+                                rows={2}
+                                placeholder="Anything you want to remember before the next session."
+                                onBlur={(e) =>
+                                  e.target.value !== (c.admin_note ?? "") &&
+                                  saveClient(c.id, { admin_note: e.target.value })
+                                }
+                                className="w-full bg-cream border border-sage/25 rounded-lg px-3 py-2 font-sans text-sm text-forest resize-none"
+                              />
+                            </div>
+
+                            <div>
+                              <p className="font-sans text-[10px] text-forest/40 uppercase tracking-wider mb-2">
+                                What they wrote
+                              </p>
+                              {(clientHistory[c.id] ?? []).length === 0 ? (
+                                <p className="font-sans text-xs text-forest/35">
+                                  Loading…
+                                </p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {clientHistory[c.id].map((sub) => (
+                                    <div key={sub.id} className="bg-cream rounded-lg p-3">
+                                      <p className="font-sans text-[10px] text-forest/40 mb-1">
+                                        {new Date(sub.created_at).toLocaleDateString(
+                                          "en-IN",
+                                          { day: "numeric", month: "short", year: "numeric" }
+                                        )}
+                                        {sub.sliding_scale ? ` · asked for ${sub.sliding_scale}` : ""}
+                                        {sub.scheduling === "booked" ? " · booked a slot" : ""}
+                                      </p>
+                                      <p className="font-sans text-sm text-forest/80 leading-relaxed whitespace-pre-wrap">
+                                        {sub.concerns}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {savingClient === c.id && (
+                              <p className="font-sans text-xs text-forest/40 flex items-center gap-1.5">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ─── Settings Tab ─────────────────── */}
             {tab === "settings" && content && (
               <div>
