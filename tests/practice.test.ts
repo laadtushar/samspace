@@ -5,8 +5,8 @@ import { describe, it, expect, beforeAll, beforeEach } from "vitest";
  *
  * These exercise the SQL itself — dedupe, constraints, what a second enquiry
  * does to an existing record — because none of that can be verified by reading
- * the code. They are skipped unless TEST_DATABASE_URL is set, so a clone or a
- * CI run without a database still passes.
+ * the code. They are skipped unless TEST_DATABASE_URL is set, so a fresh clone
+ * still passes; in CI a missing database is a failure rather than a skip.
  *
  * Start one locally with:
  *   pg_ctlcluster 16 main start
@@ -15,6 +15,28 @@ import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 
 const url = process.env.TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
+
+/**
+ * A skipped suite is indistinguishable from a passing one at a glance, so CI
+ * would happily stay green while never touching a database. This turns that
+ * into a failure: on CI the database must be present and answering, and the
+ * proof is a query rather than the presence of a variable.
+ */
+describe("database tests are wired up", () => {
+  it("is connected to a real database when running in CI", async () => {
+    if (!process.env.CI) return;
+    expect(url, "TEST_DATABASE_URL must be set in CI").toBeTruthy();
+
+    process.env.DATABASE_URL = url;
+    const { sql } = await import("@/lib/db");
+    const rows = await sql()`
+      select count(*)::int as n
+      from information_schema.tables
+      where table_schema = 'public'
+    `;
+    expect(Number(rows[0].n)).toBeGreaterThan(0);
+  });
+});
 
 suite("recordSubmission against a real database", () => {
   let recordSubmission: typeof import("@/lib/practice").recordSubmission;
