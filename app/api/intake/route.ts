@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isLikelyBot } from "@/lib/bot-check";
 import { log, newRef, errorFields } from "@/lib/log";
+import { dbConfigured } from "@/lib/db";
+import { recordSubmission } from "@/lib/practice";
 import { addSubmission, type IntakeSubmission } from "@/lib/content";
 import { intakeSchema, firstIssue } from "@/lib/validation";
 import { rateLimit, clientKey, isSameOrigin } from "@/lib/rate-limit";
@@ -118,6 +120,27 @@ export async function POST(req: Request) {
   try {
     await addSubmission(submission);
     log.info("intake.stored", { ref, id: submission.id });
+
+    /*
+      The database is written to in addition to blob storage, not instead of it,
+      for as long as the move is in progress. Blob storage is the path known to
+      work, and a database that is unreachable, unmigrated or not yet configured
+      must not be able to cost someone their submission — so this is
+      deliberately non-fatal. The record already exists and is already in the
+      dashboard by the time this runs.
+    */
+    if (dbConfigured()) {
+      try {
+        const clientId = await recordSubmission(submission);
+        log.info("intake.db_recorded", { ref, id: submission.id, clientId });
+      } catch (error) {
+        log.error("intake.db_record_failed", {
+          ref,
+          id: submission.id,
+          ...errorFields(error),
+        });
+      }
+    }
   } catch (error) {
     // Storage is the part that must not fail silently — everything else is a
     // notification about a record that now exists.

@@ -12,6 +12,7 @@ import { safeEqual } from "@/lib/auth";
 import { defaultContent, toPublicContent } from "@/lib/content";
 import { serializeJsonLd } from "@/lib/site";
 import { safeProfileUrl, safeLinkHref } from "@/lib/validation";
+import { splitStatements } from "../scripts/migrate.mjs";
 import { encryptJson, decryptJson, isEncrypted } from "@/lib/crypto";
 
 describe("email escaping", () => {
@@ -554,5 +555,51 @@ describe("startPage links survive the real save path", () => {
         },
       })
     ).toThrow();
+  });
+});
+
+describe("migration statement splitting", () => {
+  // A migration is sent one statement at a time over HTTP, so the file has to
+  // be split correctly. Cutting a dollar-quoted body in half would apply a
+  // fragment of a function definition to a live database.
+  it("splits ordinary statements", () => {
+    expect(
+      splitStatements("create table a (i int); create table b (i int);")
+    ).toHaveLength(2);
+  });
+
+  it("ignores semicolons inside quoted strings", () => {
+    const out = splitStatements("insert into t values ('a;b'); select 1;");
+    expect(out).toHaveLength(2);
+    expect(out[0]).toContain("'a;b'");
+  });
+
+  it("keeps a dollar-quoted body intact", () => {
+    const out = splitStatements(
+      "create function f() returns void as $$ begin raise notice 'x;y'; end $$ language plpgsql; select 1;"
+    );
+    expect(out).toHaveLength(2);
+    expect(out[0]).toContain("raise notice 'x;y'");
+  });
+
+  it("does not treat a semicolon in a comment as a boundary", () => {
+    expect(splitStatements("-- a; comment\nselect 1;")).toHaveLength(1);
+  });
+
+  it("splits the real migration into runnable statements", async () => {
+    const { readFileSync } = await import("fs");
+    const out = splitStatements(
+      readFileSync("db/migrations/001_practice.sql", "utf8")
+    );
+    expect(out.filter((s) => /create table/i.test(s))).toHaveLength(3);
+    expect(out.every((s) => s.trim().length > 0)).toBe(true);
+  });
+
+  it("the migration is additive — nothing drops or truncates", async () => {
+    const { readFileSync } = await import("fs");
+    const text = readFileSync("db/migrations/001_practice.sql", "utf8");
+    expect(text).not.toMatch(/\bdrop\s+(table|column|database|index)\b/i);
+    expect(text).not.toMatch(/\btruncate\b/i);
+    expect(text).not.toMatch(/\bdelete\s+from\b/i);
   });
 });
