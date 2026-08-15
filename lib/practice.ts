@@ -201,6 +201,7 @@ export interface SessionRow {
   id: string;
   client_id: string;
   client_name?: string;
+  client_email?: string;
   starts_at: string;
   ends_at: string;
   status: (typeof SESSION_STATUSES)[number];
@@ -287,7 +288,7 @@ export async function createSession(input: {
 export async function listSessions(): Promise<SessionRow[]> {
   if (!dbConfigured()) return [];
   return (await sql()`
-    select s.*, c.name as client_name
+    select s.*, c.name as client_name, c.email as client_email
     from sessions s
     join clients c on c.id = s.client_id
     where s.starts_at > now() - interval '30 days'

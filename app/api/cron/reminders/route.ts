@@ -3,6 +3,7 @@ import { sendEmail, THERAPIST_EMAIL, esc } from "@/lib/email";
 import { dbConfigured } from "@/lib/db";
 import { sessionsNeedingReminder, markReminderSent } from "@/lib/practice";
 import { log, newRef, errorFields } from "@/lib/log";
+import { formatSessionTime } from "@/lib/session-emails";
 
 export const dynamic = "force-dynamic";
 
@@ -45,19 +46,14 @@ export async function GET(req: Request) {
     log.info("reminders.due", { ref, count: due.length });
 
     for (const session of due) {
-      const when = new Date(session.starts_at).toLocaleString("en-IN", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        hour: "numeric",
-        minute: "2-digit",
-        timeZone: "Asia/Kolkata",
-      });
+      const when = formatSessionTime(session.starts_at);
 
       const result = await sendEmail({
         apiKey: process.env.RESEND_API,
         to: session.client_email,
         replyTo: THERAPIST_EMAIL,
+        // She sees every message that goes out in her name.
+        bcc: THERAPIST_EMAIL,
         subject: `Your session tomorrow — ${when}`,
         html: `
           <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; color: #2c3a2e;">

@@ -643,6 +643,8 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientId: bookFor,
+          clientName: clients.find((c) => c.id === bookFor)?.name ?? "",
+          clientEmail: clients.find((c) => c.id === bookFor)?.email ?? "",
           startsAt: new Date(bookAt).toISOString(),
         }),
       });
@@ -659,8 +661,14 @@ export default function AdminPage() {
         }
         throw new Error(body?.error || "Could not book");
       }
+      const { notified } = await res.json();
       setBookAt("");
       await loadSessions();
+      if (notified === false) {
+        setSessionsError(
+          "Session booked, but the confirmation email did not go out — tell them directly."
+        );
+      }
     } catch (err) {
       if (err instanceof SessionExpired) return endSession();
       setSessionsError(err instanceof Error ? err.message : "Could not book");
@@ -679,11 +687,20 @@ export default function AdminPage() {
       const res = await apiFetch("/api/admin/sessions", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...fields }),
+        body: JSON.stringify({
+          id,
+          ...fields,
+          // Only used when cancelling, so the person can be told.
+          clientName: sessions.find((x) => x.id === id)?.client_name,
+          clientEmail: sessions.find((x) => x.id === id)?.client_email,
+        }),
       });
       if (!res.ok) throw new Error(await errorMessage(res, "Could not save"));
-      const { session } = await res.json();
+      const { session, notified } = await res.json();
       setSessions((list) => list.map((x) => (x.id === id ? { ...x, ...session } : x)));
+      if (notified === false) {
+        setSessionsError("Saved, but the cancellation email did not go out.");
+      }
     } catch (err) {
       if (err instanceof SessionExpired) return endSession();
       setSessionsError(err instanceof Error ? err.message : "Could not save");

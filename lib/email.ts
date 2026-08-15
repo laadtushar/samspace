@@ -51,6 +51,13 @@ interface SendArgs {
   apiKey: string | undefined;
   to: string;
   replyTo?: string;
+  /**
+   * Blind copy. Used to put the practitioner on messages sent to a client, so
+   * she can see what actually went out rather than taking the dashboard's word
+   * for it. Blind rather than visible because the copy is for her records — the
+   * client is being written to, not cc'd into a thread.
+   */
+  bcc?: string;
   subject: string;
   html: string;
 }
@@ -63,6 +70,7 @@ export async function sendEmail({
   apiKey,
   to,
   replyTo,
+  bcc,
   subject,
   html,
 }: SendArgs): Promise<{ sent: boolean; error?: string }> {
@@ -76,6 +84,7 @@ export async function sendEmail({
       from: FROM_ADDRESS,
       to,
       replyTo,
+      ...(bcc ? { bcc } : {}),
       subject,
       html,
     });
