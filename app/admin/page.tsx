@@ -239,6 +239,10 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  /** Posts shipped with the site that have not been added to the blog yet. */
+  const [starterRemaining, setStarterRemaining] = useState(0);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const baselineRef = useRef("");
 
@@ -337,6 +341,54 @@ export default function AdminPage() {
     }
   };
 
+  /** How many shipped posts are not in the blog yet. Owner-only endpoint. */
+  const refreshStarterCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/blog/import");
+      if (!res.ok) return;
+      const data = await res.json();
+      setStarterRemaining(Number(data?.remaining) || 0);
+    } catch {
+      // The panel simply stays hidden; nothing here is worth an error message.
+    }
+  }, []);
+
+  const importStarterPosts = async () => {
+    setImporting(true);
+    setImportMessage("");
+    try {
+      const res = await fetch("/api/admin/blog/import", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportMessage(data.error ?? "Could not add them.");
+        return;
+      }
+
+      const added = data.imported?.length ?? 0;
+      const failed = data.failed?.length ?? 0;
+      setImportMessage(
+        failed > 0
+          ? `Added ${added}. ${failed} could not be added (ref ${data.ref}).`
+          : added === 0
+            ? "They are all here already."
+            : `Added ${added} as ${added === 1 ? "a draft" : "drafts"}. Open one to read it through.`
+      );
+
+      // Redraw from the server rather than from what we hoped happened.
+      const fresh = await apiJson<BlogPost[]>("/api/admin/blog");
+      setPosts(Array.isArray(fresh) ? fresh : []);
+      await refreshStarterCount();
+    } catch (err) {
+      if (err instanceof SessionExpired) {
+        endSession();
+        return;
+      }
+      setImportMessage("Could not reach the server.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/auth", { method: "DELETE" });
@@ -398,6 +450,7 @@ export default function AdminPage() {
         );
         setContent(cont);
         setPosts(Array.isArray(blog) ? blog : []);
+        void refreshStarterCount();
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -415,7 +468,7 @@ export default function AdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [authed, endSession]);
+  }, [authed, endSession, refreshStarterCount]);
 
   const handleSaveContent = async () => {
     setSaving(true);
@@ -2257,6 +2310,42 @@ export default function AdminPage() {
                     <Plus className="w-4 h-4" /> New Post
                   </button>
                 </div>
+
+                {me?.role === "owner" && starterRemaining > 0 && (
+                  <div className="mb-5 bg-white rounded-2xl border border-sage/20 p-5">
+                    <p className="font-sans text-sm text-forest/75 leading-relaxed mb-1">
+                      <strong>
+                        {starterRemaining} written{" "}
+                        {starterRemaining === 1 ? "post is" : "posts are"} ready to add.
+                      </strong>
+                    </p>
+                    <p className="font-sans text-xs text-forest/45 leading-relaxed mb-4">
+                      They arrive as drafts, with cover art, SEO titles and
+                      descriptions already set. Read one through and publish it
+                      yourself — nothing goes live from this button, and any post
+                      already here is left exactly as it is.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={importStarterPosts}
+                        disabled={importing}
+                        className="font-sans text-sm font-medium bg-clay text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-clay-light transition-colors disabled:opacity-60"
+                      >
+                        {importing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                        Add them as drafts
+                      </button>
+                      {importMessage && (
+                        <span className="font-sans text-xs text-forest/60">
+                          {importMessage}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {postError && (
                   <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">

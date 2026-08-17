@@ -98,13 +98,23 @@ export default async function BlogIndexPage() {
                     <Link href={`/blog/${post.slug}`} className="sm:flex">
                       {post.coverImage && (
                         <div className="sm:w-56 shrink-0 relative aspect-[16/10] sm:aspect-auto">
-                          <Image
-                            src={post.coverImage}
-                            alt={post.coverAlt || ""}
-                            fill
-                            sizes="(max-width: 640px) 100vw, 224px"
-                            className="object-cover"
-                          />
+                          {/* Vector covers skip the optimiser, which refuses SVG. */}
+                          {post.coverImage.toLowerCase().endsWith(".svg") ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={post.coverImage}
+                              alt={post.coverAlt || ""}
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Image
+                              src={post.coverImage}
+                              alt={post.coverAlt || ""}
+                              fill
+                              sizes="(max-width: 640px) 100vw, 224px"
+                              className="object-cover"
+                            />
+                          )}
                         </div>
                       )}
                       <div className="p-6 sm:p-7">

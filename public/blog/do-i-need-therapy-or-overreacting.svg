@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">A small doubting mark held inside a wide, calm space</title>
+  <!--
+    "Do I need therapy, or am I overreacting?"
+    A single question mark, deliberately small against a lot of open ground —
+    the thing that feels too minor to raise, drawn at the size it is actually
+    given rather than the size it deserves. The rings widen around it, slowly,
+    to say that the small thing is what the space is for.
+    Motion is CSS inside the file so it animates through <img> without script.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#efe8dc"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="52%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .ring { transform-origin: 600px 350px; opacity: 0; }
+      .r1 { animation: pulse 9s ease-out infinite; }
+      .r2 { animation: pulse 9s ease-out infinite 3s; }
+      .r3 { animation: pulse 9s ease-out infinite 6s; }
+      .mark { transform-origin: 600px 350px; animation: breathe 7s ease-in-out infinite; }
+      .dust { animation: drift 12s ease-in-out infinite; }
+      .d2 { animation-duration: 15s; animation-delay: -4s; }
+      .d3 { animation-duration: 18s; animation-delay: -8s; }
+      @keyframes pulse {
+        0%   { transform: scale(0.35); opacity: 0; }
+        18%  { opacity: 0.5; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+      @keyframes breathe {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.045); }
+      }
+      @keyframes drift {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-16px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ring, .mark, .dust { animation: none; }
+        .r1, .r2, .r3 { opacity: 0.32; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+
+  <g fill="none" stroke="#8a9e8c" stroke-width="1.5">
+    <circle class="ring r1" cx="600" cy="350" r="150"/>
+    <circle class="ring r2" cx="600" cy="350" r="150"/>
+    <circle class="ring r3" cx="600" cy="350" r="150"/>
+  </g>
+
+  <!--
+    Question mark, drawn as strokes so it reads as handwritten, not typeset.
+    The scale lives on an outer group because the animation below sets the CSS
+    transform property, which would otherwise override a transform attribute on
+    the same element.
+  -->
+  <g transform="translate(600 350) scale(1.5) translate(-600 -350)">
+    <g class="mark" fill="none" stroke="#2c3a2e" stroke-width="7" stroke-linecap="round">
+      <path d="M572 312c0-20 14-34 32-34s31 12 31 30c0 24-29 27-31 52"/>
+      <circle cx="604" cy="382" r="4.5" fill="#c17f5e" stroke="none"/>
+    </g>
+  </g>
+
+  <g fill="#8a9e8c" opacity="0.35">
+    <circle class="dust" cx="243" cy="188" r="4"/>
+    <circle class="dust d2" cx="958" cy="235" r="3"/>
+    <circle class="dust d3" cx="880" cy="498" r="4.5"/>
+    <circle class="dust d2" cx="300" cy="512" r="3"/>
+  </g>
+
+  <line x1="120" y1="596" x2="1080" y2="596" stroke="#8a9e8c" stroke-opacity="0.25" stroke-width="1.5"/>
+</svg>

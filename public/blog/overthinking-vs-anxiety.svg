@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">A tight closed loop beside a wide open wave</title>
+  <!--
+    "Overthinking vs. anxiety."
+    Two shapes, because the post's whole argument is that these are two things.
+    Left: a loop that closes on itself and keeps going round — a pattern with a
+    start and, eventually, an end. Right: a wave with no beginning, running
+    across the whole field, needing no trigger to continue. The loop travels;
+    the wave just is.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <style>
+      .loop { stroke-dasharray: 8 10; animation: travel 6s linear infinite; }
+      .bead { animation: orbit 6s linear infinite; }
+      .wave  { animation: swell 8s ease-in-out infinite; }
+      .wave2 { animation: swell 8s ease-in-out infinite -2.6s; opacity: 0.45; }
+      .wave3 { animation: swell 8s ease-in-out infinite -5.2s; opacity: 0.25; }
+      @keyframes travel { to { stroke-dashoffset: -360; } }
+      @keyframes orbit  { to { transform: rotate(360deg); } }
+      @keyframes swell {
+        0%, 100% { transform: translateY(0) scaleY(1); }
+        50%      { transform: translateY(-10px) scaleY(1.14); }
+      }
+      .bead { transform-origin: 356px 338px; }
+      .wave, .wave2, .wave3 { transform-origin: 860px 350px; }
+      @media (prefers-reduced-motion: reduce) {
+        .loop, .bead, .wave, .wave2, .wave3 { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- Left: overthinking. A closed circuit, the same ground covered again. -->
+  <g>
+    <circle cx="356" cy="338" r="112" fill="none" stroke="#8a9e8c" stroke-opacity="0.3" stroke-width="1.5"/>
+    <circle class="loop" cx="356" cy="338" r="112" fill="none" stroke="#2c3a2e"
+            stroke-width="7" stroke-linecap="round"/>
+    <g class="bead">
+      <circle cx="468" cy="338" r="9" fill="#c17f5e"/>
+    </g>
+    <text x="356" y="512" text-anchor="middle" font-family="Georgia, serif"
+          font-size="27" fill="#2c3a2e" opacity="0.62">a loop</text>
+  </g>
+
+  <!-- Right: anxiety. No start, no end, present across the whole field. -->
+  <g fill="none" stroke="#c17f5e" stroke-linecap="round" stroke-width="7">
+    <path class="wave3" d="M676 350c46-52 92-52 138 0s92 52 138 0 92-52 138 0"/>
+    <path class="wave2" d="M676 350c46-52 92-52 138 0s92 52 138 0 92-52 138 0"/>
+    <path class="wave"  d="M676 350c46-52 92-52 138 0s92 52 138 0 92-52 138 0"/>
+  </g>
+  <text x="860" y="512" text-anchor="middle" font-family="Georgia, serif"
+        font-size="27" fill="#2c3a2e" opacity="0.62">a state</text>
+
+  <line x1="600" y1="196" x2="600" y2="484" stroke="#8a9e8c" stroke-opacity="0.28"
+        stroke-width="1.5" stroke-dasharray="5 9"/>
+</svg>

@@ -156,17 +156,34 @@ export default async function BlogPostPage({
             )}
           </header>
 
-          {post.coverImage && (
-            <Image
-              src={post.coverImage}
-              alt={post.coverAlt || ""}
-              width={1200}
-              height={675}
-              priority
-              sizes="(max-width: 672px) 100vw, 672px"
-              className="rounded-2xl w-full h-auto mb-10"
-            />
-          )}
+          {post.coverImage &&
+            /*
+              Vector covers bypass the image optimiser: it refuses SVG unless
+              dangerouslyAllowSVG is on, which would then apply to anything
+              pasted into the dashboard later too. These are a few kilobytes and
+              resolution-independent, so there is nothing to optimise — and a
+              plain tag is what lets the animation inside them run.
+            */
+            (post.coverImage.toLowerCase().endsWith(".svg") ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={post.coverImage}
+                alt={post.coverAlt || ""}
+                width={1200}
+                height={675}
+                className="rounded-2xl w-full h-auto mb-10"
+              />
+            ) : (
+              <Image
+                src={post.coverImage}
+                alt={post.coverAlt || ""}
+                width={1200}
+                height={675}
+                priority
+                sizes="(max-width: 672px) 100vw, 672px"
+                className="rounded-2xl w-full h-auto mb-10"
+              />
+            ))}
 
           <Markdown>{post.content}</Markdown>
 
