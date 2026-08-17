@@ -11,7 +11,7 @@ import { log, errorFields } from "@/lib/log";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   /*
@@ -28,7 +28,7 @@ export async function GET() {
 
 /** Removes one submission permanently. There is no undo — the record is gone. */
 export async function DELETE(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const id = new URL(req.url).searchParams.get("id");

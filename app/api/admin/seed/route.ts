@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 /** Overwrites the live site content with the built-in defaults. */
 export async function POST() {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   await saveContent(defaultContent);

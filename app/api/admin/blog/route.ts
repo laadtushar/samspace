@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /** All posts, drafts included. */
 export async function GET() {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   return NextResponse.json(await getAllPosts());
@@ -16,7 +16,7 @@ export async function GET() {
 
 /** Creates or updates a post. `previousSlug` marks an edit that renames it. */
 export async function POST(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   let body: Record<string, unknown>;
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const slug = new URL(req.url).searchParams.get("slug");

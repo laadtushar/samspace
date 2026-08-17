@@ -22,7 +22,7 @@ const ALLOWED_TYPES = new Set([
  * directly reachable.
  */
 export async function POST(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const form = await req.formData().catch(() => null);
