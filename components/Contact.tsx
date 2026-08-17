@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import SocialLinks from "./SocialLinks";
 import AnimatedSection from "./AnimatedSection";
 import MagneticButton from "./MagneticButton";
 import TextReveal from "./TextReveal";
@@ -13,11 +12,10 @@ interface ContactProps {
     subtext: string;
     email: string;
   };
-  social?: { instagram: string; linkedin: string };
   onBookSession?: () => void;
 }
 
-export default function Contact({ contact, social, onBookSession }: ContactProps) {
+export default function Contact({ contact, onBookSession }: ContactProps) {
   const infoCards = [
     { icon: "📧", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
     // Routed through /whatsapp so the number stays out of the markup entirely.
@@ -91,7 +89,9 @@ export default function Contact({ contact, social, onBookSession }: ContactProps
                   href={c.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-sans text-sm text-cream/85 font-medium break-all group-hover:text-clay transition-colors duration-300 underline underline-offset-2 decoration-cream/20 hover:decoration-clay/50"
+                  // inline-block with vertical padding so the link is a
+                  // thumb-sized target rather than a 16px line of text.
+                  className="inline-block py-3 font-sans text-sm text-cream/85 font-medium break-all group-hover:text-clay transition-colors duration-300 underline underline-offset-2 decoration-cream/20 hover:decoration-clay/50"
                 >
                   {c.value}
                 </a>
@@ -122,19 +122,13 @@ export default function Contact({ contact, social, onBookSession }: ContactProps
         {/* Animated Contact Form */}
         <AnimatedContactForm />
 
-        {(social?.instagram || social?.linkedin) && (
-          <AnimatedSection>
-            <div className="text-center mt-14">
-              <p className="font-sans text-xs text-cream/40 mb-4">
-                Elsewhere
-              </p>
-              <SocialLinks
-                instagram={social?.instagram}
-                linkedin={social?.linkedin}
-              />
-            </div>
-          </AnimatedSection>
-        )}
+        {/*
+          The profile links used to be repeated here under an "Elsewhere"
+          heading. The footer carries the same pair on every page and sits
+          directly below this section, so on a phone the identical two icons
+          appeared twice within a single screen. The footer's copy is the one
+          that survives, because it is on every page rather than only this one.
+        */}
       </div>
     </section>
   );

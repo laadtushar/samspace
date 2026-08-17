@@ -64,7 +64,7 @@ export default function HomePage({ content }: { content: PublicSiteContent }) {
         <Mentoring mentoring={content.mentoring} />
         <Faq faq={content.faq} />
         <SessionInfo />
-        <Contact contact={content.contact} social={content.social} onBookSession={openIntake} />
+        <Contact contact={content.contact} onBookSession={openIntake} />
       </main>
       <Footer
         instagram={content.social?.instagram}

@@ -21,22 +21,28 @@ export default function Footer({
         className="max-w-6xl mx-auto px-6 text-center"
       >
         <p className="font-serif text-lg text-cream/50 mb-3">Samvriti.Space</p>
-        <nav className="flex items-center justify-center gap-5 mb-4">
+        {/*
+          The padding here is the tap target, not decoration: at text-xs these
+          links were 16px tall, which is a hard thing to hit with a thumb. The
+          negative margin keeps the footer looking the same while giving each
+          one a 40px-high area to press.
+        */}
+        <nav className="flex items-center justify-center gap-3 mb-4 -my-2">
           <Link
             href="/"
-            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors"
+            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors px-3 py-3"
           >
             Home
           </Link>
           <Link
             href="/blog"
-            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors"
+            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors px-3 py-3"
           >
             Writing
           </Link>
           <a
             href="/blog/rss.xml"
-            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors"
+            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors px-3 py-3"
           >
             RSS
           </a>

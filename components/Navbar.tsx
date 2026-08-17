@@ -61,7 +61,8 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
               router.push("/");
             }
           }}
-          className="flex flex-col leading-none"
+          // py-1/-my-1: a 40px tap target for the wordmark without moving it.
+          className="flex flex-col leading-none py-1 -my-1"
         >
           <span className="font-serif text-2xl font-semibold text-forest tracking-wide">
             Samvriti.Space
@@ -95,7 +96,9 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
 
         {/* Hamburger */}
         <button
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          // -mr-1 keeps the bars visually where they were while the button
+          // itself grows to a 48px target.
+          className="md:hidden flex flex-col gap-1.5 p-3 -mr-1"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
         >

@@ -26,7 +26,14 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex items-center bg-cream overflow-hidden pt-16"
+      /*
+        min-h-[100svh] rather than 100vh: on a phone, 100vh is measured against
+        the viewport with the browser's address bar hidden, so the section is
+        taller than what is actually on screen and pushes the heading down. svh
+        is the small viewport — what the reader can really see. min-h-screen
+        stays as the fallback for anything that does not know svh.
+      */
+      className="relative min-h-screen min-h-[100svh] flex items-center bg-cream overflow-hidden pt-16"
     >
       {/* Animated floating shapes */}
       <FloatingShapes />
@@ -39,7 +46,13 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
         }}
       />
 
-      <div className="relative max-w-6xl mx-auto px-6 py-20 w-full">
+      {/*
+        Lighter vertical padding on a phone. The section already centres its
+        contents inside a full-height box and clears the fixed header with
+        pt-16; another 80px on top of that left the heading sitting a long way
+        down an otherwise empty screen.
+      */}
+      <div className="relative max-w-6xl mx-auto px-6 py-8 sm:py-20 w-full">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left column */}
           <div>
