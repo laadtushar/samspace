@@ -62,6 +62,15 @@ interface AdminAccount {
   active: boolean;
 }
 
+/**
+ * The submissions endpoint reads both stores and reports any it could not
+ * reach, so a short list is never mistaken for a quiet week.
+ */
+interface SubmissionsResponse {
+  submissions: Submission[];
+  unavailable: ("database" | "archive")[];
+}
+
 interface Submission {
   id: string;
   timestamp: string;
@@ -190,6 +199,7 @@ export default function AdminPage() {
   const [me, setMe] = useState<AdminMe | null>(null);
   const [tab, setTab] = useState<AdminTab>("submissions");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissionsIncomplete, setSubmissionsIncomplete] = useState<string[]>([]);
   const [content, setContent] = useState<Record<string, unknown> | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
@@ -372,13 +382,20 @@ export default function AdminPage() {
     setLoading(true);
     setLoadError("");
     Promise.all([
-      apiJson<Submission[]>("/api/admin/submissions"),
+      apiJson<SubmissionsResponse>("/api/admin/submissions"),
       apiJson<Record<string, unknown>>("/api/admin/content"),
       apiJson<BlogPost[]>("/api/admin/blog"),
     ])
       .then(([subs, cont, blog]) => {
         if (cancelled) return;
-        setSubmissions(Array.isArray(subs) ? subs : []);
+        setSubmissions(Array.isArray(subs?.submissions) ? subs.submissions : []);
+        // A list that is short because a store could not be read must not look
+        // like a list that is short because nobody wrote in.
+        setSubmissionsIncomplete(
+          Array.isArray(subs?.unavailable) && subs.unavailable.length > 0
+            ? subs.unavailable
+            : []
+        );
         setContent(cont);
         setPosts(Array.isArray(blog) ? blog : []);
       })
@@ -1086,6 +1103,21 @@ export default function AdminPage() {
                     </button>
                   )}
                 </div>
+
+                {submissionsIncomplete.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 mb-4 flex items-start gap-3">
+                    <AlertCircle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+                    <p className="font-sans text-sm text-amber-900 leading-relaxed">
+                      <strong>This list may be incomplete.</strong> The{" "}
+                      {submissionsIncomplete
+                        .map((s) => (s === "database" ? "database" : "file storage"))
+                        .join(" and ")}{" "}
+                      could not be read just now, so anything held only there is
+                      missing from this view. Nothing has been lost — reload in a
+                      few minutes. If it keeps happening, say so.
+                    </p>
+                  </div>
+                )}
 
                 {submissions.length === 0 && !loadError ? (
                   <div className="text-center py-20 bg-white rounded-2xl border border-sage/15">
