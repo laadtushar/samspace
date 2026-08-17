@@ -7,11 +7,19 @@ import { formatSessionTime } from "@/lib/session-emails";
 
 export const dynamic = "force-dynamic";
 
-/** How far ahead a session gets a reminder. */
-const HOURS_AHEAD = 24;
+/**
+ * How far ahead a session gets a reminder.
+ *
+ * The run happens once a day, so this window has to be wider than a day or a
+ * session in tomorrow evening would fall between two runs and be reminded
+ * about on the morning it happens. At 36 hours every session is caught by the
+ * run before it, which is the day before for anything not booked at the last
+ * minute. Reminding twice is prevented by reminder_sent_at, not by the window.
+ */
+const HOURS_AHEAD = 36;
 
 /**
- * Sends a reminder for each session starting in the next day.
+ * Sends a reminder for each session starting in the next day and a half.
  *
  * Run on a schedule by Vercel Cron. Vercel signs its own cron requests with
  * CRON_SECRET; anything else is refused, because an open endpoint that sends
@@ -54,7 +62,9 @@ export async function GET(req: Request) {
         replyTo: THERAPIST_EMAIL,
         // She sees every message that goes out in her name.
         bcc: THERAPIST_EMAIL,
-        subject: `Your session tomorrow — ${when}`,
+        // Not "tomorrow": the window reaches far enough ahead that it would
+        // sometimes be a day off, and the date is right there in the subject.
+        subject: `Your upcoming session — ${when}`,
         html: `
           <div style="font-family: Georgia, serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; color: #2c3a2e;">
             <p style="font-size: 16px; line-height: 1.7;">Hi ${esc(session.client_name)},</p>
