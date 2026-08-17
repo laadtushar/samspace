@@ -26,9 +26,41 @@ import {
   Eye,
   EyeOff,
   X,
+  Shield,
+  UserPlus,
+  KeyRound,
 } from "lucide-react";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog";
 import { SLUG_PATTERN } from "@/lib/validation";
+
+type AdminTab =
+  | "submissions"
+  | "clients"
+  | "sessions"
+  | "content"
+  | "blog"
+  | "settings"
+  | "team";
+
+/** Who is signed in, as the auth endpoints report it. */
+interface AdminMe {
+  name: string;
+  email: string | null;
+  role: "owner" | "member";
+  legacy: boolean;
+}
+
+/** One administrator, as the Team tab lists them. */
+interface AdminAccount {
+  id: string;
+  email: string;
+  name: string;
+  role: "owner" | "member";
+  created_at: string;
+  last_login_at: string | null;
+  disabled_at: string | null;
+  active: boolean;
+}
 
 interface Submission {
   id: string;
@@ -139,13 +171,24 @@ async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [authed, setAuthed] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [tab, setTab] = useState<
-    "submissions" | "clients" | "sessions" | "content" | "blog" | "settings"
-  >("submissions");
+  /**
+   * "bootstrap" while no real account exists and the shared setup password is
+   * still the way in; "accounts" once someone has accepted an invitation.
+   */
+  const [authMode, setAuthMode] = useState<"accounts" | "bootstrap">("accounts");
+  const [challenge, setChallenge] = useState<{
+    challengeId: string;
+    sentTo: string;
+    expiresInMinutes: number;
+  } | null>(null);
+  const [code, setCode] = useState("");
+  const [me, setMe] = useState<AdminMe | null>(null);
+  const [tab, setTab] = useState<AdminTab>("submissions");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [content, setContent] = useState<Record<string, unknown> | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -192,6 +235,9 @@ export default function AdminPage() {
   const endSession = useCallback(() => {
     setAuthed(false);
     setPassword("");
+    setChallenge(null);
+    setCode("");
+    setMe(null);
     setSubmissions([]);
     setContent(null);
     setPosts([]);
@@ -199,6 +245,11 @@ export default function AdminPage() {
     setAuthError("Your session expired — please log in again.");
   }, []);
 
+  /**
+   * Step one. With accounts in place this only gets as far as an emailed code;
+   * the bootstrap password signs in outright, because there is nobody to email
+   * until the first account exists.
+   */
   const handleLogin = async () => {
     setAuthLoading(true);
     setAuthError("");
@@ -206,14 +257,69 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(
+          authMode === "bootstrap" ? { password } : { email, password }
+        ),
       });
-      if (res.ok) {
-        setAuthed(true);
-        setPassword("");
-      } else {
-        setAuthError(await errorMessage(res, "Invalid password"));
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setAuthError(
+          data.error ??
+            (authMode === "bootstrap" ? "Invalid password" : "Invalid email or password")
+        );
+        return;
       }
+
+      if (data.mfaRequired) {
+        setChallenge({
+          challengeId: data.challengeId,
+          sentTo: data.sentTo,
+          expiresInMinutes: data.expiresInMinutes,
+        });
+        setPassword("");
+        setCode("");
+        return;
+      }
+
+      setAuthed(true);
+      setPassword("");
+      setMe(data.user ?? { name: "Administrator", email: null, role: "owner", legacy: true });
+    } catch {
+      setAuthError("Connection error");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  /** Step two: the emailed code. */
+  const handleVerifyCode = async () => {
+    if (!challenge) return;
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      const res = await fetch("/api/admin/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId: challenge.challengeId, code: code.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setAuthError(data.error ?? "That code is not right.");
+        // An expired or burned code cannot be retried — send them back rather
+        // than leaving them typing into a challenge that will never accept.
+        if (data.restart) {
+          setChallenge(null);
+          setCode("");
+        }
+        return;
+      }
+
+      setChallenge(null);
+      setCode("");
+      setAuthed(true);
+      setMe(data.user ?? null);
     } catch {
       setAuthError("Connection error");
     } finally {
@@ -229,11 +335,15 @@ export default function AdminPage() {
     }
     setAuthed(false);
     setPassword("");
+    setChallenge(null);
+    setCode("");
+    setMe(null);
     setSubmissions([]);
     setContent(null);
     setPosts([]);
     setBlogView("list");
     setAuthError("");
+    setTab("submissions");
   };
 
   // A refresh shouldn't force a re-login — the cookie outlives the React state.
@@ -242,7 +352,10 @@ export default function AdminPage() {
     fetch("/api/admin/auth")
       .then((r) => (r.ok ? r.json() : { authenticated: false }))
       .then((d) => {
-        if (!cancelled) setAuthed(Boolean(d?.authenticated));
+        if (cancelled) return;
+        setAuthed(Boolean(d?.authenticated));
+        setMe(d?.user ?? null);
+        if (d?.mode === "bootstrap" || d?.mode === "accounts") setAuthMode(d.mode);
       })
       .catch(() => {})
       .finally(() => {
@@ -366,9 +479,7 @@ export default function AdminPage() {
     setPostError("");
   };
 
-  const switchTab = (
-    next: "submissions" | "clients" | "sessions" | "content" | "blog" | "settings"
-  ) => {
+  const switchTab = (next: AdminTab) => {
     if (tab === "blog" && next !== "blog" && !confirmDiscard()) return;
     if (tab === "blog" && next !== "blog") setBlogView("list");
     if (next === "clients" && clientsReady === null) void loadClients();
@@ -793,26 +904,87 @@ export default function AdminPage() {
             Samvriti.Space
           </h1>
           <p className="font-sans text-sm text-forest/50 text-center mb-8">
-            Admin Dashboard
+            {challenge ? "Check your email" : "Admin Dashboard"}
           </p>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            placeholder="Enter password"
-            className="w-full bg-white border-2 border-sage/20 rounded-xl px-4 py-3.5 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50 transition-colors mb-4"
-          />
-          {authError && (
-            <p className="font-sans text-xs text-red-500 text-center mb-3">{authError}</p>
+
+          {challenge ? (
+            <>
+              <p className="font-sans text-sm text-forest/60 text-center mb-5 leading-relaxed">
+                A six-digit code went to <strong>{challenge.sentTo}</strong>. It
+                expires in {challenge.expiresInMinutes} minutes.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
+                placeholder="000000"
+                className="w-full bg-white border-2 border-sage/20 rounded-xl px-4 py-3.5 font-mono text-center text-2xl tracking-[0.5em] text-forest placeholder:text-forest/20 focus:outline-none focus:border-clay/50 transition-colors mb-4"
+              />
+              {authError && (
+                <p className="font-sans text-xs text-red-500 text-center mb-3">{authError}</p>
+              )}
+              <button
+                onClick={handleVerifyCode}
+                disabled={authLoading || code.length !== 6}
+                className="w-full bg-forest text-cream font-sans text-sm font-medium py-3.5 rounded-xl hover:bg-forest-deep transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign in"}
+              </button>
+              <button
+                onClick={() => {
+                  setChallenge(null);
+                  setCode("");
+                  setAuthError("");
+                }}
+                className="w-full font-sans text-xs text-forest/40 hover:text-forest/70 mt-4 transition-colors"
+              >
+                Start again
+              </button>
+            </>
+          ) : (
+            <>
+              {authMode === "accounts" && (
+                <input
+                  type="email"
+                  value={email}
+                  autoComplete="username"
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  placeholder="Email address"
+                  className="w-full bg-white border-2 border-sage/20 rounded-xl px-4 py-3.5 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50 transition-colors mb-3"
+                />
+              )}
+              <input
+                type="password"
+                value={password}
+                autoComplete="current-password"
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                placeholder={authMode === "bootstrap" ? "Setup password" : "Password"}
+                className="w-full bg-white border-2 border-sage/20 rounded-xl px-4 py-3.5 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50 transition-colors mb-4"
+              />
+              {authError && (
+                <p className="font-sans text-xs text-red-500 text-center mb-3">{authError}</p>
+              )}
+              <button
+                onClick={handleLogin}
+                disabled={authLoading}
+                className="w-full bg-forest text-cream font-sans text-sm font-medium py-3.5 rounded-xl hover:bg-forest-deep transition-colors flex items-center justify-center gap-2"
+              >
+                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Login"}
+              </button>
+              {authMode === "bootstrap" && (
+                <p className="font-sans text-xs text-forest/40 text-center mt-5 leading-relaxed">
+                  This is the shared setup password. Create your own account under
+                  Team once you are in — the shared one stops working then.
+                </p>
+              )}
+            </>
           )}
-          <button
-            onClick={handleLogin}
-            disabled={authLoading}
-            className="w-full bg-forest text-cream font-sans text-sm font-medium py-3.5 rounded-xl hover:bg-forest-deep transition-colors flex items-center justify-center gap-2"
-          >
-            {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Login"}
-          </button>
         </motion.div>
       </div>
     );
@@ -825,12 +997,20 @@ export default function AdminPage() {
       <header className="bg-forest text-cream border-b border-sage/20">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <span className="font-serif text-lg font-semibold">Samvriti.Space Admin</span>
-          <button
-            onClick={handleLogout}
-            className="font-sans text-xs text-cream/60 hover:text-cream flex items-center gap-1 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" /> Logout
-          </button>
+          <div className="flex items-center gap-4">
+            {me && (
+              <span className="font-sans text-xs text-cream/50 hidden sm:inline">
+                {me.legacy ? "Setup password" : me.name}
+                {me.role === "owner" && !me.legacy && " · owner"}
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="font-sans text-xs text-cream/60 hover:text-cream flex items-center gap-1 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Logout
+            </button>
+          </div>
         </div>
       </header>
 
@@ -844,6 +1024,11 @@ export default function AdminPage() {
             { id: "content" as const, label: "Edit Content", icon: FileText },
             { id: "blog" as const, label: "Blog", icon: Newspaper, count: posts.length },
             { id: "settings" as const, label: "Settings", icon: Settings },
+            // Managing who can sign in is an owner's job, so a member is not
+            // shown a tab that would only answer 403.
+            ...(me?.role === "owner"
+              ? [{ id: "team" as const, label: "Team", icon: Shield }]
+              : []),
           ].map((t) => (
             <button
               key={t.id}
@@ -2026,6 +2211,9 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* ─── Team Tab ─────────────────────── */}
+            {tab === "team" && <TeamTab me={me} onSessionLost={endSession} />}
+
             {tab === "blog" && blogView === "list" && (
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -2574,6 +2762,444 @@ function ContentField({
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+/* ─── Team ───────────────────────────────────────
+   Who can sign in, and the two things everyone can do to their own account:
+   change a password, and sign every other browser out.
+
+   Every destructive action here is guarded on the server as well. The buttons
+   below decide what to offer, not what is allowed — a disabled button is a
+   courtesy, never a control. */
+
+function TeamTab({
+  me,
+  onSessionLost,
+}: {
+  me: AdminMe | null;
+  onSessionLost: () => void;
+}) {
+  const [users, setUsers] = useState<AdminAccount[]>([]);
+  const [ready, setReady] = useState<boolean | null>(null);
+  const [listError, setListError] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"owner" | "member">("member");
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteNotice, setInviteNotice] = useState("");
+
+  const load = useCallback(async () => {
+    setListError("");
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.status === 401) {
+        onSessionLost();
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setReady(false);
+        setListError(data.error ?? "Could not load the list.");
+        return;
+      }
+      setReady(Boolean(data.ready));
+      setUsers(Array.isArray(data.users) ? data.users : []);
+      if (!data.ready && data.error) setListError(data.error);
+    } catch {
+      setReady(false);
+      setListError("Could not reach the server.");
+    }
+  }, [onSessionLost]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const invite = async () => {
+    setInviting(true);
+    setInviteError("");
+    setInviteNotice("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: inviteName, email: inviteEmail, role: inviteRole }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setInviteError(data.ref ? `${data.error} (ref ${data.ref})` : data.error ?? "Could not send that invitation.");
+        await load();
+        return;
+      }
+      setInviteNotice(`Invitation sent to ${inviteEmail}. The link works for two days.`);
+      setInviteName("");
+      setInviteEmail("");
+      setInviteRole("member");
+      await load();
+    } catch {
+      setInviteError("Could not reach the server.");
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const update = async (id: string, patch: { role?: "owner" | "member"; disabled?: boolean }) => {
+    setBusyId(id);
+    setListError("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...patch }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) setListError(data.error ?? "Could not save that change.");
+      await load();
+    } catch {
+      setListError("Could not reach the server.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const remove = async (id: string) => {
+    setBusyId(id);
+    setListError("");
+    try {
+      const res = await fetch(`/api/admin/users?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) setListError(data.error ?? "Could not remove that account.");
+      setConfirmRemove(null);
+      await load();
+    } catch {
+      setListError("Could not reach the server.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif text-xl font-semibold text-forest mb-1">Team</h2>
+        <p className="font-sans text-sm text-forest/50">
+          Everyone who can sign in. Each person gets their own password and a
+          six-digit code emailed to them at every sign-in.
+        </p>
+      </div>
+
+      {me?.legacy && (
+        <div className="bg-clay/10 border border-clay/30 rounded-2xl p-5">
+          <p className="font-sans text-sm text-forest/80 leading-relaxed">
+            <strong>You are signed in with the shared setup password.</strong>{" "}
+            Invite yourself below to create a real account. Once you accept that
+            invitation the shared password stops working, and from then on every
+            sign-in needs an emailed code.
+          </p>
+        </div>
+      )}
+
+      {ready === false && listError && (
+        <div className="bg-white rounded-2xl p-6 border border-sage/20">
+          <p className="font-sans text-sm text-forest/60">{listError}</p>
+        </div>
+      )}
+
+      {/* Invite */}
+      <div className="bg-white rounded-2xl p-6 border border-sage/20">
+        <h3 className="font-sans text-sm font-semibold text-forest mb-4 flex items-center gap-2">
+          <UserPlus className="w-4 h-4" /> Invite someone
+        </h3>
+        <div className="grid sm:grid-cols-3 gap-3 mb-3">
+          <input
+            value={inviteName}
+            onChange={(e) => setInviteName(e.target.value)}
+            placeholder="Name"
+            className="bg-cream/40 border-2 border-sage/20 rounded-xl px-4 py-3 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50"
+          />
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            placeholder="Email address"
+            className="bg-cream/40 border-2 border-sage/20 rounded-xl px-4 py-3 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50"
+          />
+          <select
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value as "owner" | "member")}
+            className="bg-cream/40 border-2 border-sage/20 rounded-xl px-4 py-3 font-sans text-sm text-forest focus:outline-none focus:border-clay/50"
+          >
+            <option value="member">Member</option>
+            <option value="owner">Owner</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={invite}
+            disabled={inviting || !inviteName.trim() || !inviteEmail.trim()}
+            className="bg-forest text-cream font-sans text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-forest-deep transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            Send invitation
+          </button>
+          {inviteNotice && (
+            <span className="font-sans text-xs text-forest/60">{inviteNotice}</span>
+          )}
+          {inviteError && (
+            <span className="font-sans text-xs text-red-500">{inviteError}</span>
+          )}
+        </div>
+        <p className="font-sans text-xs text-forest/40 mt-3 leading-relaxed">
+          An owner can invite and remove people. A member can do everything else
+          — clients, sessions, content — but cannot change who has access.
+        </p>
+      </div>
+
+      {/* People */}
+      {ready && (
+        <div className="bg-white rounded-2xl border border-sage/20 overflow-hidden">
+          {users.length === 0 && (
+            <p className="font-sans text-sm text-forest/50 p-6">
+              No accounts yet. The invitation above creates the first one.
+            </p>
+          )}
+          {users.map((u) => (
+            <div
+              key={u.id}
+              className="p-5 border-b border-sage/10 last:border-0 flex flex-wrap items-center gap-3 justify-between"
+            >
+              <div className="min-w-0">
+                <p className="font-sans text-sm text-forest font-medium truncate">
+                  {u.name}
+                  {me?.email && u.email === me.email && (
+                    <span className="text-forest/40 font-normal"> · you</span>
+                  )}
+                </p>
+                <p className="font-sans text-xs text-forest/50 truncate">{u.email}</p>
+                <p className="font-sans text-xs text-forest/35 mt-1">
+                  {!u.active && !u.disabled_at && "Invitation not accepted yet"}
+                  {u.disabled_at && "Disabled"}
+                  {u.active &&
+                    (u.last_login_at
+                      ? `Last signed in ${formatWhen(u.last_login_at)}`
+                      : "Never signed in")}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={u.role}
+                  disabled={busyId === u.id}
+                  onChange={(e) => update(u.id, { role: e.target.value as "owner" | "member" })}
+                  className="bg-cream/40 border border-sage/20 rounded-lg px-3 py-2 font-sans text-xs text-forest focus:outline-none focus:border-clay/50"
+                >
+                  <option value="member">Member</option>
+                  <option value="owner">Owner</option>
+                </select>
+
+                <button
+                  onClick={() => update(u.id, { disabled: !u.disabled_at })}
+                  disabled={busyId === u.id}
+                  className="font-sans text-xs text-forest/60 hover:text-forest px-3 py-2 rounded-lg hover:bg-cream/60 transition-colors disabled:opacity-40"
+                >
+                  {u.disabled_at ? "Enable" : "Disable"}
+                </button>
+
+                {confirmRemove === u.id ? (
+                  <>
+                    <button
+                      onClick={() => remove(u.id)}
+                      disabled={busyId === u.id}
+                      className="font-sans text-xs text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      {busyId === u.id ? "Removing…" : "Really remove"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmRemove(null)}
+                      className="font-sans text-xs text-forest/40 hover:text-forest/70 px-2"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setConfirmRemove(u.id)}
+                    className="text-forest/40 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                    aria-label={`Remove ${u.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          {listError && ready && (
+            <p className="font-sans text-xs text-red-500 px-5 pb-4">{listError}</p>
+          )}
+        </div>
+      )}
+
+      <YourAccount me={me} onSessionLost={onSessionLost} />
+    </div>
+  );
+}
+
+/** Password change and "sign out everywhere", for whoever is signed in. */
+function YourAccount({
+  me,
+  onSessionLost,
+}: {
+  me: AdminMe | null;
+  onSessionLost: () => void;
+}) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [revoking, setRevoking] = useState(false);
+
+  if (me?.legacy) {
+    return (
+      <div className="bg-white rounded-2xl p-6 border border-sage/20">
+        <h3 className="font-sans text-sm font-semibold text-forest mb-2 flex items-center gap-2">
+          <KeyRound className="w-4 h-4" /> Your account
+        </h3>
+        <p className="font-sans text-sm text-forest/50 leading-relaxed">
+          The shared setup password lives in the site&rsquo;s environment settings
+          rather than in an account, so it cannot be changed from here. Invite
+          yourself above to get an account of your own.
+        </p>
+      </div>
+    );
+  }
+
+  const change = async () => {
+    setError("");
+    setNotice("");
+    if (next !== confirm) {
+      setError("The two new passwords do not match");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: current, newPassword: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401 && !data.error) {
+        onSessionLost();
+        return;
+      }
+      if (!res.ok) {
+        setError(data.error ?? "Could not change your password.");
+        return;
+      }
+      setNotice("Password changed. Every other browser has been signed out.");
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const signOutOthers = async () => {
+    setRevoking(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/account", { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "Could not sign the other sessions out.");
+        return;
+      }
+      setNotice(
+        data.ended === 0
+          ? "You were not signed in anywhere else."
+          : `Signed out of ${data.ended} other ${data.ended === 1 ? "browser" : "browsers"}.`
+      );
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setRevoking(false);
+    }
+  };
+
+  const INPUT =
+    "bg-cream/40 border-2 border-sage/20 rounded-xl px-4 py-3 font-sans text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-clay/50";
+
+  return (
+    <div className="bg-white rounded-2xl p-6 border border-sage/20">
+      <h3 className="font-sans text-sm font-semibold text-forest mb-4 flex items-center gap-2">
+        <KeyRound className="w-4 h-4" /> Your account
+      </h3>
+
+      <div className="grid sm:grid-cols-3 gap-3 mb-3">
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          placeholder="Current password"
+          className={INPUT}
+        />
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          placeholder="New password (12+)"
+          className={INPUT}
+        />
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Repeat new password"
+          className={INPUT}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={change}
+          disabled={saving || !current || next.length < 12}
+          className="bg-forest text-cream font-sans text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-forest-deep transition-colors flex items-center gap-2 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Change password
+        </button>
+        <button
+          onClick={signOutOthers}
+          disabled={revoking}
+          className="font-sans text-sm text-forest/60 hover:text-forest px-4 py-2.5 rounded-xl hover:bg-cream/60 transition-colors disabled:opacity-50"
+        >
+          {revoking ? "Signing out…" : "Sign out everywhere else"}
+        </button>
+        {notice && <span className="font-sans text-xs text-forest/60">{notice}</span>}
+        {error && <span className="font-sans text-xs text-red-500">{error}</span>}
+      </div>
+
+      <p className="font-sans text-xs text-forest/40 mt-3 leading-relaxed">
+        Changing your password ends every other session. Use &ldquo;sign out
+        everywhere else&rdquo; if you have signed in on a device you no longer have.
+      </p>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  * it has already stored.
  */
 export async function POST() {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   try {

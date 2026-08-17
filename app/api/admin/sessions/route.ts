@@ -19,7 +19,7 @@ import {
 
 /** Everything upcoming, or one client's history when an id is given. */
 export async function GET(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   if (!dbConfigured()) {
@@ -55,7 +55,7 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
@@ -125,7 +125,7 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
@@ -165,7 +165,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const id = new URL(req.url).searchParams.get("id");

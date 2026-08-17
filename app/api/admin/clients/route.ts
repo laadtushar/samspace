@@ -15,7 +15,7 @@ import { log, errorFields } from "@/lib/log";
  * an id is given.
  */
 export async function GET(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   if (!dbConfigured()) {
@@ -53,7 +53,7 @@ const patchSchema = z.object({
 
 /** Updates the fields the practitioner owns. */
 export async function PATCH(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));

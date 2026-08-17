@@ -603,3 +603,85 @@ describe("migration statement splitting", () => {
     expect(text).not.toMatch(/\bdelete\s+from\b/i);
   });
 });
+
+/**
+ * Every route under /api/admin has to check who is asking.
+ *
+ * There is no middleware doing it centrally, so the check lives in each route —
+ * which means a new route ships unprotected the day someone forgets. This walks
+ * the directory rather than a list, so a file added later is covered without
+ * anyone remembering to add it here.
+ */
+describe("admin routes are guarded", () => {
+  /**
+   * The three ways in, which cannot require a session because the caller does
+   * not have one yet. Everything else must.
+   */
+  const PUBLIC_BY_DESIGN = [
+    "app/api/admin/auth/route.ts",
+    "app/api/admin/auth/verify/route.ts",
+    "app/api/admin/invite/route.ts",
+  ];
+
+  const routeFiles = (dir: string): string[] => {
+    const { readdirSync, statSync } = require("fs") as typeof import("fs");
+    return readdirSync(dir).flatMap((entry: string) => {
+      const full = `${dir}/${entry}`;
+      if (statSync(full).isDirectory()) return routeFiles(full);
+      return entry === "route.ts" ? [full] : [];
+    });
+  };
+
+  it("checks the caller in every handler it exports", async () => {
+    const { readFileSync } = await import("fs");
+    const files = routeFiles("app/api/admin");
+    expect(files.length).toBeGreaterThan(5);
+
+    for (const file of files) {
+      if (PUBLIC_BY_DESIGN.includes(file)) continue;
+      const source = readFileSync(file, "utf8");
+      const handlers =
+        source.match(/export async function (GET|POST|PATCH|PUT|DELETE)\b/g) ?? [];
+      const guards =
+        source.match(/\b(requireAdmin|adminOrDenied|ownerOrDenied)\(\)/g) ?? [];
+
+      expect(handlers.length, `${file} exports no handlers`).toBeGreaterThan(0);
+      expect(
+        guards.length,
+        `${file} has ${handlers.length} handlers but only ${guards.length} guard calls`
+      ).toBeGreaterThanOrEqual(handlers.length);
+    }
+  });
+
+  it("always awaits the guard, since it reads the session from the database", async () => {
+    const { readFileSync } = await import("fs");
+    for (const file of routeFiles("app/api/admin")) {
+      const source = readFileSync(file, "utf8");
+      // `requireAdmin()` without await returns a Promise, which is truthy —
+      // it would refuse every request rather than allowing them, but the
+      // sibling helpers destructure and would throw. Either way it is a bug.
+      expect(source, `${file} calls a guard without awaiting it`).not.toMatch(
+        /(?<!await\s)\b(requireAdmin|adminOrDenied|ownerOrDenied)\(\)/
+      );
+    }
+  });
+});
+
+describe("the admin accounts migration", () => {
+  it("is additive — nothing drops or truncates", async () => {
+    const { readFileSync } = await import("fs");
+    const text = readFileSync("db/migrations/003_admin_users.sql", "utf8");
+    expect(text).not.toMatch(/\bdrop\s+(table|column|database|index)\b/i);
+    expect(text).not.toMatch(/\btruncate\b/i);
+    expect(text).not.toMatch(/\bdelete\s+from\b/i);
+  });
+
+  it("creates the four tables the login flow needs", async () => {
+    const { readFileSync } = await import("fs");
+    const out = splitStatements(readFileSync("db/migrations/003_admin_users.sql", "utf8"));
+    const tables = out.filter((s) => /create table/i.test(s));
+    expect(tables).toHaveLength(4);
+    // Every one of them is safe to run twice.
+    expect(tables.every((s) => /create table if not exists/i.test(s))).toBe(true);
+  });
+});

@@ -6,14 +6,14 @@ import { siteContentSchema, firstIssue } from "@/lib/validation";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   return NextResponse.json(await getContent());
 }
 
 export async function POST(req: Request) {
-  const denied = requireAdmin();
+  const denied = await requireAdmin();
   if (denied) return denied;
 
   let body: unknown;

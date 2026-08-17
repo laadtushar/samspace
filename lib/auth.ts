@@ -1,24 +1,49 @@
 import { createHmac, timingSafeEqual, randomBytes } from "crypto";
 import { cookies } from "next/headers";
+import type { AdminRole, AdminUser } from "@/lib/admin-users";
+import {
+  hasUsableAdminUsers,
+  userForSession,
+  createSession,
+  revokeSession,
+  SESSION_TTL_MS,
+} from "@/lib/admin-users";
 
 /**
  * Admin authentication.
  *
- * Previously the raw password travelled in an `x-admin-password` header on
- * every request, was compared with `!==` (which short-circuits on the first
- * differing byte), and could be guessed an unlimited number of times. It was
- * the only thing standing between the internet and a set of mental-health
- * records.
+ * There are two ways in, and only ever one of them at a time.
  *
- * Now: log in once, receive a signed httpOnly cookie with a fixed lifetime, and
- * the password itself is never sent again. Comparisons are constant-time and
- * repeated failures lock the source out.
+ * Once real accounts exist, signing in means an email address, a password, and
+ * a six-digit code sent to that address. The cookie then names a row in
+ * admin_sessions, so a session can be ended from the other side — which is what
+ * you need when a laptop goes missing, and what a self-contained token cannot
+ * give you.
+ *
+ * Before any account exists there is nobody to email, so the old shared
+ * ADMIN_PASSWORD still works. That is the bootstrap, not a fallback: the moment
+ * one account has a password and is enabled, the environment password stops
+ * being accepted. Keeping it alive alongside real accounts would mean every
+ * protection below could be walked around by whoever still had the old secret.
  */
 
 const COOKIE_NAME = "samvriti_admin";
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
+
+export { SESSION_TTL_MS };
+
+/** Who is making this request. */
+export interface AdminIdentity {
+  /** Null only for a bootstrap session, which belongs to no account. */
+  userId: string | null;
+  sessionId: string | null;
+  name: string;
+  email: string | null;
+  role: AdminRole;
+  /** True when signed in with the environment password rather than an account. */
+  legacy: boolean;
+}
 
 /** Compares two strings without leaking where they diverge. */
 export function safeEqual(a: string, b: string): boolean {
@@ -30,8 +55,6 @@ export function safeEqual(a: string, b: string): boolean {
 }
 
 function sessionSecret(): string {
-  // The password doubles as the signing key: changing it invalidates every
-  // outstanding session, which is the behaviour you want from a password change.
   const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
   if (!secret) {
     throw new Error(
@@ -45,20 +68,14 @@ function sign(payload: string): string {
   return createHmac("sha256", sessionSecret()).update(payload).digest("hex");
 }
 
-function issueToken(): string {
-  const expiresAt = Date.now() + SESSION_TTL_MS;
-  const payload = String(expiresAt);
-  return `${payload}.${sign(payload)}`;
-}
-
-function isTokenValid(token: string | undefined): boolean {
-  if (!token) return false;
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
-  if (!safeEqual(signature, sign(payload))) return false;
-
-  const expiresAt = Number(payload);
-  return Number.isFinite(expiresAt) && Date.now() < expiresAt;
+function setCookie(value: string): void {
+  cookies().set(COOKIE_NAME, value, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: SESSION_TTL_MS / 1000,
+  });
 }
 
 // ─── Brute-force throttle ──────────────────────────
@@ -87,7 +104,19 @@ export function clearFailedLogins(key: string): void {
   attempts.delete(key);
 }
 
-// ─── Session cookie ────────────────────────────────
+// ─── Bootstrap password ────────────────────────────
+
+/**
+ * Whether the environment password is still a way in.
+ *
+ * False as soon as one account exists that can be signed in to. Checked on
+ * every bootstrap login rather than cached, because the answer changes the
+ * instant the first invitation is accepted.
+ */
+export async function legacyLoginAllowed(): Promise<boolean> {
+  if (!process.env.ADMIN_PASSWORD) return false;
+  return !(await hasUsableAdminUsers());
+}
 
 export function verifyPassword(candidate: unknown): boolean {
   const expected = process.env.ADMIN_PASSWORD;
@@ -95,26 +124,110 @@ export function verifyPassword(candidate: unknown): boolean {
   return safeEqual(candidate, expected);
 }
 
-export function startSession(): void {
-  cookies().set(COOKIE_NAME, issueToken(), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: SESSION_TTL_MS / 1000,
-  });
+export function startLegacySession(): void {
+  const payload = `l.${Date.now() + SESSION_TTL_MS}`;
+  setCookie(`${payload}.${sign(payload)}`);
 }
 
-export function endSession(): void {
-  cookies().delete(COOKIE_NAME);
+// ─── Account sessions ──────────────────────────────
+
+export async function startUserSession(
+  userId: string,
+  userAgent: string | null
+): Promise<void> {
+  const sessionId = await createSession(userId, userAgent);
+  const payload = `u.${sessionId}`;
+  setCookie(`${payload}.${sign(payload)}`);
 }
 
-/** True when the caller presents a valid, unexpired admin session cookie. */
-export function isAuthenticated(): boolean {
+/**
+ * Reads the cookie and returns who it belongs to, or null.
+ *
+ * The signature is checked before the database is touched, so a forged or
+ * tampered cookie costs a hash rather than a query.
+ */
+export async function currentAdmin(): Promise<AdminIdentity | null> {
+  let raw: string | undefined;
   try {
-    return isTokenValid(cookies().get(COOKIE_NAME)?.value);
+    raw = cookies().get(COOKIE_NAME)?.value;
   } catch {
-    // sessionSecret() throws when ADMIN_PASSWORD is unset — fail closed.
-    return false;
+    return null;
+  }
+  if (!raw) return null;
+
+  let identity: AdminIdentity | null = null;
+  try {
+    identity = await identify(raw);
+  } catch {
+    // A missing secret, or a database that is briefly unreachable, must fail
+    // closed rather than granting access.
+    return null;
+  }
+  return identity;
+}
+
+async function identify(raw: string): Promise<AdminIdentity | null> {
+  const cut = raw.lastIndexOf(".");
+  if (cut <= 0) return null;
+  const payload = raw.slice(0, cut);
+  const signature = raw.slice(cut + 1);
+  if (!safeEqual(signature, sign(payload))) return null;
+
+  if (payload.startsWith("u.")) {
+    const sessionId = payload.slice(2);
+    const user = await userForSession(sessionId);
+    if (!user) return null;
+    return {
+      userId: user.id,
+      sessionId,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      legacy: false,
+    };
+  }
+
+  // `l.<expiry>` is a bootstrap session. The bare `<expiry>` form is what the
+  // previous version of this file issued; it is accepted on the same terms so
+  // an upgrade does not sign the practitioner out mid-edit.
+  const expiry = payload.startsWith("l.") ? payload.slice(2) : payload;
+  const expiresAt = Number(expiry);
+  if (!Number.isFinite(expiresAt) || Date.now() >= expiresAt) return null;
+  if (!(await legacyLoginAllowed())) return null;
+
+  return {
+    userId: null,
+    sessionId: null,
+    name: "Administrator",
+    email: null,
+    // The bootstrap session must be able to invite the first real account,
+    // which is an owner's job.
+    role: "owner",
+    legacy: true,
+  };
+}
+
+/** Ends the caller's session: revoked in the database, then cleared here. */
+export async function endSession(): Promise<void> {
+  const identity = await currentAdmin();
+  if (identity?.sessionId) {
+    try {
+      await revokeSession(identity.sessionId);
+    } catch {
+      // Clearing the cookie still signs this browser out.
+    }
+  }
+  try {
+    cookies().delete(COOKIE_NAME);
+  } catch {
+    // Nothing to clear.
   }
 }
+
+/** True when the caller presents a valid admin session of either kind. */
+export async function isAuthenticated(): Promise<boolean> {
+  return (await currentAdmin()) !== null;
+}
+
+/** Convenience for routes that need the account itself. */
+export type { AdminUser };
