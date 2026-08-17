@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">A doorway rather than a wall, with a light left on either side</title>
+  <!--
+    "How to set a boundary with Indian parents without a fight."
+    The post's central correction is that a boundary is not a wall. So: an arch
+    with an opening in it, two warm points either side that stay lit, and a
+    gate that is clearly a shape you can pass through at agreed times.
+    Nothing here is closed. The line is drawn and the room is still shared.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#eee6d9"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .lampA { animation: glow 6s ease-in-out infinite; }
+      .lampB { animation: glow 6s ease-in-out infinite -3s; }
+      .arch  { stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: draw 4s ease-out forwards; }
+      .sill  { animation: shift 9s ease-in-out infinite; }
+      @keyframes glow {
+        0%, 100% { opacity: 0.55; transform: scale(1); }
+        50%      { opacity: 1;    transform: scale(1.07); }
+      }
+      @keyframes draw { to { stroke-dashoffset: 0; } }
+      @keyframes shift {
+        0%, 100% { transform: translateX(0); }
+        50%      { transform: translateX(9px); }
+      }
+      .lampA { transform-origin: 292px 350px; }
+      .lampB { transform-origin: 908px 350px; }
+      @media (prefers-reduced-motion: reduce) {
+        .lampA, .lampB, .sill { animation: none; }
+        .arch { animation: none; stroke-dashoffset: 0; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- Two people, both still here, both still lit. -->
+  <g class="lampA"><circle cx="292" cy="350" r="86" fill="url(#warm)"/></g>
+  <g class="lampB"><circle cx="908" cy="350" r="86" fill="url(#warm)"/></g>
+  <circle cx="292" cy="350" r="16" fill="#c17f5e"/>
+  <circle cx="908" cy="350" r="16" fill="#c17f5e"/>
+
+  <!-- The boundary: an arch you can walk through, not a wall. -->
+  <g class="arch" fill="none" stroke="#2c3a2e" stroke-width="8" stroke-linecap="round">
+    <path d="M482 508V392a118 118 0 0 1 236 0v116"/>
+  </g>
+
+  <!-- The agreed opening, marked but never closed. -->
+  <g class="sill">
+    <line x1="546" y1="508" x2="654" y2="508" stroke="#c17f5e" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <line x1="120" y1="508" x2="466" y2="508" stroke="#8a9e8c" stroke-opacity="0.4" stroke-width="2"/>
+  <line x1="734" y1="508" x2="1080" y2="508" stroke="#8a9e8c" stroke-opacity="0.4" stroke-width="2"/>
+
+  <text x="600" y="574" text-anchor="middle" font-family="Georgia, serif"
+        font-size="26" fill="#2c3a2e" opacity="0.6">a door, not a wall</text>
+</svg>

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">Two forms joined by a thread that keeps pulling taut and slack</title>
+  <!--
+    "Signs of an anxious attachment style."
+    Two circles and one thread between them. The thread never breaks and the
+    circles never actually move apart — but the tension in the line keeps
+    changing, tightening and releasing on its own. That is the experience the
+    post describes: nothing is wrong, and it still does not settle.
+    The smaller circle keeps a faint halo, always slightly reaching.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#efe7db"/>
+    </linearGradient>
+    <style>
+      /*
+        The thread bows and straightens by transform rather than by animating
+        the `d` attribute: CSS path animation is unsupported in Firefox, and a
+        cover image that sits inert in one browser is not a cover image.
+      */
+      .thread { transform-origin: 616px 338px; animation: tension 5.5s ease-in-out infinite; }
+      .seeker { transform-origin: 420px 338px; animation: lean 5.5s ease-in-out infinite; }
+      .halo   { transform-origin: 420px 338px; animation: reach 5.5s ease-in-out infinite; }
+      .steady { transform-origin: 812px 338px; animation: settle 11s ease-in-out infinite; }
+      /*
+        Slack, then taut, then slack again. Never detached.
+        Not squashed all the way to zero: the geometry degenerates near it and
+        the line renders as a row of dashes. The stroke is marked
+        non-scaling so squashing the path does not thin the line with it.
+      */
+      @keyframes tension {
+        0%, 100% { transform: scaleY(1); }
+        50%      { transform: scaleY(0.12); }
+      }
+      @keyframes lean {
+        0%, 100% { transform: translateX(0); }
+        50%      { transform: translateX(14px); }
+      }
+      @keyframes reach {
+        0%, 100% { transform: scale(1); opacity: 0.32; }
+        50%      { transform: scale(1.22); opacity: 0.1; }
+      }
+      @keyframes settle {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.02); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .thread, .seeker, .halo, .steady { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!--
+    The thread. Always attached, never at rest.
+    A single sagging curve rather than an S: flattening it to nothing reads as
+    the line pulling taut, which is the actual sensation the post describes. An
+    S-curve was tried first and its two control points cancelled each other out,
+    leaving something that barely moved.
+  -->
+  <path class="thread" d="M470 338Q616 452 762 338" fill="none"
+        stroke="#c17f5e" stroke-width="6" stroke-linecap="round"
+        vector-effect="non-scaling-stroke"/>
+
+  <!-- The one that reaches. -->
+  <circle class="halo" cx="420" cy="338" r="66" fill="#c17f5e" opacity="0.3"/>
+  <g class="seeker">
+    <circle cx="420" cy="338" r="50" fill="#2c3a2e"/>
+  </g>
+
+  <!-- The one that stays where it is. -->
+  <g class="steady">
+    <circle cx="812" cy="338" r="50" fill="none" stroke="#2c3a2e" stroke-width="6"/>
+  </g>
+
+  <g fill="#8a9e8c" opacity="0.5">
+    <circle cx="216" cy="212" r="3.5"/>
+    <circle cx="1004" cy="470" r="3.5"/>
+    <circle cx="964" cy="180" r="2.5"/>
+    <circle cx="252" cy="484" r="2.5"/>
+  </g>
+
+  <line x1="120" y1="580" x2="1080" y2="580" stroke="#8a9e8c" stroke-opacity="0.22" stroke-width="1.5"/>
+</svg>

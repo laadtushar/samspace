@@ -206,7 +206,13 @@ export const blogPostSchema = z.object({
   title: trimmed(200).min(1, "Title is required"),
   excerpt: trimmed(400).optional().default(""),
   content: trimmed(100_000).min(1, "Post content is required"),
-  coverImage: z.unknown().transform((v) => safeExternalUrl(v)),
+  /*
+    Same rule as a /start link, and for the same reason: a path on this site or
+    an https URL, nothing else. It was https-only, which ruled out artwork
+    shipped with the site — an absolute URL would have to name the production
+    domain and would then be wrong on every preview deployment.
+  */
+  coverImage: z.unknown().transform(safeLinkHref),
   coverAlt: trimmed(200).optional().default(""),
   tags: z.array(trimmed(40)).max(12).optional().default([]),
   status: z.enum(["draft", "published"]).default("draft"),
