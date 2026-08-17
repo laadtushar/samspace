@@ -23,9 +23,15 @@
       .seeker { transform-origin: 420px 338px; animation: lean 5.5s ease-in-out infinite; }
       .halo   { transform-origin: 420px 338px; animation: reach 5.5s ease-in-out infinite; }
       .steady { transform-origin: 812px 338px; animation: settle 11s ease-in-out infinite; }
+      /*
+        Slack, then taut, then slack again. Never detached.
+        Not squashed all the way to zero: the geometry degenerates near it and
+        the line renders as a row of dashes. The stroke is marked
+        non-scaling so squashing the path does not thin the line with it.
+      */
       @keyframes tension {
         0%, 100% { transform: scaleY(1); }
-        50%      { transform: scaleY(-0.55); }
+        50%      { transform: scaleY(0.12); }
       }
       @keyframes lean {
         0%, 100% { transform: translateX(0); }
@@ -49,11 +55,14 @@
 
   <!--
     The thread. Always attached, never at rest.
-    Drawn with a deep bow on purpose: the motion is a vertical flip of this
-    curve, so a shallow one would change by a few pixels and read as static.
+    A single sagging curve rather than an S: flattening it to nothing reads as
+    the line pulling taut, which is the actual sensation the post describes. An
+    S-curve was tried first and its two control points cancelled each other out,
+    leaving something that barely moved.
   -->
-  <path class="thread" d="M470 338C572 246 662 430 762 338" fill="none"
-        stroke="#c17f5e" stroke-width="6" stroke-linecap="round"/>
+  <path class="thread" d="M470 338Q616 452 762 338" fill="none"
+        stroke="#c17f5e" stroke-width="6" stroke-linecap="round"
+        vector-effect="non-scaling-stroke"/>
 
   <!-- The one that reaches. -->
   <circle class="halo" cx="420" cy="338" r="66" fill="#c17f5e" opacity="0.3"/>
