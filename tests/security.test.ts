@@ -685,3 +685,44 @@ describe("the admin accounts migration", () => {
     expect(tables.every((s) => /create table if not exists/i.test(s))).toBe(true);
   });
 });
+
+/**
+ * The Google Business Profile link in the structured data.
+ *
+ * Google's share URL carries tokens identifying whoever pressed share. The
+ * codebase already strips that class of parameter from Instagram and LinkedIn
+ * profiles; this pins the same rule for the listing, which is easy to undo by
+ * pasting a fresh share link over it.
+ */
+describe("the Business Profile reference", () => {
+  const layout = () => {
+    const { readFileSync } = require("fs") as typeof import("fs");
+    return readFileSync("app/layout.tsx", "utf8");
+  };
+
+  it("is present in the business structured data", () => {
+    expect(layout()).toContain("kgmid=/g/11zwyw0x4j");
+  });
+
+  it("carries no share-tracking parameters", () => {
+    const source = layout();
+    const link = source.match(/"(https:\/\/www\.google\.com\/search\?[^"]*)"/)?.[1] ?? "";
+    expect(link).toBeTruthy();
+    for (const param of ["utm_source", "shem", "shndl", "kgs", "source=", "&hl="]) {
+      expect(link, `share tracking leaked: ${param}`).not.toContain(param);
+    }
+  });
+
+  it("hangs off the business rather than the person", () => {
+    // The listing is the practice, not Priyanka's personal profile.
+    const source = layout();
+    const businessBlock = source.slice(
+      source.indexOf('"@type": ["ProfessionalService"'),
+      source.indexOf('"@type": "Person"')
+    );
+    expect(businessBlock).toContain("GOOGLE_BUSINESS_PROFILE");
+    expect(source.slice(source.indexOf('"@type": "Person"'))).not.toContain(
+      "GOOGLE_BUSINESS_PROFILE"
+    );
+  });
+});
