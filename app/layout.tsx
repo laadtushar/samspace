@@ -125,7 +125,22 @@ export default function RootLayout({
   // linked graph — the business, the person behind it, and the site — rather
   // than three unrelated islands. The FAQ mirrors the section rendered on the
   // page; markup for questions a visitor cannot see is a policy violation.
-  const jsonLd = {
+  /**
+ * The Google Business Profile, as a knowledge-graph entity.
+ *
+ * kgmid is the stable identifier for the listing; the URL Google hands out when
+ * you share a profile also carries shem, shndl, kgs and utm_source, all of which
+ * identify whoever pressed share. Those are stripped here for the same reason
+ * safeProfileUrl strips Instagram's ?igsh= — passing one visitor's share token
+ * to every reader of the page is not something a profile link needs to do.
+ *
+ * This is a modest signal on its own. What actually ties the listing to this
+ * site is the Website field on the profile itself pointing back here.
+ */
+const GOOGLE_BUSINESS_PROFILE =
+  "https://www.google.com/search?kgmid=/g/11zwyw0x4j";
+
+const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
@@ -148,6 +163,7 @@ export default function RootLayout({
         sameAs: [
           defaultContent.social.instagram,
           defaultContent.social.linkedin,
+          GOOGLE_BUSINESS_PROFILE,
         ].filter(Boolean),
         founder: { "@id": `${SITE_URL}#priyanka` },
         provider: { "@id": `${SITE_URL}#priyanka` },
