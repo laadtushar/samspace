@@ -6,6 +6,17 @@ import FloatingShapes from "./FloatingShapes";
 import TextReveal from "./TextReveal";
 import MagneticButton from "./MagneticButton";
 
+/*
+  Entrance timings are deliberately short.
+  
+  These elements are all in the HTML from the first byte; the animation only
+  decides when the browser is allowed to show them. An earlier version held the
+  subtext until 1.8s and the call to action until 2.5s, which measured as a
+  3.1s Largest Contentful Paint against Google's 2.5s threshold — the page
+  painted in 348ms and then sat there. The reveal still staggers, it just no
+  longer costs two and a half seconds of someone's first impression.
+*/
+
 const credentials = [
   "M.Sc. Clinical Psychology",
   "UGC NET-JRF Qualified",
@@ -60,7 +71,7 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
             >
               <span className="inline-block font-sans text-xs font-medium tracking-widest uppercase text-clay border border-clay/40 rounded-full px-4 py-1.5 mb-8">
                 Counselling Psychologist & Academic Mentor
@@ -71,8 +82,8 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
             <h1 className="font-serif text-5xl sm:text-6xl lg:text-[4.5rem] font-semibold text-forest leading-[1.1] mb-6">
               <TextReveal
                 text={hero.headline}
-                delay={1.0}
-                staggerDelay={0.06}
+                delay={0.15}
+                staggerDelay={0.035}
               />
             </h1>
 
@@ -80,7 +91,7 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
             <motion.p
               initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.8, delay: 1.8 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
               className="font-sans text-lg text-forest/60 leading-relaxed mb-8 max-w-lg"
             >
               {hero.subtext}
@@ -95,7 +106,7 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
                   animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                   transition={{
                     duration: 0.5,
-                    delay: 2.1 + i * 0.12,
+                    delay: 0.45 + i * 0.07,
                     ease: [0.23, 0.86, 0.39, 0.96],
                   }}
                   className="font-sans text-xs bg-forest/8 text-forest/80 border border-forest/15 rounded-full px-4 py-1.5 font-medium"
@@ -109,7 +120,7 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 2.5 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
               className="flex flex-wrap gap-4"
             >
               <MagneticButton strength={0.15}>
@@ -138,8 +149,8 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
               initial={{ opacity: 0, y: -60, rotate: -6 }}
               animate={{ opacity: 1, y: 0, rotate: 0 }}
               transition={{
-                duration: 1.2,
-                delay: 1.2,
+                duration: 0.8,
+                delay: 0.25,
                 ease: [0.23, 0.86, 0.39, 0.96],
               }}
             >
@@ -205,7 +216,7 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
                   transition={{
                     duration: 0.6,
-                    delay: 2.0 + i * 0.15,
+                    delay: 0.7 + i * 0.1,
                     type: "spring",
                     stiffness: 200,
                     damping: 15,
