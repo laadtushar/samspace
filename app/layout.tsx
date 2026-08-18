@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BotIdClient } from "botid/client";
 import { Analytics } from "@vercel/analytics/next";
+import MotionPreferences from "@/components/MotionPreferences";
 import {
   SITE_URL,
   SITE_NAME,
@@ -262,7 +263,7 @@ const jsonLd = {
       <body
         className={`${cormorant.variable} ${dmSans.variable} font-sans bg-cream text-forest antialiased`}
       >
-        {children}
+        <MotionPreferences>{children}</MotionPreferences>
         <Analytics />
       </body>
     </html>
