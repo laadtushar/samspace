@@ -157,6 +157,8 @@ Most people I work with are somewhere in between: some overthinking, some anxiet
 
 When this pattern shows up specifically in a relationship, it often has a particular shape — that's covered in [signs of an anxious attachment style](/blog/anxious-attachment-style-relationships). And if you're still weighing whether any of this is worth raising at all, [that question has its own answer](/blog/do-i-need-therapy-or-overreacting).
 
+If the second voice interrupting the loop has lately been a chatbot at 1am, that's worth its own look — [ChatGPT versus a therapist for anxiety](/blog/chatgpt-vs-therapist-for-anxiety) covers what it's genuinely good for and where it runs out.
+
 If this has been sitting with you for a while, or you're genuinely not sure which of these fits what you're going through, that's a reasonable thing to bring to a session. I work with young adults on exactly this kind of overthinking-anxiety overlap, drawing from CBT, humanistic therapy, and trauma-informed care, shaped around what you're actually bringing, not a fixed script.
 
 Sessions run on a sliding scale (₹600–₹1000), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
@@ -282,6 +284,63 @@ If holding the line leaves you replaying the conversation for days afterwards, t
 If you're in the middle of that kind of boundary right now, and the guilt or the pushback is bigger than you expected, that's worth working through with someone rather than white-knuckling it alone. A lot of what makes these conversations hard isn't the script, it's everything underneath it: old patterns, old fears about disappointing your parents, and sometimes grief about a relationship that isn't quite what you wish it were.
 
 I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale (₹600–₹1000). [You can read more or book a session here.](/?intake=true)
+
+${CRISIS_NOTE}`,
+  },
+
+  {
+    slug: "chatgpt-vs-therapist-for-anxiety",
+    title: "I've Been Talking to ChatGPT About My Anxiety. Should I See a Therapist Instead?",
+    seoTitle: "ChatGPT vs Therapist for Anxiety: Where AI Runs Out",
+    seoDescription:
+      "Using ChatGPT to work through anxiety? Here's what it's genuinely useful for, where it runs out, and how to know if it's time to talk to an actual person.",
+    excerpt:
+      "At 1am it's right there, and some of that use is genuinely fine. Here's what a chatbot is actually good for with anxiety, the four places it quietly runs out, and how to tell which side of that line you're on.",
+    coverImage: "/blog/chatgpt-vs-therapist-for-anxiety.svg",
+    coverAlt:
+      "Identical chat bubbles that keep clearing beside a single line threading through three points that grow",
+    tags: ["Anxiety", "AI and therapy", "Young adults"],
+    content: `At 1am, when the spiral starts and calling anyone feels like too much, ChatGPT is right there. No appointment, no cost, no waiting for a reply, no risk of being judged for the same worry you've already brought up four times this week. It makes complete sense that so many people have started using it this way, and honestly, some of that use is fine. This isn't a piece telling you to stop.
+
+But if you're reading this because some part of you is already wondering whether it's enough, that instinct is worth taking seriously. Here's an honest breakdown of what it's actually good for, where it quietly runs out, and how to tell which side of that line you're on.
+
+## What it's genuinely useful for
+
+**Putting language to something vague.** A lot of anxiety starts as a feeling with no name attached, and typing it out, even to a chatbot, can help you land on "oh, this is what I'm actually worried about." That clarity has real value on its own.
+
+**Practicing something between sessions**, if you're already in therapy. Rehearsing a hard conversation, drafting a boundary you're nervous to set, working through a CBT thought record you learned with your therapist. Used this way, it's closer to a tool than a substitute.
+
+**Getting basic psychoeducation.** Understanding what anxiety is, roughly how it works, what common patterns look like. This kind of general information is something it can genuinely help with.
+
+**Immediate availability when nothing else is open.** At 1am, "something is better than nothing" is a reasonable stance, as long as it's not replacing the something-more that would actually help long-term.
+
+## Where it quietly runs out
+
+**It can't see you.** A therapist notices when you've gone quiet for a beat too long, when your voice changes talking about a specific topic, when you say "I'm fine" in a tone that clearly means you're not. None of that reaches a chat window. You're only working with what you type, which means anything you're not consciously naming just doesn't factor in at all.
+
+**It agrees with you more than it should.** These systems are built to be validating, which feels good in the moment and can be genuinely unhelpful if what you actually need is to be gently challenged. Anxious thinking often needs someone willing to say "I hear why that feels true, and I don't think it is," not something calibrated to keep the conversation pleasant.
+
+**It doesn't hold anything from session to session.** A therapist tracks your patterns over weeks and months: this is the third time you've mentioned feeling this way about your mother, that thing you said in passing four sessions ago connects to what you're describing now. That continuity is where a lot of the actual insight comes from, and it's very hard to reconstruct by re-explaining your situation from scratch every time you open a new chat.
+
+**It can't tell the difference between reassurance and treatment.** Asking the same worry five different ways and getting calm, reasonable answers each time can feel like progress. Often it's the opposite: it's the same reassurance-seeking loop anxiety runs on, just with an infinitely patient, always-available partner for it. The relief is real but short-lived, and it can end up feeding the exact pattern that's meant to be resolving. If that loop is familiar, [overthinking versus anxiety](/blog/overthinking-vs-anxiety) covers why it doesn't respond to being reasoned with, however good the reasoning is.
+
+**Genuine risk in a real crisis.** This is the part that matters most and gets said the least clearly. If what you're going through moves toward real crisis territory, a chatbot cannot reliably recognise that or respond the way a trained person would, and there have been documented cases of exactly this failing badly. If you are ever having thoughts of harming yourself, that is not a moment for a chat window. Call iCall at 9152987821 or Vandrevala Foundation at 1860-2662-345, available 24/7.
+
+## A rough way to tell where you're at
+
+If you're using it occasionally to think something through, or to practice a skill you already learned somewhere else, that's a reasonable use of the tool.
+
+If you notice you're going back to it multiple times a day for the same worry, if the relief it gives never seems to last, if you've started preferring it to talking to actual people in your life, or if what you're bringing to it has started to feel bigger than "help me think this through," that's usually a sign it's time to bring in a person, not because the chatbot did anything wrong, but because you've reached the edge of what it was ever going to be able to offer.
+
+If the hesitation underneath this is really "but is my anxiety bad enough to bother a therapist with," that's a separate question worth its own answer — [do I need therapy, or am I overreacting](/blog/do-i-need-therapy-or-overreacting) takes it on directly.
+
+## What a therapist adds that this can't
+
+Someone who remembers you over time. Someone who can push back, not just agree. Someone who can actually notice what's happening in the room with you, not just what you've typed. And someone who's accountable to your wellbeing specifically, not to keeping a conversation smooth.
+
+That last distinction is the real answer to ChatGPT versus a therapist for anxiety. It isn't that one is clever and the other isn't. It's that only one of them is responsible for you.
+
+If any of this is landing, that's usually enough of a sign to take the next step. I work with young adults on exactly this kind of anxiety and overthinking, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, and I'm genuinely not going to make you feel bad for having used ChatGPT to get this far. Sessions run on a sliding scale (₹600–₹1000), specifically so cost isn't the reason this stays a conversation with a chatbot instead of a person. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
