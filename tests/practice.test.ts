@@ -122,7 +122,7 @@ suite("recordSubmission against a real database", () => {
   it("never lets a new submission overwrite a decision the practitioner made", async () => {
     const clientId = await recordSubmission(submission());
     await sql()`
-      update clients set status = 'active', agreed_rate = '₹500 (Student)'
+      update clients set status = 'active', agreed_rate = '₹600 (Student)'
       where id = ${clientId}
     `;
 
@@ -130,7 +130,7 @@ suite("recordSubmission against a real database", () => {
 
     const [client] = await sql()`select * from clients`;
     expect(client.status).toBe("active");
-    expect(client.agreed_rate).toBe("₹500 (Student)");
+    expect(client.agreed_rate).toBe("₹600 (Student)");
   });
 
   it("is idempotent — replaying the same submission id stores it once", async () => {
@@ -150,7 +150,7 @@ suite("recordSubmission against a real database", () => {
 
   it("records the student rate when it was confirmed", async () => {
     await recordSubmission(
-      submission({ slidingScale: "₹500 (Student)", studentConfirmed: true })
+      submission({ slidingScale: "₹600 (Student)", studentConfirmed: true })
     );
     const [sub] = await sql()`select * from submissions`;
     const [client] = await sql()`select * from clients`;
@@ -565,7 +565,7 @@ suite("the dashboard reads submissions from the database", () => {
 
   it("carries the student confirmation through", async () => {
     await practice.recordSubmission(
-      submission({ slidingScale: "₹500 (Student)", studentConfirmed: true })
+      submission({ slidingScale: "₹600 (Student)", studentConfirmed: true })
     );
     const [row] = await practice.listSubmissionsForDashboard();
     expect(row.studentConfirmed).toBe(true);

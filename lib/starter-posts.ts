@@ -88,7 +88,7 @@ You don't need certainty before booking a first session. A first session is ofte
 
 If the hesitation you're sitting with looks more like a loop you can't put down, it may be worth reading [overthinking versus anxiety](/blog/overthinking-vs-anxiety) as well, since the two often travel together.
 
-If you've been going back and forth on this, that back-and-forth is usually the clearest signal available. I work with young adults navigating exactly this kind of "is this worth bringing up" hesitation, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around what you bring rather than a fixed idea of what counts. Sessions run on a sliding scale (₹500–₹1000), so cost doesn't have to be part of the hesitation either. [You can read more or book a session here.](/?intake=true)
+If you've been going back and forth on this, that back-and-forth is usually the clearest signal available. I work with young adults navigating exactly this kind of "is this worth bringing up" hesitation, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around what you bring rather than a fixed idea of what counts. Sessions run on a sliding scale (₹600–₹1000), so cost doesn't have to be part of the hesitation either. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -159,7 +159,7 @@ When this pattern shows up specifically in a relationship, it often has a partic
 
 If this has been sitting with you for a while, or you're genuinely not sure which of these fits what you're going through, that's a reasonable thing to bring to a session. I work with young adults on exactly this kind of overthinking-anxiety overlap, drawing from CBT, humanistic therapy, and trauma-informed care, shaped around what you're actually bringing, not a fixed script.
 
-Sessions run on a sliding scale (₹500–₹1000), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
+Sessions run on a sliding scale (₹600–₹1000), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -218,7 +218,7 @@ This is the part that often confuses people the most, including the person exper
 
 Attachment style isn't a fixed sentence. It's a pattern that developed for a reason, and patterns that developed can shift with the right kind of work, usually a combination of understanding where it came from and practising new responses in real relationships as they come up.
 
-If you've recognised yourself in this, especially if it's been affecting how safe your relationships feel, that's worth bringing to a session. I work with young adults on attachment patterns and relationship anxiety, drawing from CBT, humanistic therapy, and trauma-informed care, since attachment work often benefits from looking at both present-day patterns and where they started. Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+If you've recognised yourself in this, especially if it's been affecting how safe your relationships feel, that's worth bringing to a session. I work with young adults on attachment patterns and relationship anxiety, drawing from CBT, humanistic therapy, and trauma-informed care, since attachment work often benefits from looking at both present-day patterns and where they started. Sessions run on a sliding scale (₹600–₹1000). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -281,7 +281,7 @@ If holding the line leaves you replaying the conversation for days afterwards, t
 
 If you're in the middle of that kind of boundary right now, and the guilt or the pushback is bigger than you expected, that's worth working through with someone rather than white-knuckling it alone. A lot of what makes these conversations hard isn't the script, it's everything underneath it: old patterns, old fears about disappointing your parents, and sometimes grief about a relationship that isn't quite what you wish it were.
 
-I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale (₹600–₹1000). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },

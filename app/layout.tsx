@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist Priyanka Varma offers online therapy (₹500–₹1000) and academic mentoring for young adults aged 18–35. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
+      "Counselling psychologist Priyanka Varma offers online therapy (₹600–₹1000) and academic mentoring for young adults aged 18–35. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
     url: SITE_URL,
     siteName: SITE_NAME,
     locale: "en_IN",
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist for young adults 18–35. CBT, Humanistic, Trauma-Informed Care. Sessions ₹500–₹1000. Book online.",
+      "Counselling psychologist for young adults 18–35. CBT, Humanistic, Trauma-Informed Care. Sessions ₹600–₹1000. Book online.",
   },
   robots: {
     index: IS_PRODUCTION_SITE,
@@ -152,7 +152,7 @@ const jsonLd = {
           "Online counselling and academic mentoring for young adults aged 18–35 by Priyanka Varma, M.Sc. Clinical Psychology.",
         url: SITE_URL,
         image: `${SITE_URL}/priyanka.jpeg`,
-        priceRange: "₹500–₹1000",
+        priceRange: "₹600–₹1000",
         currenciesAccepted: "INR",
         areaServed: { "@type": "Country", name: "India" },
         availableLanguage: ["English", "Hindi"],
@@ -184,7 +184,7 @@ const jsonLd = {
               priceSpecification: {
                 "@type": "PriceSpecification",
                 priceCurrency: "INR",
-                minPrice: 500,
+                minPrice: 600,
                 maxPrice: 1000,
               },
             },

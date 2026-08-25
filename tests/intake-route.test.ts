@@ -101,7 +101,7 @@ describe("POST /api/intake", () => {
   });
 
   it("refuses the student rate without confirmation, and stores nothing", async () => {
-    const res = await POST(post({ ...valid, slidingScale: "₹500 (Student)" }));
+    const res = await POST(post({ ...valid, slidingScale: "₹600 (Student)" }));
     const body = await res.json();
     expect(res.status).toBe(400);
     expect(body.error).toMatch(/student/i);
@@ -110,7 +110,7 @@ describe("POST /api/intake", () => {
 
   it("accepts the student rate once confirmed and records the confirmation", async () => {
     const res = await POST(
-      post({ ...valid, slidingScale: "₹500 (Student)", studentConfirmed: true })
+      post({ ...valid, slidingScale: "₹600 (Student)", studentConfirmed: true })
     );
     expect(res.status).toBe(200);
     expect(addSubmission.mock.calls[0][0].studentConfirmed).toBe(true);
