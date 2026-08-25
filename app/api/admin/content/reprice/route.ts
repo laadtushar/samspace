@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ownerOrDenied } from "@/lib/admin-guard";
 import { getContent, saveContent } from "@/lib/content";
 import { getAllPosts, savePost } from "@/lib/blog";
-import { reprice, RATE_PATTERN, type Rewrite } from "@/lib/reprice";
+import { reprice, normalizeAmount, type Rewrite } from "@/lib/reprice";
 import { siteContentSchema, firstIssue } from "@/lib/validation";
 import { log, newRef, errorFields } from "@/lib/log";
 
@@ -24,9 +24,21 @@ export const dynamic = "force-dynamic";
  * correction, not a general find-and-replace over the whole site.
  */
 
+/**
+ * Accepts "600" as readily as "₹600".
+ *
+ * The dashboard sends the symbol, but the field it comes from holds digits, and
+ * a caller reaching this directly should not have to guess which form is meant.
+ * Normalising here keeps one representation past this point.
+ */
+const amount = z
+  .unknown()
+  .transform(normalizeAmount)
+  .refine((v) => v !== "", "Rates must be plain amounts, e.g. 500 or ₹500");
+
 const bodySchema = z.object({
-  from: z.string().trim().regex(RATE_PATTERN, "From must be a rupee amount, e.g. ₹500"),
-  to: z.string().trim().regex(RATE_PATTERN, "To must be a rupee amount, e.g. ₹600"),
+  from: amount,
+  to: amount,
   dryRun: z.boolean().optional().default(false),
 });
 

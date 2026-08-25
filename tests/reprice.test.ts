@@ -3,6 +3,7 @@ import {
   reprice,
   rewriteText,
   isRate,
+  normalizeAmount,
   RATE_PATTERN,
 } from "../lib/reprice";
 
@@ -98,6 +99,33 @@ describe("what counts as a rate", () => {
       "",
     ]) {
       expect(isRate(bad)).toBe(false);
+    }
+  });
+});
+
+describe("reading what someone typed", () => {
+  it("accepts a bare number, which is what a phone keyboard makes easy", () => {
+    // The bug this exists for: the field demanded ₹500, the person typed 500,
+    // and the button stayed disabled with nothing saying why.
+    expect(normalizeAmount("500")).toBe("₹500");
+    expect(normalizeAmount(600)).toBe("₹600");
+  });
+
+  it("accepts the symbol too, however it is spaced", () => {
+    expect(normalizeAmount("₹500")).toBe("₹500");
+    expect(normalizeAmount("  ₹500  ")).toBe("₹500");
+    expect(normalizeAmount("₹ 500")).toBe("₹500");
+  });
+
+  it("returns nothing for anything that is not a plain amount", () => {
+    for (const bad of ["", "   ", "₹", "5", "abc", "₹500–₹1000", "500 (Student)", "5.5", "-500", null, undefined, {}]) {
+      expect(normalizeAmount(bad)).toBe("");
+    }
+  });
+
+  it("agrees with the rate pattern on everything it accepts", () => {
+    for (const input of ["500", "₹600", " 1000 ", "12000"]) {
+      expect(isRate(normalizeAmount(input))).toBe(true);
     }
   });
 });

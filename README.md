@@ -106,8 +106,9 @@ structured data, the share cards and the intake form's fallback — and leaves
 the live site quoting the old number.
 
 **Session Rates → Change a rate everywhere** does the whole set in one pass.
-Enter the old and new amounts, press **Preview** to see every place that would
-change, then apply. Owner-only, and both values must be plain rupee amounts, so
+Type the old and new amounts as plain numbers — the ₹ is printed beside the
+field rather than typed — press **Preview** to see every place that would
+change, then apply. Owner-only, and both values must be whole rupee amounts, so
 it cannot be used as a general find-and-replace over the site. `₹500` will not
 match inside `₹5000`.
 
