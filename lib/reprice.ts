@@ -27,6 +27,21 @@ export function isRate(value: unknown): value is string {
 }
 
 /**
+ * Reduces what someone typed to one canonical form.
+ *
+ * "600", "₹600" and " 600 " all mean the same rate, and which one arrives
+ * depends on whether it was typed on a phone, pasted from the site, or sent by
+ * a caller who never saw the form. Returns "" for anything that is not a plain
+ * amount, so the caller has a single thing to check.
+ */
+export function normalizeAmount(value: unknown): string {
+  if (typeof value !== "string" && typeof value !== "number") return "";
+  const digits = String(value).trim().replace(/^₹/, "").trim();
+  const candidate = `₹${digits}`;
+  return RATE_PATTERN.test(candidate) ? candidate : "";
+}
+
+/**
  * Replaces one rupee amount with another inside a single string.
  *
  * The lookahead is what keeps ₹500 from matching the first four characters of

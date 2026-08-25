@@ -2821,8 +2821,49 @@ function CalendlySettings({
  *
  * It previews before it writes, because the thing it edits is already public.
  */
-/** Mirrors the server's rule, so the button disables before the request fails. */
-const RATE = /^₹\d{2,6}$/;
+/**
+ * The fields hold digits, and the ₹ is printed beside them.
+ *
+ * Requiring the symbol to be typed meant the button stayed disabled for anyone
+ * entering 500 on a phone, where ₹ is two keyboard layers down — which looked
+ * like the feature was broken rather than like the field was fussy. Anything
+ * pasted in is reduced to its digits, so ₹500 works too.
+ */
+const digitsOnly = (v: string) => v.replace(/\D/g, "").slice(0, 6);
+const isAmount = (v: string) => /^\d{2,6}$/.test(v);
+
+/** A rupee amount: the symbol is printed, the field takes digits. */
+function AmountField({
+  value,
+  onChange,
+  placeholder,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  label: string;
+}) {
+  return (
+    <div className="relative">
+      <span
+        className="absolute left-3 top-1/2 -translate-y-1/2 font-sans text-sm text-forest/40 pointer-events-none"
+        aria-hidden="true"
+      >
+        ₹
+      </span>
+      <input
+        value={value}
+        onChange={(e) => onChange(digitsOnly(e.target.value))}
+        // A numeric keypad on a phone, and no spinner arrows eating the width.
+        inputMode="numeric"
+        placeholder={placeholder}
+        aria-label={label}
+        className="w-28 pl-7 pr-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+      />
+    </div>
+  );
+}
 
 function RepriceEverywhere() {
   const [from, setFrom] = useState("");
@@ -2831,7 +2872,15 @@ function RepriceEverywhere() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
-  const valid = RATE.test(from.trim()) && RATE.test(to.trim());
+  const valid = isAmount(from) && isAmount(to) && from !== to;
+  const hint =
+    !from || !to
+      ? ""
+      : from === to
+        ? "Both amounts are the same."
+        : valid
+          ? ""
+          : "Enter whole amounts, e.g. 500 and 600.";
 
   const run = async (dryRun: boolean) => {
     setBusy(true);
@@ -2840,7 +2889,7 @@ function RepriceEverywhere() {
       const res = await fetch("/api/admin/content/reprice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: from.trim(), to: to.trim(), dryRun }),
+        body: JSON.stringify({ from: `₹${from}`, to: `₹${to}`, dryRun }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -2851,7 +2900,7 @@ function RepriceEverywhere() {
 
       if (dryRun) {
         setPreview(data);
-        if (!data.edits) setMessage(`Nothing on the site says ${from.trim()}.`);
+        if (!data.edits) setMessage(`Nothing on the site says ₹${from}.`);
         return;
       }
 
@@ -2880,28 +2929,26 @@ function RepriceEverywhere() {
         post — including the ones already published.
       </p>
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <input
+        <AmountField
           value={from}
-          onChange={(e) => {
-            setFrom(e.target.value);
+          onChange={(v) => {
+            setFrom(v);
             setPreview(null);
           }}
-          placeholder="₹500"
-          aria-label="Rate to replace"
-          className="w-28 px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+          placeholder="500"
+          label="Rate to replace"
         />
         <span className="font-sans text-sm text-forest/40" aria-hidden="true">
           &rarr;
         </span>
-        <input
+        <AmountField
           value={to}
-          onChange={(e) => {
-            setTo(e.target.value);
+          onChange={(v) => {
+            setTo(v);
             setPreview(null);
           }}
-          placeholder="₹600"
-          aria-label="Rate to use instead"
-          className="w-28 px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+          placeholder="600"
+          label="Rate to use instead"
         />
         <button
           onClick={() => run(true)}
@@ -2911,6 +2958,12 @@ function RepriceEverywhere() {
           {busy && !preview ? "Checking…" : "Preview"}
         </button>
       </div>
+
+      {/*
+        A greyed-out button with no explanation reads as broken rather than as
+        waiting for something, so say what it is waiting for.
+      */}
+      {hint && <p className="font-sans text-xs text-forest/40 mb-3">{hint}</p>}
 
       {preview && preview.edits > 0 && (
         <div className="bg-cream/60 border border-sage/20 rounded-xl p-4 mb-3">
