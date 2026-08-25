@@ -17,7 +17,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/** Matches "₹500 (Student)" — the same rule the form applies client-side. */
+/** Matches "₹600 (Student)" — the same rule the form applies client-side. */
 const isStudentRate = (option: string) => /\(([^)]*student[^)]*)\)/i.test(option);
 
 export async function POST(req: Request) {

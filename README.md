@@ -90,12 +90,26 @@ disclosed.
 
 ## Sliding scale and the student rate
 
-Rates are configured in the dashboard, one per line, e.g. `₹500 (Student)`.
+Rates are configured in the dashboard, one per line, e.g. `₹600 (Student)`.
 Anything with `(Student)` in the label is treated as the concessional rate: a
 person choosing it is shown a short note explaining who the rate is funded by
 and asked to confirm they're a student. The API enforces the same rule, so a
 request that skips the form cannot claim the rate either. Nobody choosing
 another rate ever sees that step.
+
+### Changing a rate that is already published
+
+The figure appears in more than one place: the rates list, the services card,
+the FAQ answer, and the body of any post that quotes it. Those are all stored
+copy, so editing `defaultContent` moves only what the code owns — the
+structured data, the share cards and the intake form's fallback — and leaves
+the live site quoting the old number.
+
+**Session Rates → Change a rate everywhere** does the whole set in one pass.
+Enter the old and new amounts, press **Preview** to see every place that would
+change, then apply. Owner-only, and both values must be plain rupee amounts, so
+it cannot be used as a general find-and-replace over the site. `₹500` will not
+match inside `₹5000`.
 
 ## Scheduling
 

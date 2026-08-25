@@ -726,3 +726,82 @@ describe("the Business Profile reference", () => {
     );
   });
 });
+
+/**
+ * The sliding scale is quoted in six places that nothing links together.
+ *
+ * The student rate lives in the content defaults, in the intake form's
+ * fallback, in the search description, in the social card, in the structured
+ * data's priceRange and minPrice, and in every blog post's closing line. When
+ * the rate changed from ₹500 to ₹600 each of those had to be found by hand.
+ * These tests fail the next time one of them is missed, which is the only
+ * mechanism that catches a stale price before a reader does.
+ */
+describe("the sliding scale is quoted consistently", () => {
+  const read = async (path: string) => {
+    const { readFileSync } = await import("fs");
+    return readFileSync(path, "utf8");
+  };
+
+  /** The lowest rate, taken from the content defaults rather than hardcoded. */
+  const lowestRate = async () => {
+    const { defaultContent } = await import("@/lib/content");
+    const first = defaultContent.slidingScale[0];
+    const amount = first.match(/₹(\d+)/)?.[1];
+    expect(amount, `could not read a rate from "${first}"`).toBeTruthy();
+    return Number(amount);
+  };
+
+  it("marks the cheapest rate as the student one", async () => {
+    const { defaultContent } = await import("@/lib/content");
+    const amounts = defaultContent.slidingScale.map((r) =>
+      Number(r.match(/₹(\d+)/)?.[1] ?? 0)
+    );
+    expect(defaultContent.slidingScale[0]).toContain("(Student)");
+    expect(Math.min(...amounts)).toBe(amounts[0]);
+  });
+
+  it("uses the same lowest rate in the structured data", async () => {
+    const layout = await read("app/layout.tsx");
+    const low = await lowestRate();
+    expect(layout).toContain(`minPrice: ${low}`);
+    expect(layout).toContain(`priceRange: "₹${low}–₹1000"`);
+  });
+
+  it("uses the same lowest rate in the search and social descriptions", async () => {
+    const layout = await read("app/layout.tsx");
+    const low = await lowestRate();
+    // The OG description, the Twitter description and priceRange all quote it.
+    const quoted = layout.match(/₹\d+–₹1000/g) ?? [];
+    expect(quoted.length).toBeGreaterThanOrEqual(3);
+    for (const q of quoted) expect(q).toBe(`₹${low}–₹1000`);
+  });
+
+  it("uses the same lowest rate in the services card and the FAQ answer", async () => {
+    const content = await read("lib/content.ts");
+    const low = await lowestRate();
+    for (const q of content.match(/₹\d+–₹1000/g) ?? []) {
+      expect(q).toBe(`₹${low}–₹1000`);
+    }
+    // The FAQ explains which rate is the student one by naming the amount.
+    expect(content).toContain(`The ₹${low} rate is reserved for students`);
+  });
+
+  it("uses the same lowest rate in every shipped post", async () => {
+    const { STARTER_POSTS } = await import("@/lib/starter-posts");
+    const low = await lowestRate();
+    for (const post of STARTER_POSTS) {
+      const quoted = post.content.match(/₹\d+–₹1000/g) ?? [];
+      expect(quoted.length, `${post.slug} never quotes the rate`).toBeGreaterThan(0);
+      for (const q of quoted) expect(q, post.slug).toBe(`₹${low}–₹1000`);
+    }
+  });
+
+  it("uses the same lowest rate in the intake form's fallback", async () => {
+    const form = await read("components/IntakeFormModal.tsx");
+    const low = await lowestRate();
+    for (const q of form.match(/₹\d+ \(Student\)/g) ?? []) {
+      expect(q).toBe(`₹${low} (Student)`);
+    }
+  });
+});

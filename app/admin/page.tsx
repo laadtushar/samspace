@@ -1544,7 +1544,7 @@ export default function AdminPage() {
                           }}
                         />
                         <ContentField
-                          label="Price (e.g. ₹500–₹1000 or leave empty)"
+                          label="Price (e.g. ₹600–₹1000 or leave empty)"
                           value={item.price || ""}
                           onChange={(v) => {
                             const items = [...(content as any).services.items];
@@ -1752,7 +1752,7 @@ export default function AdminPage() {
                                 </label>
                                 <input
                                   defaultValue={c.agreed_rate ?? ""}
-                                  placeholder={c.student_rate ? "₹500 (Student)" : "₹800"}
+                                  placeholder={c.student_rate ? "₹600 (Student)" : "₹800"}
                                   onBlur={(e) =>
                                     e.target.value !== (c.agreed_rate ?? "") &&
                                     saveClient(c.id, { agreed_rate: e.target.value })
@@ -2055,6 +2055,7 @@ export default function AdminPage() {
                       onChange={(v) => setContent({ ...content, studentNote: v })}
                       textarea
                     />
+                    {me?.role === "owner" && <RepriceEverywhere />}
                   </ContentSection>
 
                   <ContentSection title="Scheduling (Calendly)">
@@ -2810,6 +2811,147 @@ function CalendlySettings({
 }
 
 // ─── Helper Components ──────────────────────────────
+/**
+ * Changing a rate in the field above fixes the list and nothing else.
+ *
+ * The same figure is written into the services card, the FAQ answer and the
+ * body of published posts, and each of those is stored copy — editing one and
+ * forgetting the others is how the site ends up quoting two prices at once.
+ * This finds every one of them.
+ *
+ * It previews before it writes, because the thing it edits is already public.
+ */
+/** Mirrors the server's rule, so the button disables before the request fails. */
+const RATE = /^₹\d{2,6}$/;
+
+function RepriceEverywhere() {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [preview, setPreview] = useState<RepriceResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const valid = RATE.test(from.trim()) && RATE.test(to.trim());
+
+  const run = async (dryRun: boolean) => {
+    setBusy(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/content/reprice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from: from.trim(), to: to.trim(), dryRun }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data.error ?? "Could not do that.");
+        setPreview(null);
+        return;
+      }
+
+      if (dryRun) {
+        setPreview(data);
+        if (!data.edits) setMessage(`Nothing on the site says ${from.trim()}.`);
+        return;
+      }
+
+      setPreview(null);
+      setFrom("");
+      setTo("");
+      setMessage(
+        data.failed?.length
+          ? `Changed ${data.edits} in ${data.targets.length}. ${data.failed.length} could not be saved (ref ${data.ref}).`
+          : `Changed ${data.edits} ${data.edits === 1 ? "mention" : "mentions"} across ${data.targets.length}. Live within ~60 seconds.`
+      );
+    } catch {
+      setMessage("Connection error.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-sage/15 pt-4 mt-2">
+      <p className="font-sans text-xs font-medium text-forest/50 uppercase tracking-wider mb-1.5">
+        Change a rate everywhere
+      </p>
+      <p className="font-sans text-xs text-forest/40 mb-3">
+        Rewrites one amount across the rates, the services card, the FAQ and every
+        post — including the ones already published.
+      </p>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <input
+          value={from}
+          onChange={(e) => {
+            setFrom(e.target.value);
+            setPreview(null);
+          }}
+          placeholder="₹500"
+          aria-label="Rate to replace"
+          className="w-28 px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+        />
+        <span className="font-sans text-sm text-forest/40" aria-hidden="true">
+          &rarr;
+        </span>
+        <input
+          value={to}
+          onChange={(e) => {
+            setTo(e.target.value);
+            setPreview(null);
+          }}
+          placeholder="₹600"
+          aria-label="Rate to use instead"
+          className="w-28 px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+        />
+        <button
+          onClick={() => run(true)}
+          disabled={!valid || busy}
+          className="font-sans text-xs font-medium px-4 py-2 rounded-lg border border-sage/30 text-forest disabled:opacity-40"
+        >
+          {busy && !preview ? "Checking…" : "Preview"}
+        </button>
+      </div>
+
+      {preview && preview.edits > 0 && (
+        <div className="bg-cream/60 border border-sage/20 rounded-xl p-4 mb-3">
+          <p className="font-sans text-sm text-forest mb-2">
+            {preview.edits} {preview.edits === 1 ? "mention" : "mentions"} in{" "}
+            {preview.targets.length}{" "}
+            {preview.targets.length === 1 ? "place" : "places"}:
+          </p>
+          <ul className="space-y-1 mb-3 max-h-48 overflow-y-auto">
+            {preview.targets.map((t) => (
+              <li key={t.label} className="font-sans text-xs text-forest/60">
+                <span className="font-medium text-forest/80">{t.label}</span> &middot;{" "}
+                {t.changes.length} {t.changes.length === 1 ? "change" : "changes"}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => run(false)}
+            disabled={busy}
+            className="font-sans text-xs font-medium px-4 py-2 rounded-lg bg-forest text-cream disabled:opacity-40"
+          >
+            {busy ? "Applying…" : `Change all to ${preview.to}`}
+          </button>
+        </div>
+      )}
+
+      {message && <p className="font-sans text-xs text-forest/60">{message}</p>}
+    </div>
+  );
+}
+
+interface RepriceResult {
+  from: string;
+  to: string;
+  dryRun: boolean;
+  edits: number;
+  failed: string[];
+  ref?: string;
+  targets: { label: string; changes: unknown[]; saved: boolean }[];
+}
+
 function ContentSection({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
