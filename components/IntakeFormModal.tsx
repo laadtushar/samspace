@@ -11,6 +11,11 @@ import {
   ChevronLeft,
   CalendarDays,
 } from "lucide-react";
+import {
+  providerFor,
+  embedUrlFor,
+  isBookingConfirmation,
+} from "@/lib/scheduling";
 
 interface IntakeData {
   name: string;
@@ -88,6 +93,7 @@ export default function IntakeFormModal({
   isOpen,
   onClose,
   slidingScale: rawSlidingScale = ["₹600 (Student)", "₹800", "₹900", "₹1000"],
+  // Named for Calendly for storage-compatibility; any supported provider works.
   calendlyUrl = "",
   studentNote = defaultStudentNote,
 }: {
@@ -112,20 +118,13 @@ export default function IntakeFormModal({
   const [embedSrc, setEmbedSrc] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Only a real Calendly link switches the scheduling step on — a blank or
-  // malformed value in the admin panel simply leaves the flow as it was.
-  const schedulingEnabled = useMemo(() => {
-    if (!calendlyUrl) return false;
-    try {
-      const url = new URL(calendlyUrl);
-      return url.protocol === "https:" && /(^|\.)calendly\.com$/.test(url.hostname);
-    } catch {
-      return false;
-    }
-  }, [calendlyUrl]);
+  // Only a link to a provider we recognise switches the scheduling step on — a
+  // blank or malformed value in the admin panel leaves the flow as it was.
+  const provider = useMemo(() => providerFor(calendlyUrl), [calendlyUrl]);
+  const schedulingEnabled = provider !== null;
 
   // ─── Step definitions ─────────────────────────────
-  // The scheduling step only exists once a Calendly link is configured, so the
+  // The scheduling step only exists once a booking link is configured, so the
   // rest of the flow is addressed by id rather than by a fixed index.
   const steps = useMemo(
     () => [
@@ -177,33 +176,26 @@ export default function IntakeFormModal({
   );
   const selectedRate = parseOption(slidingScale[rateIndex]);
 
-  // Calendly's embed needs the host domain; build it client-side only.
+  // Calendly needs to be told the parent domain before it will frame at all, so
+  // the embed URL can only be built in the browser.
   useEffect(() => {
     if (!schedulingEnabled) return;
-    try {
-      const url = new URL(calendlyUrl);
-      url.searchParams.set("embed_domain", window.location.hostname);
-      url.searchParams.set("embed_type", "Inline");
-      url.searchParams.set("hide_gdpr_banner", "1");
-      setEmbedSrc(url.toString());
-    } catch {
-      setEmbedSrc("");
-    }
+    setEmbedSrc(embedUrlFor(calendlyUrl, window.location.hostname));
   }, [calendlyUrl, schedulingEnabled]);
 
-  // Calendly notifies the parent frame when a slot is actually booked, so the
-  // step can mark itself done without asking the person to self-report.
+  // Both providers announce a completed booking to the parent frame, so the
+  // step can mark itself done rather than asking the person to self-report.
+  // The manual confirm below stays regardless: an announcement that never
+  // arrives must not be the difference between a booking counting and not.
   useEffect(() => {
     if (!schedulingEnabled) return;
     const onMessage = (e: MessageEvent) => {
-      if (!/^https:\/\/([a-z0-9-]+\.)*calendly\.com$/.test(e.origin)) return;
-      if (e.data?.event === "calendly.event_scheduled") {
-        setData((d) => ({ ...d, scheduling: "booked" }));
-      }
+      if (!isBookingConfirmation(calendlyUrl, e.origin, e.data)) return;
+      setData((d) => ({ ...d, scheduling: "booked" }));
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [schedulingEnabled]);
+  }, [calendlyUrl, schedulingEnabled]);
 
   // The slider always displays a rate, so the displayed default is committed
   // when the step is reached — otherwise submitting would complain that nothing
@@ -469,7 +461,7 @@ export default function IntakeFormModal({
                       </div>
                     )}
 
-                    {/* Schedule — optional, only when a Calendly link is set */}
+                    {/* Schedule — optional, only when a booking link is set */}
                     {currentStep === "schedule" && (
                       <div>
                         <h3 className="font-serif text-xl font-semibold text-forest mb-2">

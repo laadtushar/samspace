@@ -219,7 +219,7 @@ export async function POST(req: Request) {
             }</td></tr>
             <tr><td style="padding: 6px 0; font-weight: bold;">Scheduling</td><td>${
               booked
-                ? "Slot booked via Calendly"
+                ? "Slot booked"
                 : data.scheduling === "skipped"
                   ? "Skipped — needs a time"
                   : "—"

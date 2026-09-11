@@ -114,10 +114,31 @@ match inside `₹5000`.
 
 ## Scheduling
 
-Paste a Calendly event link into **Scheduling (Calendly)** in the dashboard and
-an optional booking step appears as the intake form's first step. Clear the
-field and the step disappears. Booking is never required — people can skip it
-and submit the form regardless.
+Paste a booking link into **Scheduling** in the dashboard and an optional
+booking step appears as the intake form's first step. Clear the field and the
+step disappears. Booking is never required — people can skip it and submit the
+form regardless.
+
+Calendly and [Cal ID](https://cal.id/) are both supported. The dashboard names
+whichever one it recognises and shows the setup steps for that one only.
+
+Providers are described in one place, `lib/scheduling.ts`: the hosts the schema
+will store, the query parameters that make a booking page embeddable, and the
+`postMessage` that means a slot was taken. Everything else — the schema, the
+intake form, the settings panel — reads from that list, so a third provider is a
+new entry and nothing else. Splitting it across those four places is how a link
+the dashboard calls valid ends up being one the form refuses to show.
+
+The stored key is still `calendlyUrl`. Renaming a top-level key would orphan the
+link already in stored content, because `mergeContent` merges one level deep and
+the old key would keep winning.
+
+When a booking page announces a completed booking to the parent frame, the step
+marks itself done. Calendly's announcement is well established; Cal's is the
+documented embed event, and only fires because the embed parameters are set. The
+**I've already booked a slot** link under the calendar stays regardless — an
+announcement that never arrives must not be the difference between a booking
+counting and not.
 
 ## Deployment
 

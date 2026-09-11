@@ -63,7 +63,11 @@ export interface SiteContent {
     links: { label: string; description: string; href: string }[];
   };
   slidingScale: string[];
-  /** Calendly scheduling link. Empty string hides the optional scheduling step. */
+  /**
+   * Booking link — Calendly or Cal ID. Empty string hides the scheduling step.
+   * Named for Calendly because it was Calendly-only first, and the key is what
+   * stored content is already keyed by.
+   */
   calendlyUrl: string;
   /** Honest note shown when someone picks a student-labelled rate. */
   studentNote: string;
