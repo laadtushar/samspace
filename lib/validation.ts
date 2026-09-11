@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SCHEDULING_HOSTS } from "@/lib/scheduling";
 
 /**
  * Server-side schemas for everything that arrives over HTTP.
@@ -67,7 +68,7 @@ export function safeExternalUrl(
  * Instagram hands out ?igsh= and LinkedIn ?utm_source=share_via when you use
  * their share sheets; both identify who did the sharing. Keeping them would
  * pass that on to every visitor who clicks, and the profile resolves
- * identically without them. WhatsApp and Calendly links keep their query
+ * identically without them. WhatsApp and booking links keep their query
  * strings, because there it carries the prefilled message or booking details.
  */
 export function safeProfileUrl(
@@ -119,9 +120,15 @@ const whatsappUrl = z
     safeExternalUrl(v, ["wa.me", "whatsapp.com", "api.whatsapp.com"])
   );
 
-const calendlyUrl = z
+/*
+  The stored key is still `calendlyUrl`, because renaming a top-level key would
+  orphan the link already saved in stored content — `mergeContent` merges one
+  level deep, so the old key would keep winning while the new one stayed empty.
+  What it accepts is no longer Calendly-only; see lib/scheduling.ts.
+*/
+const bookingUrl = z
   .unknown()
-  .transform((v) => safeExternalUrl(v, ["calendly.com"]));
+  .transform((v) => safeExternalUrl(v, SCHEDULING_HOSTS));
 
 const featureSchema = z.object({
   icon: trimmed(8),
@@ -190,7 +197,7 @@ export const siteContentSchema = z.object({
     links: z.array(startLinkSchema).max(10),
   }),
   slidingScale: z.array(trimmed(60)).max(12),
-  calendlyUrl,
+  calendlyUrl: bookingUrl,
   studentNote: trimmed(2000),
 });
 

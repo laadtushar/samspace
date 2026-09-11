@@ -30,6 +30,7 @@ import {
   UserPlus,
   KeyRound,
 } from "lucide-react";
+import { providerFor, SCHEDULING_PROVIDERS } from "@/lib/scheduling";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog";
 import { SLUG_PATTERN } from "@/lib/validation";
 
@@ -2059,7 +2060,7 @@ export default function AdminPage() {
                   </ContentSection>
 
                   <ContentSection title="Scheduling (Calendly)">
-                    <CalendlySettings
+                    <SchedulingSettings
                       value={((content as any).calendlyUrl as string) || ""}
                       onChange={(v) => setContent({ ...content, calendlyUrl: v })}
                     />
@@ -2638,7 +2639,133 @@ export default function AdminPage() {
 // ─── Calendly Integration ───────────────────────────
 // A blank link keeps the scheduling step out of the intake form entirely, so
 // this panel doubles as the on/off switch for the whole integration.
-function CalendlySettings({
+/**
+ * The booking link, whichever provider it belongs to.
+ *
+ * The steps below are written for someone who has not set one of these up
+ * before — the field on its own assumes she already knows what an "event link"
+ * is. Which guide is shown follows the link once one is pasted, so the page
+ * stops offering instructions for a provider she is not using.
+ */
+const SETUP_GUIDES: Record<string, { title: string; body: React.ReactNode }[]> = {
+  calendly: [
+    {
+      title: "Make a free Calendly account",
+      body: (
+        <>
+          Go to{" "}
+          <a
+            href="https://calendly.com/signup"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-clay underline underline-offset-2"
+          >
+            calendly.com/signup
+          </a>
+          . The free plan is enough — it allows one event type, which is all you
+          need. Connect the calendar you actually keep, so it never offers a time
+          you&apos;re already busy.
+        </>
+      ),
+    },
+    {
+      title: "Create an event type",
+      body: (
+        <>
+          In{" "}
+          <a
+            href="https://calendly.com/event_types/user/me"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-clay underline underline-offset-2"
+          >
+            Event Types
+          </a>
+          , add a <strong>One-on-One</strong> event. Name it something a client
+          will recognise — &ldquo;Therapy Session&rdquo; — and set the length to{" "}
+          <strong>50 minutes</strong> to match your sessions.
+        </>
+      ),
+    },
+    {
+      title: "Set when you're available",
+      body: (
+        <>
+          Under that event&apos;s availability, choose the hours you want to be
+          bookable. Worth adding a buffer after each session and a minimum notice
+          period, so nobody books you in ten minutes&apos; time.
+        </>
+      ),
+    },
+    {
+      title: "Copy the link",
+      body: (
+        <>
+          On the event, click <strong>Copy link</strong>. It looks like{" "}
+          <code className="text-forest/70 break-all">
+            https://calendly.com/your-name/therapy-session
+          </code>
+          .
+        </>
+      ),
+    },
+  ],
+  calid: [
+    {
+      title: "Make a Cal ID account",
+      body: (
+        <>
+          Go to{" "}
+          <a
+            href="https://cal.id/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-clay underline underline-offset-2"
+          >
+            cal.id
+          </a>{" "}
+          and sign up. Connect the calendar you actually keep, so it never offers
+          a time you&apos;re already busy. If you already use Calendly, Cal ID can
+          import your event types rather than making you rebuild them.
+        </>
+      ),
+    },
+    {
+      title: "Create an event type",
+      body: (
+        <>
+          Add a <strong>One-on-One</strong> event type. Name it something a client
+          will recognise — &ldquo;Therapy Session&rdquo; — and set the length to{" "}
+          <strong>50 minutes</strong> to match your sessions.
+        </>
+      ),
+    },
+    {
+      title: "Set when you're available",
+      body: (
+        <>
+          Under that event&apos;s availability, choose your bookable hours. Worth
+          adding a buffer after each session and a minimum notice period, so
+          nobody books you in ten minutes&apos; time.
+        </>
+      ),
+    },
+    {
+      title: "Copy the link",
+      body: (
+        <>
+          Copy the event&apos;s booking link. It looks like{" "}
+          <code className="text-forest/70 break-all">
+            https://cal.id/your-name/therapy-session
+          </code>
+          .
+        </>
+      ),
+    },
+  ],
+};
+
+function SchedulingSettings({
   value,
   onChange,
 }: {
@@ -2646,23 +2773,24 @@ function CalendlySettings({
   onChange: (v: string) => void;
 }) {
   const trimmed = value.trim();
-  let status: "off" | "valid" | "invalid" = "off";
-  if (trimmed) {
-    try {
-      const url = new URL(trimmed);
-      status = url.protocol === "https:" && /(^|\.)calendly\.com$/.test(url.hostname)
-        ? "valid"
-        : "invalid";
-    } catch {
-      status = "invalid";
-    }
-  }
+  const provider = providerFor(trimmed);
+  const status: "off" | "valid" | "invalid" = !trimmed
+    ? "off"
+    : provider
+      ? "valid"
+      : "invalid";
+
+  // Which guide to show. Follows the link once there is a valid one; until then
+  // it is hers to pick, so the choice survives an empty field.
+  const [chosen, setChosen] = useState(SCHEDULING_PROVIDERS[0].id);
+  const guideId = provider?.id ?? chosen;
+  const steps = SETUP_GUIDES[guideId] ?? [];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <span
-          className={`w-2 h-2 rounded-full ${
+          className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
             status === "valid"
               ? "bg-green-500"
               : status === "invalid"
@@ -2672,88 +2800,49 @@ function CalendlySettings({
         />
         <span className="font-sans text-xs text-forest/60">
           {status === "valid"
-            ? "Connected — the intake form opens with an optional booking step."
+            ? `Connected to ${provider!.name} — the intake form opens with an optional booking step.`
             : status === "invalid"
-              ? "That doesn't look like a Calendly link — the step stays hidden until it's fixed."
+              ? `That isn't a link we can embed. Use ${SCHEDULING_PROVIDERS.map((p) => p.name).join(" or ")} — the step stays hidden until it's fixed.`
               : "Off — the intake form skips scheduling entirely."}
         </span>
       </div>
 
       <ContentField
-        label="Calendly event link"
+        label={`Booking link (${SCHEDULING_PROVIDERS.map((p) => p.name).join(" or ")})`}
         value={value}
         onChange={(v) => onChange(v.trim())}
       />
 
-      {/* Written for someone who has never used Calendly — the field alone
-          assumes she already knows what an "event link" is. */}
       <div className="bg-cream rounded-lg p-5">
-        <p className="font-sans text-xs font-semibold text-forest/70 mb-3">
-          {status === "valid" ? "Setting this up again?" : "Getting your link"}
-        </p>
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <p className="font-sans text-xs font-semibold text-forest/70">
+            {status === "valid" ? "Setting this up again?" : "Getting your link"}
+          </p>
+          {/* Hidden once a link is set: the answer is no longer hers to choose. */}
+          {status !== "valid" && (
+            <div className="flex gap-1" role="group" aria-label="Booking provider">
+              {SCHEDULING_PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setChosen(p.id)}
+                  aria-pressed={guideId === p.id}
+                  className={`font-sans text-[11px] px-3 py-1.5 rounded-full border transition-colors ${
+                    guideId === p.id
+                      ? "bg-forest text-cream border-forest"
+                      : "border-sage/30 text-forest/60"
+                  }`}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <ol className="space-y-3">
           {[
-            {
-              title: "Make a free Calendly account",
-              body: (
-                <>
-                  Go to{" "}
-                  <a
-                    href="https://calendly.com/signup"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-clay underline underline-offset-2"
-                  >
-                    calendly.com/signup
-                  </a>
-                  . The free plan is enough — it allows one event type, which is
-                  all you need. Connect the calendar you actually keep, so it
-                  never offers a time you&apos;re already busy.
-                </>
-              ),
-            },
-            {
-              title: "Create an event type",
-              body: (
-                <>
-                  In{" "}
-                  <a
-                    href="https://calendly.com/event_types/user/me"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-clay underline underline-offset-2"
-                  >
-                    Event Types
-                  </a>
-                  , add a <strong>One-on-One</strong> event. Name it something a
-                  client will recognise — &ldquo;Therapy Session&rdquo; — and set
-                  the length to <strong>50 minutes</strong> to match your sessions.
-                </>
-              ),
-            },
-            {
-              title: "Set when you're available",
-              body: (
-                <>
-                  Under that event&apos;s availability, choose the hours you want
-                  to be bookable. Worth adding a buffer after each session and a
-                  minimum notice period, so nobody books you in ten minutes&apos;
-                  time.
-                </>
-              ),
-            },
-            {
-              title: "Copy the link",
-              body: (
-                <>
-                  On the event, click <strong>Copy link</strong>. It looks like{" "}
-                  <code className="text-forest/70 break-all">
-                    https://calendly.com/your-name/therapy-session
-                  </code>
-                  .
-                </>
-              ),
-            },
+            ...steps,
             {
               title: "Paste it above and save",
               body: (
@@ -2788,6 +2877,11 @@ function CalendlySettings({
             their submission is tagged <strong>Slot booked</strong>.
           </p>
           <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
+            If the booking page doesn&apos;t tell us it&apos;s done, there&apos;s an
+            <strong> I&apos;ve already booked a slot</strong> link under the
+            calendar, so a booking always counts either way.
+          </p>
+          <p className="font-sans text-[11px] text-forest/50 leading-relaxed">
             To turn scheduling off, clear the box above and save. The step
             disappears from the form entirely.
           </p>
@@ -2801,7 +2895,7 @@ function CalendlySettings({
           </p>
           <iframe
             src={trimmed}
-            title="Calendly preview"
+            title={`${provider!.name} preview`}
             className="w-full h-[360px] border-0"
           />
         </div>
