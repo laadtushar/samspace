@@ -32,6 +32,14 @@ import {
 } from "lucide-react";
 import { providerFor, SCHEDULING_PROVIDERS } from "@/lib/scheduling";
 import { whatsappLinkProblem } from "@/lib/whatsapp";
+import {
+  parseRate,
+  formatRate,
+  splitRate,
+  isStudentRate,
+  priceRangeOf,
+} from "@/lib/rates";
+import { TOKENS, fillTokens, rateValues } from "@/lib/tokens";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog";
 import { SLUG_PATTERN } from "@/lib/validation";
 
@@ -2110,16 +2118,11 @@ export default function AdminPage() {
                   </ContentSection>
 
                   <ContentSection title="Session Rates">
-                    <ContentField
-                      label="Rates, one per line — add (Student) to mark the concessional rate"
-                      value={(content as any).slidingScale?.join("\n") || ""}
-                      onChange={(v) =>
-                        setContent({
-                          ...content,
-                          slidingScale: v.split("\n").filter((x: string) => x.trim()),
-                        })
+                    <RatesEditor
+                      rates={((content as any).slidingScale as string[]) || []}
+                      onChange={(slidingScale) =>
+                        setContent({ ...content, slidingScale })
                       }
-                      textarea
                     />
                     <ContentField
                       label="Student rate note (shown when a student rate is picked)"
@@ -2997,6 +3000,182 @@ function SchedulingSettings({
  */
 const digitsOnly = (v: string) => v.replace(/\D/g, "").slice(0, 6);
 const isAmount = (v: string) => /^\d{2,6}$/.test(v);
+
+/**
+ * One row per rate, rather than one textarea for all of them.
+ *
+ * The textarea made a rate a line of free text, so a missed newline silently
+ * produced a single rate reading "₹500 (Student)  ₹600" — and every digit in
+ * it was being read as one number, which had the intake form advertising a
+ * sliding scale ending at ₹500600. A row cannot hold two rates, so that shape
+ * is now unreachable; where it already exists, the row offers to split it.
+ *
+ * The amount is digits with the ₹ printed beside it, for the same reason as the
+ * repricing field: ₹ is two keyboard layers down on a phone.
+ */
+function RatesEditor({
+  rates,
+  onChange,
+}: {
+  rates: string[];
+  onChange: (rates: string[]) => void;
+}) {
+  const replace = (i: number, value: string) => {
+    const next = [...rates];
+    next[i] = value;
+    onChange(next);
+  };
+  const move = (i: number, by: number) => {
+    const j = i + by;
+    if (j < 0 || j >= rates.length) return;
+    const next = [...rates];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <p className="font-sans text-xs font-medium text-forest/50 uppercase tracking-wider mb-1.5">
+        Session rates
+      </p>
+      <p className="font-sans text-xs text-forest/40 mb-3">
+        Label one of them <strong>Student</strong> to mark it concessional — that
+        is what triggers the honesty step in the intake form.
+      </p>
+
+      <ul className="space-y-2 mb-3">
+        {rates.map((rate, i) => {
+          const { amount, label, extras } = parseRate(rate);
+          return (
+            <li key={i} className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <span
+                  aria-hidden="true"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 font-sans text-sm text-forest/40 pointer-events-none"
+                >
+                  ₹
+                </span>
+                <input
+                  value={amount ?? ""}
+                  onChange={(e) => replace(i, formatRate(e.target.value, label))}
+                  inputMode="numeric"
+                  aria-label={`Rate ${i + 1} amount`}
+                  className="w-24 pl-7 pr-2 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+                />
+              </div>
+              <input
+                value={label}
+                onChange={(e) => replace(i, formatRate(amount ?? "", e.target.value))}
+                placeholder="label (optional)"
+                aria-label={`Rate ${i + 1} label`}
+                className="flex-1 min-w-[9rem] px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+              />
+              {isStudentRate(rate) && (
+                <span className="font-sans text-[10px] uppercase tracking-wider text-clay bg-clay/10 rounded-full px-2 py-1">
+                  concessional
+                </span>
+              )}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => move(i, -1)}
+                  disabled={i === 0}
+                  aria-label={`Move rate ${i + 1} up`}
+                  className="px-2 py-2 rounded-lg text-forest/40 hover:text-forest disabled:opacity-25"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(i, 1)}
+                  disabled={i === rates.length - 1}
+                  aria-label={`Move rate ${i + 1} down`}
+                  className="px-2 py-2 rounded-lg text-forest/40 hover:text-forest disabled:opacity-25"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange(rates.filter((_, j) => j !== i))}
+                  aria-label={`Remove rate ${i + 1}`}
+                  className="px-2 py-2 rounded-lg text-forest/40 hover:text-red-500"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {extras.length > 0 && (
+                <div className="basis-full flex flex-wrap items-center gap-2 pl-1">
+                  <p className="font-sans text-[11px] text-red-600">
+                    This row holds {extras.length + 1} rates.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [...rates];
+                      next.splice(i, 1, ...splitRate(rate));
+                      onChange(next);
+                    }}
+                    className="font-sans text-[11px] font-medium px-3 py-1.5 rounded-lg border border-sage/30 text-forest"
+                  >
+                    Split into separate rates
+                  </button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      <button
+        type="button"
+        onClick={() => onChange([...rates, ""])}
+        className="font-sans text-xs text-forest/60 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/25 hover:border-sage/50 transition-colors"
+      >
+        <Plus className="w-3.5 h-3.5" /> Add a rate
+      </button>
+
+      <p className="font-sans text-xs text-forest/40 mt-3">
+        Shown on the site as <strong>{priceRangeOf(rates) || "—"}</strong>.
+      </p>
+
+      {/*
+        The reason the rates list is the only place a price is typed: anywhere
+        else that needs one writes a token, and the figure is filled in when the
+        page renders. Changing a rate here changes it everywhere at once.
+      */}
+      <div className="bg-cream rounded-lg p-4 mt-4">
+        <p className="font-sans text-[11px] font-semibold text-forest/70 mb-2">
+          Write these in any text on the site, or in a post
+        </p>
+        <ul className="space-y-1.5">
+          {TOKENS.map((t) => (
+            <li key={t.token} className="flex flex-wrap items-baseline gap-2">
+              <code className="font-sans text-[11px] text-clay bg-clay/10 rounded px-1.5 py-0.5">
+                {t.token}
+              </code>
+              <span className="font-sans text-[11px] text-forest/50">
+                {t.describes}
+                {fillTokens(t.token, rateValues(rates)) !== t.token && (
+                  <>
+                    {" — now "}
+                    <strong className="text-forest/70">
+                      {fillTokens(t.token, rateValues(rates))}
+                    </strong>
+                  </>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="font-sans text-[11px] text-forest/40 leading-relaxed mt-3">
+          A token with nothing behind it stays visible as written rather than
+          rendering blank, so a typo is something you can see.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 /** A rupee amount: the symbol is printed, the field takes digits. */
 function AmountField({

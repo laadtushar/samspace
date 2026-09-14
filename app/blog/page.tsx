@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCachedContent } from "@/lib/content";
+import { fillDeep, rateValues } from "@/lib/tokens";
 import { getCachedPublishedPosts, readingMinutes } from "@/lib/blog";
 import { SITE_URL, SITE_NAME, serializeJsonLd } from "@/lib/site";
 import Navbar from "@/components/Navbar";
@@ -33,7 +34,12 @@ function formatDate(iso: string): string {
 }
 
 export default async function BlogIndexPage() {
-  const [posts, content] = await Promise.all([getCachedPublishedPosts(), getCachedContent()]);
+  const [stored, content] = await Promise.all([
+    getCachedPublishedPosts(),
+    getCachedContent(),
+  ]);
+  // Excerpts quote rates too, so they resolve the same tokens the post body does.
+  const posts = fillDeep(stored, rateValues(content.slidingScale));
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
