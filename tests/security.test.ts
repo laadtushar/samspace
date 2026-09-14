@@ -159,6 +159,17 @@ describe("safeExternalUrl", () => {
   });
 });
 
+describe("the practitioner's own number is not in the codebase", () => {
+  it("ships no phone number in the defaults", () => {
+    // It was in lib/content.ts, in a public repository, which is a worse
+    // exposure than the redirect that was hiding it from the markup.
+    const serialised = JSON.stringify(defaultContent);
+    expect(serialised).not.toMatch(/\+?9\d[\d\s-]{8,}/);
+    expect(serialised).not.toContain("wa.me");
+    expect(defaultContent.contact.phone).toBe("");
+  });
+});
+
 describe("site content validation", () => {
   it("accepts the shipped defaults", () => {
     const parsed = siteContentSchema.safeParse(defaultContent);
@@ -166,12 +177,25 @@ describe("site content validation", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("scrubs a javascript: whatsapp link on the way in", () => {
+  it("refuses a WhatsApp link that carries a phone number", () => {
+    // How the number leaked before: wa.me/<number> puts it in the URL itself.
+    // Saving one now stores nothing, so the stored copy self-heals.
     const parsed = siteContentSchema.parse({
       ...defaultContent,
-      contact: { ...defaultContent.contact, whatsappLink: "javascript:alert(1)" },
+      contact: {
+        ...defaultContent.contact,
+        whatsappLink: "https://wa.me/919130743144",
+      },
     });
     expect(parsed.contact.whatsappLink).toBe("");
+  });
+
+  it("keeps a WhatsApp handle, which names no number", () => {
+    const parsed = siteContentSchema.parse({
+      ...defaultContent,
+      contact: { ...defaultContent.contact, whatsappLink: "samvriti.space" },
+    });
+    expect(parsed.contact.whatsappLink).toBe("https://wa.me/samvriti.space");
   });
 
   it("scrubs a non-Calendly scheduling link", () => {
@@ -455,15 +479,31 @@ describe("contact details kept out of the browser", () => {
     expect("phone" in publicContent.contact).toBe(false);
   });
 
-  it("drops the wa.me link, which contains the number in its URL", () => {
-    expect("whatsappLink" in publicContent.contact).toBe(false);
+  it("ships no WhatsApp link of its own", () => {
+    // A handle is safe to serve; the defaults simply carry none until one is
+    // configured, so nothing ships in the public repository either.
+    expect(publicContent.contact.whatsappLink).toBe("");
   });
 
-  it("leaves no trace of the number anywhere in the serialised object", () => {
+  it("leaves no trace of a number anywhere in the serialised object", () => {
+    /*
+      This used to compare against the shipped phone number. That number is now
+      "", and `not.toContain("")` is true of nothing — the assertion passed by
+      being meaningless. It checks for the shape instead, so it still fails if a
+      number is ever put back into the defaults.
+    */
     const serialised = JSON.stringify(publicContent);
-    const digits = defaultContent.contact.phone.replace(/\D/g, "");
-    expect(serialised).not.toContain(digits);
+    expect(serialised).not.toMatch(/\+?9\d[\d\s-]{8,}/);
     expect(serialised).not.toContain("wa.me");
+  });
+
+  it("would still catch a number put back into the defaults", () => {
+    // Guarding the guard: the regex above has to actually match one.
+    const withNumber = JSON.stringify({
+      ...publicContent,
+      contact: { ...publicContent.contact, note: "+91 91307 43144" },
+    });
+    expect(withNumber).toMatch(/\+?9\d[\d\s-]{8,}/);
   });
 
   it("keeps the parts the page actually needs", () => {

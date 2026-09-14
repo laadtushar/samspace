@@ -11,15 +11,30 @@ interface ContactProps {
     heading: string;
     subtext: string;
     email: string;
+    whatsappLink?: string;
   };
   onBookSession?: () => void;
 }
 
 export default function Contact({ contact, onBookSession }: ContactProps) {
+  /*
+    The WhatsApp card appears only when a link is configured, and the link is a
+    handle rather than wa.me/<number> — the schema refuses a number outright. So
+    it can go straight in the href: the redirect that used to hide the number
+    from the markup was never hiding it from anyone who clicked.
+  */
   const infoCards = [
     { icon: "📧", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
-    // Routed through /whatsapp so the number stays out of the markup entirely.
-    { icon: "💬", label: "WhatsApp", value: "Send a message", href: "/whatsapp" },
+    ...(contact.whatsappLink
+      ? [
+          {
+            icon: "💬",
+            label: "WhatsApp",
+            value: "Send a message",
+            href: contact.whatsappLink as string | null,
+          },
+        ]
+      : []),
     { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null as string | null },
   ];
   return (
