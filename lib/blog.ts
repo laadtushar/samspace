@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { BUILD_ID } from "@/lib/build-id";
 import {
   readConfidentialJson,
   writeConfidentialJson,
@@ -106,7 +107,8 @@ export const POSTS_TAG = "blog-posts";
  */
 export const getCachedPublishedPosts = unstable_cache(
   () => getPublishedPosts(),
-  [POSTS_TAG],
+  // Same reason as site content: a post's shape is code, not just data.
+  [POSTS_TAG, BUILD_ID],
   { tags: [POSTS_TAG], revalidate: 3600 }
 );
 
