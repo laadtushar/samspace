@@ -62,6 +62,19 @@ export interface SiteContent {
     subtext: string;
     links: { label: string; description: string; href: string }[];
   };
+  /**
+   * What a first session actually looks like.
+   *
+   * A new top-level key, which matters: `mergeContent` spreads the defaults
+   * underneath stored content, so a key stored content has never seen is served
+   * from here. That is the only way copy added after the dashboard was first
+   * used reaches the live site without being retyped there.
+   */
+  sessionStructure: {
+    heading: string;
+    intro: string;
+    steps: { title: string; desc: string }[];
+  };
   slidingScale: string[];
   /**
    * Booking link — Calendly or Cal ID. Empty string hides the scheduling step.
@@ -239,6 +252,29 @@ export const defaultContent: SiteContent = {
       },
     ],
   },
+  sessionStructure: {
+    heading: "What actually happens in a first session",
+    intro:
+      "Most people are nervous before a first session, including people who have done this before. That is usually not a sign anything is wrong — it is what it feels like to talk to someone new about things that matter. Here is the hour, so it is one less unknown.",
+    steps: [
+      {
+        title: "Before we start",
+        desc: "You will have filled in the intake form. It is not a test you can get wrong — it exists so the first session does not start from zero.",
+      },
+      {
+        title: "The first ten minutes",
+        desc: "Orientation, not your deepest trauma. How confidentiality works and where its limits are, how long and how often we meet, and room for anything you want to ask before getting into anything personal.",
+      },
+      {
+        title: "The middle",
+        desc: "A conversation rather than a monologue you have to deliver well. Start wherever feels most pressing — you do not need the right words, or to begin at the beginning.",
+      },
+      {
+        title: "Toward the end",
+        desc: "A loose plan for what to focus on next and how often to meet. Not a fixed number of sessions, and not a commitment you are locked into.",
+      },
+    ],
+  },
   slidingScale: ["₹500 (Student)", "₹800", "₹900", "₹1000"],
   calendlyUrl: "",
   studentNote:
@@ -299,7 +335,16 @@ const LEGACY_SUBMISSIONS_KEY = "intake-submissions.json";
  * partially-saved section (or a newly added field) falls back to its default
  * instead of rendering `undefined` on the live site.
  */
-function mergeContent(stored: unknown): SiteContent {
+/**
+ * Stored content over the shipped defaults, one level deep.
+ *
+ * Exported for the tests, which pin the property the rest of the site leans on:
+ * a key the stored document has never seen is served from the defaults. That is
+ * how copy added after the dashboard was first used reaches the live site at
+ * all — without it, every new field would render empty until someone retyped it
+ * into Settings.
+ */
+export function mergeContent(stored: unknown): SiteContent {
   if (!stored || typeof stored !== "object") return defaultContent;
   const isPlainObject = (v: unknown) =>
     typeof v === "object" && v !== null && !Array.isArray(v);
