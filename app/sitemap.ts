@@ -3,7 +3,7 @@ import { SITE_URL } from "@/lib/site";
 import { getPublishedPosts } from "@/lib/blog";
 
 /** The last time the homepage copy actually changed. */
-const HOME_LAST_EDITED = "2026-08-25";
+const HOME_LAST_EDITED = "2026-09-14";
 
 export const revalidate = 3600;
 

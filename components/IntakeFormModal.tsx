@@ -86,13 +86,13 @@ const defaultStudentNote =
   "The student rate is kept low on purpose — so someone still studying, without their own income, never has to choose between therapy and affording the month. It works because the people who can pay a little more do. If you're earning, picking a higher rate quietly keeps this slot open for someone who genuinely can't. No proof is asked for. It runs on trust.";
 
 // An option counts as concessional when its bracketed label mentions students,
-// e.g. "₹600 (Student)" — that's the only rate the honesty note applies to.
+// e.g. "₹500 (Student)" — that's the only rate the honesty note applies to.
 const isStudentOption = (option: string) => /\(([^)]*student[^)]*)\)/i.test(option);
 
 export default function IntakeFormModal({
   isOpen,
   onClose,
-  slidingScale: rawSlidingScale = ["₹600 (Student)", "₹800", "₹900", "₹1000"],
+  slidingScale: rawSlidingScale = ["₹500 (Student)", "₹800", "₹900", "₹1000"],
   // Named for Calendly for storage-compatibility; any supported provider works.
   calendlyUrl = "",
   studentNote = defaultStudentNote,
@@ -108,7 +108,7 @@ export default function IntakeFormModal({
   const slidingScale =
     rawSlidingScale.length > 0
       ? rawSlidingScale
-      : ["₹600 (Student)", "₹800", "₹900", "₹1000"];
+      : ["₹500 (Student)", "₹800", "₹900", "₹1000"];
   const [step, setStep] = useState(0);
   const [data, setData] = useState<IntakeData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
@@ -140,7 +140,7 @@ export default function IntakeFormModal({
   const currentStep = steps[Math.min(step, steps.length - 1)].id;
   const isLastStep = step === steps.length - 1;
 
-  // Split an option like "₹600 (Student)" into its amount and optional label
+  // Split an option like "₹500 (Student)" into its amount and optional label
   const parseOption = (option: string) => {
     const match = option.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
     return match

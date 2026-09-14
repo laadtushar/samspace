@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">One hour drawn as three segments that fill in order: settling in, talking, and agreeing what comes next</title>
+  <!--
+    "What actually happens in a first session."
+    The fear the post addresses is a blank hour, so the picture is that hour
+    with its shape drawn in: three parts, filling in the order they happen,
+    ending somewhere rather than trailing off. Two marks above face each other
+    the whole way through — nobody is being talked at.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <style>
+      .seg { stroke-dasharray: 220; stroke-dashoffset: 220; }
+      .s1 { animation: fill 9s ease-in-out infinite; }
+      .s2 { animation: fill 9s ease-in-out infinite 1.1s; }
+      .s3 { animation: fill 9s ease-in-out infinite 2.2s; }
+      .lean { animation: lean 9s ease-in-out infinite; }
+      @keyframes fill {
+        0%        { stroke-dashoffset: 220; }
+        26%, 92%  { stroke-dashoffset: 0; }
+        100%      { stroke-dashoffset: 220; }
+      }
+      /* The listening one leans in a little, then settles. */
+      @keyframes lean {
+        0%, 100% { transform: translateX(0); }
+        40%, 80% { transform: translateX(14px); }
+      }
+      .lean { transform-origin: 462px 214px; }
+      @media (prefers-reduced-motion: reduce) {
+        .seg { animation: none; stroke-dashoffset: 0; }
+        .lean { animation: none; transform: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- Two people, facing each other for the whole hour. -->
+  <circle cx="738" cy="214" r="22" fill="#2c3a2e"/>
+  <circle class="lean" cx="462" cy="214" r="22" fill="#c17f5e"/>
+
+  <!-- The hour, with its shape drawn in. -->
+  <g fill="none" stroke-width="14" stroke-linecap="round">
+    <g stroke="#8a9e8c" stroke-opacity="0.22">
+      <path d="M230 370h200"/>
+      <path d="M500 370h200"/>
+      <path d="M770 370h200"/>
+    </g>
+    <path class="seg s1" stroke="#2c3a2e" d="M230 370h200"/>
+    <path class="seg s2" stroke="#2c3a2e" d="M500 370h200"/>
+    <path class="seg s3" stroke="#c17f5e" d="M770 370h200"/>
+  </g>
+
+  <g font-family="Georgia, serif" font-size="25" fill="#2c3a2e" opacity="0.62" text-anchor="middle">
+    <text x="330" y="440">settling in</text>
+    <text x="600" y="440">what brought you</text>
+    <text x="870" y="440">what's next</text>
+  </g>
+
+  <text x="600" y="540" text-anchor="middle" font-family="Georgia, serif"
+        font-size="28" fill="#2c3a2e" opacity="0.45">one hour</text>
+</svg>

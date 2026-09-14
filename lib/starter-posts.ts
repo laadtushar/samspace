@@ -84,11 +84,11 @@ That last part matters more than people expect, especially if you're used to bei
 
 ## If you're still not sure
 
-You don't need certainty before booking a first session. A first session is often part of how that certainty gets built, not something you need to arrive with already sorted out. It's also not a commitment to years of sessions. Plenty of people come with one specific thing on their mind, work through it over a handful of sessions, and stop when it feels resolved. There isn't a minimum threshold of seriousness required to start, and there isn't a minimum number of sessions you're obligated to continue for.
+You don't need certainty before booking a first session. A first session is often part of how that certainty gets built, not something you need to arrive with already sorted out — and if the unknown is the hour itself, [here is what actually happens in one](/blog/what-happens-first-therapy-session). It's also not a commitment to years of sessions. Plenty of people come with one specific thing on their mind, work through it over a handful of sessions, and stop when it feels resolved. There isn't a minimum threshold of seriousness required to start, and there isn't a minimum number of sessions you're obligated to continue for.
 
 If the hesitation you're sitting with looks more like a loop you can't put down, it may be worth reading [overthinking versus anxiety](/blog/overthinking-vs-anxiety) as well, since the two often travel together.
 
-If you've been going back and forth on this, that back-and-forth is usually the clearest signal available. I work with young adults navigating exactly this kind of "is this worth bringing up" hesitation, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around what you bring rather than a fixed idea of what counts. Sessions run on a sliding scale (₹600–₹1000), so cost doesn't have to be part of the hesitation either. [You can read more or book a session here.](/?intake=true)
+If you've been going back and forth on this, that back-and-forth is usually the clearest signal available. I work with young adults navigating exactly this kind of "is this worth bringing up" hesitation, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around what you bring rather than a fixed idea of what counts. Sessions run on a sliding scale (₹500–₹1000), so cost doesn't have to be part of the hesitation either. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -159,9 +159,11 @@ When this pattern shows up specifically in a relationship, it often has a partic
 
 If the second voice interrupting the loop has lately been a chatbot at 1am, that's worth its own look — [ChatGPT versus a therapist for anxiety](/blog/chatgpt-vs-therapist-for-anxiety) covers what it's genuinely good for and where it runs out.
 
+And if the loop mostly shows up as doing more rather than doing less — everything early, everything over-prepared — that has a name too: [high-functioning anxiety](/blog/high-functioning-anxiety).
+
 If this has been sitting with you for a while, or you're genuinely not sure which of these fits what you're going through, that's a reasonable thing to bring to a session. I work with young adults on exactly this kind of overthinking-anxiety overlap, drawing from CBT, humanistic therapy, and trauma-informed care, shaped around what you're actually bringing, not a fixed script.
 
-Sessions run on a sliding scale (₹600–₹1000), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
+Sessions run on a sliding scale (₹500–₹1000), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -220,7 +222,7 @@ This is the part that often confuses people the most, including the person exper
 
 Attachment style isn't a fixed sentence. It's a pattern that developed for a reason, and patterns that developed can shift with the right kind of work, usually a combination of understanding where it came from and practising new responses in real relationships as they come up.
 
-If you've recognised yourself in this, especially if it's been affecting how safe your relationships feel, that's worth bringing to a session. I work with young adults on attachment patterns and relationship anxiety, drawing from CBT, humanistic therapy, and trauma-informed care, since attachment work often benefits from looking at both present-day patterns and where they started. Sessions run on a sliding scale (₹600–₹1000). [You can read more or book a session here.](/?intake=true)
+If you've recognised yourself in this, especially if it's been affecting how safe your relationships feel, that's worth bringing to a session. I work with young adults on attachment patterns and relationship anxiety, drawing from CBT, humanistic therapy, and trauma-informed care, since attachment work often benefits from looking at both present-day patterns and where they started. Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -283,7 +285,7 @@ If holding the line leaves you replaying the conversation for days afterwards, t
 
 If you're in the middle of that kind of boundary right now, and the guilt or the pushback is bigger than you expected, that's worth working through with someone rather than white-knuckling it alone. A lot of what makes these conversations hard isn't the script, it's everything underneath it: old patterns, old fears about disappointing your parents, and sometimes grief about a relationship that isn't quite what you wish it were.
 
-I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale (₹600–₹1000). [You can read more or book a session here.](/?intake=true)
+I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -340,7 +342,139 @@ Someone who remembers you over time. Someone who can push back, not just agree. 
 
 That last distinction is the real answer to ChatGPT versus a therapist for anxiety. It isn't that one is clever and the other isn't. It's that only one of them is responsible for you.
 
-If any of this is landing, that's usually enough of a sign to take the next step. I work with young adults on exactly this kind of anxiety and overthinking, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, and I'm genuinely not going to make you feel bad for having used ChatGPT to get this far. Sessions run on a sliding scale (₹600–₹1000), specifically so cost isn't the reason this stays a conversation with a chatbot instead of a person. [You can read more or book a session here.](/?intake=true)
+If any of this is landing, that's usually enough of a sign to take the next step. I work with young adults on exactly this kind of anxiety and overthinking, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, and I'm genuinely not going to make you feel bad for having used ChatGPT to get this far. Sessions run on a sliding scale (₹500–₹1000), specifically so cost isn't the reason this stays a conversation with a chatbot instead of a person. [You can read more or book a session here.](/?intake=true)
+
+${CRISIS_NOTE}`,
+  },
+
+  {
+    slug: "what-happens-first-therapy-session",
+    title: "What Actually Happens in Your First Therapy Session",
+    seoTitle: "What to Expect in Your First Therapy Session",
+    seoDescription:
+      "Nervous about your first therapy session? Here's a realistic walkthrough of what actually happens, so you know what to expect before you book.",
+    excerpt:
+      "People put off a booked session for weeks, not from doubt but from not knowing what the hour will look like. Here is the hour, start to finish, so there is one less unknown in the way.",
+    coverImage: "/blog/what-happens-first-therapy-session.svg",
+    coverAlt:
+      "One hour drawn as three segments that fill in order, with two marks facing each other above it",
+    tags: ["Starting therapy", "First session", "Young adults"],
+    content: `The intake form is filled out. The session is booked. And now there's a new, slightly different kind of anxiety sitting on top of whatever brought you here in the first place: what actually happens once you log on?
+
+This is one of the most common reasons people put off a first session for weeks after they've already decided to go. Not doubt about whether they need it, just not knowing what the hour is actually going to look like, and the mind filling that gap with something more intimidating than it needs to be. Here's a realistic walkthrough, so there's one less unknown standing between you and booking.
+
+## Before the session
+
+You'll usually have already filled out an intake form with some basic context: what's bringing you in, a bit about yourself, maybe a few logistics like preferred rate and timing. This isn't a test you can get wrong. It exists so the first session doesn't start from zero, and so your therapist has some sense of where to begin before you're both sitting there.
+
+It's normal to feel nervous right before. Most people do, even people who've been to therapy before with a different therapist. That nervousness usually isn't a sign anything is wrong. It's just what it feels like to talk to someone new about things that matter.
+
+## The first ten or fifteen minutes
+
+A first session almost never opens with "so, tell me your deepest trauma." It usually starts much more simply: a bit of orientation. What therapy with this particular person is going to be like, how confidentiality works and what its actual limits are, logistics like session length and frequency, and space for you to ask anything you're unsure about before getting into anything personal.
+
+This part matters more than it might seem. It's where you get a sense of the person you're about to talk to, and where a lot of the initial nervousness tends to settle, simply because the unknown becomes a little more known.
+
+## The middle of the session
+
+This is where you start actually talking about what brought you in, though "talking about it" looks different than most people expect. It's rarely a monologue you're expected to deliver perfectly. It's much more of a conversation, with your therapist asking questions, reflecting back what they're hearing, and gently steering when something's worth slowing down on.
+
+You don't need to have it organised beforehand. You don't need the "right" words. You don't need to start at the beginning of your life story. Most people start wherever feels most pressing right now, and a good therapist will follow that thread and ask what's needed as it comes up, rather than expecting you to present a tidy summary.
+
+It's also completely fine to not know exactly what you want to say, or to say "I don't really know how to explain this" out loud. That's a normal and honestly pretty common way for people to begin.
+
+## What it's not
+
+It's not advice-giving in the way a friend might offer advice. A therapist isn't going to tell you what to do with your life in the first session, or really at any point, in that direct a way. The work is more about helping you understand your own patterns clearly enough that your own answers start to become visible, which takes longer than one session, but tends to hold up better than advice handed to you from outside.
+
+It's also not a one-way interrogation. You're allowed to ask questions too: about the therapist's approach, about how they typically work, about anything from the intake process that wasn't clear. A first session is as much you evaluating fit as it is anything else.
+
+## Toward the end
+
+Most first sessions close with some kind of loose plan: what you might focus on next, how often you'll meet, and space for any final questions before you log off. You're not committing to a fixed number of sessions or a rigid treatment plan at this point. It's more of a working starting point that can shift as you both learn more about what's actually useful.
+
+## How you might feel afterward
+
+This varies a lot, and neither extreme means anything went wrong. Some people feel lighter, like something's been set down that they'd been carrying alone. Others feel a bit raw or tired, especially if it's the first time they've said some of it out loud. Some feel oddly neutral, like nothing dramatic happened, which is also completely normal for a first session. It usually takes a few sessions before you get a real feel for whether it's working, not because the first one doesn't matter, but because trust and rhythm build gradually.
+
+If something about the first session feels off (not just uncomfortable in the ordinary way that talking about hard things is uncomfortable, but actually mismatched) it's okay to say so, or to try someone else. Fit matters in therapy more than people expect, and one session is rarely enough to know for certain, but it's also fine to trust a strong instinct either way.
+
+## If you're still deciding
+
+Knowing what to expect doesn't remove all the nervousness, and it doesn't need to. Most people are at least a little nervous walking into a first session, including people who've done this many times before. That doesn't mean you're not ready. It usually just means it matters to you.
+
+I work with young adults, and most of my clients are coming into therapy for the first time. Sessions draw from CBT, humanistic therapy, and trauma-informed care, shaped around whatever you bring rather than a fixed script, and the first session is exactly the low-pressure, get-to-know-each-other conversation described above.
+
+If the hesitation sitting underneath this is less about the hour itself and more about whether any of it is worth bringing up, [do I need therapy, or am I overreacting](/blog/do-i-need-therapy-or-overreacting) takes that on directly. And if you've been leaning on ChatGPT to think things through so far, [here's where it helps and where it runs out](/blog/chatgpt-vs-therapist-for-anxiety).
+
+Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+
+${CRISIS_NOTE}`,
+  },
+
+  {
+    slug: "high-functioning-anxiety",
+    title: "High-Functioning Anxiety: When You Look Fine But Don't Feel Fine",
+    seoTitle: "High-Functioning Anxiety: Signs You Might Miss",
+    seoDescription:
+      "High-functioning anxiety hides behind achievement and a put-together exterior. Here's why it's easy to miss, even in yourself, and what helps.",
+    excerpt:
+      "Deadlines met early, messages answered in minutes, and a stomach that hasn't unclenched in weeks. Why anxiety that produces results is the hardest kind to name, and what actually helps.",
+    coverImage: "/blog/high-functioning-anxiety.svg",
+    coverAlt:
+      "A steady flat line above a tight restless one, both running exactly the same length",
+    tags: ["Anxiety", "Perfectionism", "Young adults"],
+    content: `You're the one who submits everything early. Who replies to messages within minutes. Who's described as "so put together" by people who have no idea that getting there involved three redone drafts, a stomach that hasn't fully unclenched in weeks, and a to-do list that never quite feels complete even when it's finished.
+
+From the outside, it looks like things are going well. From the inside, it can feel like running a background process that never shuts off, one that happens to also be very good at producing results, which is exactly why it goes unnoticed for so long, sometimes by the person experiencing it most of all.
+
+This is often what people mean by high-functioning anxiety. It isn't a formal diagnosis, you won't find it in a diagnostic manual, but it's a genuinely useful way to describe a pattern that a lot of people recognise and very few talk about, mostly because it doesn't look like what anxiety is "supposed" to look like.
+
+## Why it's easy to miss
+
+Most descriptions of anxiety focus on visible struggle: falling behind, avoiding things, being unable to function. High-functioning anxiety does the opposite. It often drives more output, not less. Deadlines get met, sometimes early. Responsibilities get handled, often over-handled. To everyone around you, and sometimes to yourself, that looks like things are fine, maybe even like you're thriving.
+
+What doesn't show up in that picture is the cost of getting there. The anxiety isn't absent, it's just being converted into productivity instead of visible distress, which makes it much harder to name, and much easier to mistake for just being driven, conscientious, or "a bit of a perfectionist."
+
+## What it actually looks like
+
+**Achievement that doesn't bring relief.** You hit the goal, and the satisfaction lasts a day, sometimes less, before attention moves to the next thing that could go wrong or the next standard that hasn't been met yet.
+
+**Constant anticipation of what could go wrong.** Preparing for problems that haven't happened and mostly won't, running through worst-case scenarios before a meeting, a message, or an ordinary conversation that doesn't need that much preparation.
+
+**Physical tension that's become background noise.** A jaw that's often clenched, shoulders that sit up near your ears, a stomach that's tight more often than not, all of it so constant that it stops registering as tension and starts feeling like a baseline state.
+
+**Overpreparing for almost everything.** Rereading a message five times before sending it. Rehearsing a simple conversation as if it were a high-stakes negotiation. Doing far more than a task actually requires, not out of enjoyment, but because underpreparing feels unsafe.
+
+**Difficulty stopping, even when there's nothing left to do.** Rest doesn't come easily, and when it does happen, it often comes with a background sense that you should be doing something else, which makes it hard to actually feel rested even after taking a break.
+
+**A gap between how you're perceived and how you feel.** People describe you as calm, capable, on top of things. Internally, none of that matches what the day has actually felt like, which can create its own strange loneliness: being seen as fine by everyone while feeling anything but.
+
+## Why it tends to go unaddressed
+
+A few reasons, and they tend to reinforce each other. It doesn't disrupt daily functioning in an obvious way, so there's no clear moment that makes it feel like something worth addressing. It's often praised rather than questioned: reliability, thoroughness, and high output are usually rewarded, not flagged as signs something might be off. And because it looks so different from more visible anxiety, it's easy to conclude that what you're dealing with must just be "how you are," a personality trait rather than a pattern that could actually shift.
+
+There's also a quieter reason worth naming. Slowing down, resting, or asking for help can feel genuinely unsafe when so much of your sense of stability has been built around staying capable and on top of things. Addressing the anxiety can feel, at least at first, like it threatens the very thing that's been keeping everything together, even though it's usually the opposite that's true.
+
+## What tends to help
+
+**Separating output from okay-ness.** Getting things done and actually feeling fine are two different measurements, and it helps to start checking in on both, rather than assuming one confirms the other.
+
+**Noticing the physical signs earlier.** The tension, the racing thoughts before something low-stakes, the inability to fully switch off, these are worth treating as real signals rather than background noise to push through.
+
+**Practising rest without needing to earn it first.** This is often harder than it sounds for someone used to functioning this way, since rest can feel like it needs to be justified by having finished enough first. Learning to rest before you've "earned" it is frequently a meaningful part of the work.
+
+**Understanding where the pattern comes from.** High-functioning anxiety often has roots in environments where achievement felt like the safest or most reliable way to be valued, sometimes going back to childhood or early academic pressure. Working through that history tends to matter more, long-term, than any single coping technique on its own.
+
+## If this sounds like you
+
+The fact that things look fine from the outside doesn't mean there's nothing here worth addressing. A lot of people carry this for years, partly because it's genuinely hard to justify getting help for something that, on paper, looks like success.
+
+If this pattern sounds familiar, that's a reasonable thing to bring into a session, even if you can't point to anything obviously wrong. I work with young adults on exactly this kind of anxiety, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, and a lot of what we do together is exactly this: separating what looks fine from what actually feels fine.
+
+If you're still not sure this counts as something worth addressing, since nothing looks obviously wrong from the outside, [this piece on "am I overreacting"](/blog/do-i-need-therapy-or-overreacting) speaks to exactly that hesitation. And if the achievement-driven loop sounds like it also shows up as constant mental replay, [overthinking vs. anxiety](/blog/overthinking-vs-anxiety) breaks down that related pattern.
+
+Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
