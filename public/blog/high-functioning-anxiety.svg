@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">A steady flat line above a tight restless one, both running the same length</title>
+  <!--
+    "High-functioning anxiety."
+    Not two people — one. So the two lines are stacked rather than set side by
+    side, and they span exactly the same distance: the same hours, measured two
+    ways. The top line is what everyone sees and it does not move. The bottom
+    one never stops.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <clipPath id="window">
+      <rect x="360" y="360" width="640" height="170"/>
+    </clipPath>
+    <style>
+      /* One period of the zigzag is 80 units, so shifting by 80 loops seamlessly. */
+      .restless { animation: run 2.4s linear infinite; }
+      @keyframes run { to { transform: translateX(-80px); } }
+      .tick { animation: steady 9s ease-in-out infinite; }
+      @keyframes steady { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.55; } }
+      @media (prefers-reduced-motion: reduce) {
+        .restless, .tick { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- What shows: level, unremarkable, the same every day. -->
+  <path d="M360 250h640" fill="none" stroke="#2c3a2e" stroke-width="7" stroke-linecap="round"/>
+  <g class="tick" fill="#8a9e8c">
+    <circle cx="440" cy="250" r="7"/>
+    <circle cx="600" cy="250" r="7"/>
+    <circle cx="760" cy="250" r="7"/>
+    <circle cx="920" cy="250" r="7"/>
+  </g>
+  <text x="320" y="259" text-anchor="end" font-family="Georgia, serif"
+        font-size="27" fill="#2c3a2e" opacity="0.62">what shows</text>
+
+  <!-- What it costs: the same span, never once flat. -->
+  <g clip-path="url(#window)">
+    <path class="restless"
+          d="M260 487l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84l20 84l20 -84"
+          fill="none" stroke="#c17f5e" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="320" y="454" text-anchor="end" font-family="Georgia, serif"
+        font-size="27" fill="#2c3a2e" opacity="0.62">what it costs</text>
+
+  <!-- The same span, marked, so the two lines cannot be read as two people. -->
+  <g stroke="#8a9e8c" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="5 9">
+    <line x1="360" y1="212" x2="360" y2="530"/>
+    <line x1="1000" y1="212" x2="1000" y2="530"/>
+  </g>
+</svg>

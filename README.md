@@ -90,7 +90,7 @@ disclosed.
 
 ## Sliding scale and the student rate
 
-Rates are configured in the dashboard, one per line, e.g. `₹600 (Student)`.
+Rates are configured in the dashboard, one per line, e.g. `₹500 (Student)`.
 Anything with `(Student)` in the label is treated as the concessional rate: a
 person choosing it is shown a short note explaining who the rate is funded by
 and asked to confirm they're a student. The API enforces the same rule, so a

@@ -1545,7 +1545,7 @@ export default function AdminPage() {
                           }}
                         />
                         <ContentField
-                          label="Price (e.g. ₹600–₹1000 or leave empty)"
+                          label="Price (e.g. ₹500–₹1000 or leave empty)"
                           value={item.price || ""}
                           onChange={(v) => {
                             const items = [...(content as any).services.items];
@@ -1753,7 +1753,7 @@ export default function AdminPage() {
                                 </label>
                                 <input
                                   defaultValue={c.agreed_rate ?? ""}
-                                  placeholder={c.student_rate ? "₹600 (Student)" : "₹800"}
+                                  placeholder={c.student_rate ? "₹500 (Student)" : "₹800"}
                                   onBlur={(e) =>
                                     e.target.value !== (c.agreed_rate ?? "") &&
                                     saveClient(c.id, { agreed_rate: e.target.value })

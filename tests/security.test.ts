@@ -733,7 +733,7 @@ describe("the Business Profile reference", () => {
  * The student rate lives in the content defaults, in the intake form's
  * fallback, in the search description, in the social card, in the structured
  * data's priceRange and minPrice, and in every blog post's closing line. When
- * the rate changed from ₹500 to ₹600 each of those had to be found by hand.
+ * a rate changes each of those has to agree, and by hand each one is a place to miss.
  * These tests fail the next time one of them is missed, which is the only
  * mechanism that catches a stale price before a reader does.
  */
