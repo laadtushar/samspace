@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { PublicSiteContent } from "@/lib/content";
-import type { BlogPost } from "@/lib/blog";
+import type { BlogPost } from "@/lib/blog-format";
 import IntakeFormModal from "./IntakeFormModal";
 import SocialLinks from "./SocialLinks";
 

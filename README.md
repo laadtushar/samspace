@@ -57,26 +57,54 @@ CI runs all four on every pull request (`.github/workflows/ci.yml`).
 
 Two stores, and which one holds what matters.
 
-**Postgres (Neon)** is the practice's own records — clients, sessions,
-reminders and administrator accounts. Schema in `db/migrations/`, applied at
-deploy time by `scripts/migrate.mjs` against a `_migrations` ledger.
+**Postgres (Neon)** holds the practice's own records — clients, sessions,
+reminders, administrator accounts — and the blog. Schema in `db/migrations/`,
+applied at deploy time by `scripts/migrate.mjs` against a `_migrations` ledger.
 
-**Vercel Blob** is everything the public site renders.
+**Vercel Blob** holds site content, images, and the submissions archive.
 
 | What | Where | Access |
 | --- | --- | --- |
-| Site content | `site-content.json` | public |
-| Blog posts | `blog/<slug>.json` | **encrypted** |
-| Blog images | `blog-images/*` | public |
-| Intake submissions | `submissions/<timestamp>-<id>.json` | **encrypted** |
+| Blog posts | Postgres, `blog_posts` | access-controlled |
+| Intake submissions | Postgres, `submissions` | access-controlled |
+| Site content | blob, `site-content.json` | public |
+| Blog images | blob, `blog-images/*` | public |
+| Submissions archive | blob, `submissions/<timestamp>-<id>.json` | **encrypted** |
 
-Blob is billed per request, and every public page reads content while the post
-list is one list call plus one read per post. Both public reads therefore go
-through `unstable_cache` with an hour's lifetime — `getCachedContent` and
-`getCachedPublishedPosts` — so storage is touched per hour rather than per page
-regeneration. Every write clears its tag (`bustCache`), so an edit still appears
-immediately; `tests/cache-invalidation.test.ts` pins that, because a write path
-that skipped it would look like a broken site rather than a warm cache.
+### Why the blog moved
+
+Blob is billed per request, and reading the blog cost a list plus one request
+per post — seven posts was eight requests, from the homepage, the archive,
+every post page, the sitemap and the feed. That is what took the account to 75%
+of a monthly free tier. One query returns the same rows.
+
+Posts are stored in plain text there, unlike in blob. They were encrypted
+because the blob store is public at the store level — its access level is fixed
+at creation, every object is fetchable by anyone holding its URL, and a draft is
+hidden from the site but not from storage. A database reached with a connection
+string has none of those properties, so the encryption was guarding against
+something that is no longer true.
+
+Blob is still read for posts in two cases: when no database is configured at all
+(a fresh clone, local development, CI), and while `blog_posts` is still empty.
+In that second case the rows are copied across on the way past. That backfill is
+not a convenience — without it there is a state that loses posts, where the
+first edit after deploying writes one row, reads switch to the database because
+it is no longer empty, and every other post disappears from the site.
+`tests/blog-backfill.test.ts` covers exactly that sequence.
+
+### Caching
+
+Site content still comes from blob and is read by every public page, so it goes
+through `unstable_cache` with an hour's lifetime. Every write clears its tag
+(`bustCache`), so an edit still appears immediately;
+`tests/cache-invalidation.test.ts` pins that, because a write path that skipped
+it would look like a broken site rather than a warm cache.
+
+The cache key includes the commit sha. Without it an entry outlives the
+deployment that wrote it, and a deployment that adds a field goes on serving an
+object shaped by the previous one — which happened, and presented as new copy
+simply not appearing.
 
 The dashboard deliberately reads `getContent` and `getAllPosts` uncached: it has
 to show what is stored, not what was stored an hour ago.
