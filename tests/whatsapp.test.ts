@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { safeWhatsappLink, whatsappLinkProblem } from "@/lib/whatsapp";
 import { siteContentSchema } from "@/lib/validation";
-import { defaultContent, toPublicContent } from "@/lib/content";
+import { defaultContent, toPublicContent, mergeContent } from "@/lib/content";
 
 describe("a WhatsApp link that cannot be a phone number", () => {
   it("refuses wa.me/<number>, which is how the number leaked before", () => {
@@ -103,5 +103,48 @@ describe("the schema and the shipped defaults", () => {
     });
     expect(shown.contact.whatsappLink).toBe("https://wa.me/samvriti");
     expect("phone" in shown.contact).toBe(false);
+  });
+});
+
+describe("a number already in storage never reaches the page", () => {
+  /*
+    The regression this exists for. Validating on save protects nothing that was
+    stored before the rule existed, and `contact` is merged one level deep — so
+    a legacy wa.me/<number> survived the merge and, once the field was served
+    publicly, went straight into an href on the live site.
+  */
+  const stored = {
+    contact: {
+      whatsappLink:
+        "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book",
+    },
+  };
+
+  it("drops a stored link carrying a number", () => {
+    expect(mergeContent(stored).contact.whatsappLink).toBe("");
+  });
+
+  it("leaves no trace of it in what the browser receives", () => {
+    const serialised = JSON.stringify(toPublicContent(mergeContent(stored)));
+    expect(serialised).not.toContain("wa.me");
+    // Not a bare \d{7,}: the LinkedIn profile URL legitimately ends in nine
+    // digits, and an assertion that flags that is one nobody will trust.
+    expect(serialised).not.toContain("919130743144");
+    expect(serialised).not.toMatch(/(?:\+?91[\s-]?)?\d{5}[\s-]?\d{5}/);
+  });
+
+  it("still serves a stored handle, which names no number", () => {
+    const merged = mergeContent({
+      contact: { whatsappLink: "https://wa.me/samvriti.space" },
+    });
+    expect(merged.contact.whatsappLink).toBe("https://wa.me/samvriti.space");
+  });
+
+  it("keeps the rest of the stored contact details", () => {
+    const merged = mergeContent({
+      contact: { email: "someone@example.com", whatsappLink: "https://wa.me/919130743144" },
+    });
+    expect(merged.contact.email).toBe("someone@example.com");
+    expect(merged.contact.whatsappLink).toBe("");
   });
 });

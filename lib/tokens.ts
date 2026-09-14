@@ -81,8 +81,3 @@ export function fillDeep<T>(value: T, values: Record<string, string>): T {
   }
   return value;
 }
-
-/** Which tokens a piece of copy uses, and which of those resolve to nothing. */
-export function tokensIn(text: string): string[] {
-  return [...text.matchAll(TOKEN_PATTERN)].map((m) => m[1].toLowerCase());
-}

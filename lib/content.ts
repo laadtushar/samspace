@@ -1,5 +1,6 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { fillDeep, rateValues } from "@/lib/tokens";
+import { safeWhatsappLink } from "@/lib/whatsapp";
 import {
   readConfidentialJson,
   readPublicJson,
@@ -366,6 +367,29 @@ export function mergeContent(stored: unknown): SiteContent {
         ? { ...(fallback as object), ...(value as object) }
         : value;
   }
+
+  /*
+    Validating a WhatsApp link on the way in is not enough, and assuming it was
+    put the practitioner's phone number back on the live site.
+
+    The schema runs when content is saved. A document stored before the rule
+    existed still holds wa.me/<number>, and because contact is merged one level
+    deep that value survives untouched — so removing the field from the schema
+    and then serving it publicly meant the number went straight into an href.
+
+    Storage is the untrusted side of this boundary: anything already in it
+    predates whatever rule is current. So the same check runs on the way out,
+    where a stored number becomes "" and the contact card simply does not
+    render.
+  */
+  const contact = merged.contact as SiteContent["contact"] | undefined;
+  if (contact) {
+    merged.contact = {
+      ...contact,
+      whatsappLink: safeWhatsappLink(contact.whatsappLink),
+    };
+  }
+
   return merged as unknown as SiteContent;
 }
 
