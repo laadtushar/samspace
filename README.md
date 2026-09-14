@@ -29,13 +29,18 @@ the defaults in `lib/content.ts` — but nothing can be saved.
 
 ## Environment variables
 
-Every variable is documented in [`.env.example`](.env.example). The two that
+Every variable is documented in [`.env.example`](.env.example). The three that
 must be set for the site to be usable in production:
 
-- `ADMIN_PASSWORD` — guards the dashboard. Long and random; it is the only
-  thing between the internet and stored client records.
+- `DATABASE_URL` — Neon Postgres. Migrations run from the build script, so a
+  deployment without it fails at build rather than quietly at runtime.
 - `BLOB_READ_WRITE_TOKEN` — Vercel Blob storage. Set automatically when a Blob
   store is linked to the project on Vercel.
+- `ADMIN_PASSWORD` — the bootstrap way into the dashboard, and only until the
+  first real account exists. Once one administrator has a password and is
+  enabled it stops being accepted, because keeping it alive alongside real
+  accounts would mean every protection on them could be walked around by
+  whoever still had the shared secret.
 
 ## Checks
 
@@ -50,7 +55,13 @@ CI runs all four on every pull request (`.github/workflows/ci.yml`).
 
 ## How data is stored
 
-Everything lives in Vercel Blob. There is no database.
+Two stores, and which one holds what matters.
+
+**Postgres (Neon)** is the practice's own records — clients, sessions,
+reminders and administrator accounts. Schema in `db/migrations/`, applied at
+deploy time by `scripts/migrate.mjs` against a `_migrations` ledger.
+
+**Vercel Blob** is everything the public site renders.
 
 | What | Where | Access |
 | --- | --- | --- |
@@ -58,6 +69,17 @@ Everything lives in Vercel Blob. There is no database.
 | Blog posts | `blog/<slug>.json` | **encrypted** |
 | Blog images | `blog-images/*` | public |
 | Intake submissions | `submissions/<timestamp>-<id>.json` | **encrypted** |
+
+Blob is billed per request, and every public page reads content while the post
+list is one list call plus one read per post. Both public reads therefore go
+through `unstable_cache` with an hour's lifetime — `getCachedContent` and
+`getCachedPublishedPosts` — so storage is touched per hour rather than per page
+regeneration. Every write clears its tag (`bustCache`), so an edit still appears
+immediately; `tests/cache-invalidation.test.ts` pins that, because a write path
+that skipped it would look like a broken site rather than a warm cache.
+
+The dashboard deliberately reads `getContent` and `getAllPosts` uncached: it has
+to show what is stored, not what was stored an hour ago.
 
 Two decisions worth knowing about:
 
@@ -90,7 +112,32 @@ disclosed.
 
 ## Sliding scale and the student rate
 
-Rates are configured in the dashboard, one per line, e.g. `₹500 (Student)`.
+Rates are configured in the dashboard as one row each — an amount and an
+optional label. A row cannot hold two rates, which a textarea could: a missed
+newline used to produce a single entry reading `₹500 (Student)  ₹600`, and
+since every consumer pulled the number back out by taking every digit in the
+string, that read as ₹500600. Where such an entry already exists the row offers
+to split it.
+
+### Writing a price without typing the figure
+
+A rate is typed in the rates list and referenced everywhere else, so a change is
+one edit rather than a hunt through the FAQ, the services card and every
+published post:
+
+| Token | Resolves to |
+| --- | --- |
+| `{{rate.range}}` | the full scale, e.g. `₹500–₹1000` |
+| `{{rate.lowest}}` | the lowest rate |
+| `{{rate.highest}}` | the highest rate |
+| `{{rate.student}}` | the concessional rate, if there is one |
+
+They work in site content and in post bodies and excerpts, and resolve on the
+way out to the public site — not in `getContent`, because the dashboard has to
+see the token to edit it. A token with nothing behind it stays visible rather
+than rendering blank, so a typo is something you can see.
+
+Existing copy with literal figures keeps working; nothing was migrated.
 Anything with `(Student)` in the label is treated as the concessional rate: a
 person choosing it is shown a short note explaining who the rate is funded by
 and asked to confirm they're a student. The API enforces the same rule, so a
