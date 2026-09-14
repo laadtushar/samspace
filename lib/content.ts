@@ -1,6 +1,7 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { fillDeep, rateValues } from "@/lib/tokens";
 import { safeWhatsappLink } from "@/lib/whatsapp";
+import { BUILD_ID } from "@/lib/build-id";
 import {
   readConfidentialJson,
   readPublicJson,
@@ -458,7 +459,9 @@ export function resolveContentTokens(content: SiteContent): SiteContent {
 
 export const getCachedContent = unstable_cache(
   async () => resolveContentTokens(await getContent()),
-  [CONTENT_TAG],
+  // Scoped to the build: a deployment that adds a field must not keep serving
+  // an object shaped by the previous one.
+  [CONTENT_TAG, BUILD_ID],
   { tags: [CONTENT_TAG], revalidate: 3600 }
 );
 
