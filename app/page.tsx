@@ -1,12 +1,12 @@
-import { getContent, toPublicContent } from "@/lib/content";
+import { getCachedContent, toPublicContent } from "@/lib/content";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
-import { getPublishedPosts } from "@/lib/blog";
+import { getCachedPublishedPosts } from "@/lib/blog";
 import HomePage from "@/components/HomePage";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const content = await getContent();
+  const content = await getCachedContent();
 
   /*
     The homepage links a few posts from the sections where someone is deciding.
@@ -14,7 +14,7 @@ export default async function Home() {
     slug becomes a 404 the moment a post is renamed or withdrawn, and the
     homepage is the worst place on the site to serve one.
   */
-  const posts = (await getPublishedPosts().catch(() => [])).map((post) => ({
+  const posts = (await getCachedPublishedPosts().catch(() => [])).map((post) => ({
     slug: post.slug,
     title: post.title,
     tags: post.tags,

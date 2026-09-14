@@ -3,12 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
-  getPublishedPosts,
+  getCachedPublishedPosts,
   getPublishedPostBySlug,
   readingMinutes,
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
-import { getContent } from "@/lib/content";
+import { getCachedContent } from "@/lib/content";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Markdown from "@/components/Markdown";
@@ -17,7 +17,7 @@ export const revalidate = 300;
 
 /** Prerenders published posts at build time; new ones fill in on demand. */
 export async function generateStaticParams() {
-  const posts = await getPublishedPosts().catch(() => []);
+  const posts = await getCachedPublishedPosts().catch(() => []);
   return posts.map((post) => ({ slug: post.slug }));
 }
 
@@ -73,7 +73,7 @@ export default async function BlogPostPage({
 }) {
   const [post, content] = await Promise.all([
     getPublishedPostBySlug(params.slug),
-    getContent(),
+    getCachedContent(),
   ]);
   if (!post) notFound();
 

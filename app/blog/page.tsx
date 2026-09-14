@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { getContent } from "@/lib/content";
-import { getPublishedPosts, readingMinutes } from "@/lib/blog";
+import { getCachedContent } from "@/lib/content";
+import { getCachedPublishedPosts, readingMinutes } from "@/lib/blog";
 import { SITE_URL, SITE_NAME, serializeJsonLd } from "@/lib/site";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -33,7 +33,7 @@ function formatDate(iso: string): string {
 }
 
 export default async function BlogIndexPage() {
-  const [posts, content] = await Promise.all([getPublishedPosts(), getContent()]);
+  const [posts, content] = await Promise.all([getCachedPublishedPosts(), getCachedContent()]);
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
