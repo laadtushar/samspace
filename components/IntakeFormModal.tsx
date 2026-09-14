@@ -16,6 +16,7 @@ import {
   embedUrlFor,
   isBookingConfirmation,
 } from "@/lib/scheduling";
+import { priceRangeOf, isStudentRate } from "@/lib/rates";
 
 interface IntakeData {
   name: string;
@@ -87,7 +88,7 @@ const defaultStudentNote =
 
 // An option counts as concessional when its bracketed label mentions students,
 // e.g. "₹500 (Student)" — that's the only rate the honesty note applies to.
-const isStudentOption = (option: string) => /\(([^)]*student[^)]*)\)/i.test(option);
+const isStudentOption = isStudentRate;
 
 export default function IntakeFormModal({
   isOpen,
@@ -148,14 +149,10 @@ export default function IntakeFormModal({
       : { amount: option, label: null as string | null };
   };
 
-  // Derive the headline range from the numeric values so labels never corrupt it
-  const amounts = slidingScale
-    .map((p) => parseInt(p.replace(/[^\d]/g, ""), 10))
-    .filter((n) => !Number.isNaN(n));
-  const priceRange =
-    amounts.length > 0
-      ? `₹${Math.min(...amounts)}–₹${Math.max(...amounts)}`
-      : "";
+  // The headline range reads the first rupee figure in each entry rather than
+  // every digit in it. Two rates run onto one line — "₹500 (Student)  ₹600" —
+  // otherwise read as ₹500600 and the form advertises a scale ending in it.
+  const priceRange = priceRangeOf(slidingScale);
 
   // Cheapest non-student rate — offered as the one-tap alternative to someone
   // who realises the student rate isn't theirs to take.

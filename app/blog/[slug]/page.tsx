@@ -9,6 +9,7 @@ import {
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
 import { getCachedContent } from "@/lib/content";
+import { fillDeep, rateValues } from "@/lib/tokens";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Markdown from "@/components/Markdown";
@@ -71,11 +72,22 @@ export default async function BlogPostPage({
 }: {
   params: { slug: string };
 }) {
-  const [post, content] = await Promise.all([
+  const [stored, content] = await Promise.all([
     getPublishedPostBySlug(params.slug),
     getCachedContent(),
   ]);
-  if (!post) notFound();
+  if (!stored) notFound();
+
+  /*
+    A post can write {{rate.range}} rather than the figure, so a rate change
+    does not mean editing five published posts by hand — which is how the site
+    ended up quoting two prices at once the last time one changed.
+
+    Filled here rather than in storage: the dashboard editor has to show the
+    token, and the word count and structured data below should describe what a
+    reader actually sees.
+  */
+  const post = fillDeep(stored, rateValues(content.slidingScale));
 
   const url = `${SITE_URL}/blog/${post.slug}`;
 

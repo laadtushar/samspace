@@ -1,4 +1,5 @@
 import { unstable_cache, revalidateTag } from "next/cache";
+import { fillDeep, rateValues } from "@/lib/tokens";
 import {
   readConfidentialJson,
   readPublicJson,
@@ -389,10 +390,27 @@ export const CONTENT_TAG = "site-content";
  * The admin dashboard deliberately keeps using getContent — it must always see
  * what is actually stored, not what was stored an hour ago.
  */
-export const getCachedContent = unstable_cache(getContent, [CONTENT_TAG], {
-  tags: [CONTENT_TAG],
-  revalidate: 3600,
-});
+/**
+ * Content with pricing tokens filled in, for the public site.
+ *
+ * Copy can say {{rate.range}} instead of typing the figure out, so a rate lives
+ * in the rates list and nowhere else. Resolving here means every public
+ * consumer gets it without knowing about tokens at all — the page, the FAQ
+ * structured data, the share descriptions, the /start page.
+ *
+ * Deliberately not in getContent: the dashboard must see {{rate.range}} to edit
+ * it. Resolving before it got there would replace the token with today's number
+ * and quietly undo the arrangement the first time a FAQ answer was saved.
+ */
+export function resolveContentTokens(content: SiteContent): SiteContent {
+  return fillDeep(content, rateValues(content.slidingScale));
+}
+
+export const getCachedContent = unstable_cache(
+  async () => resolveContentTokens(await getContent()),
+  [CONTENT_TAG],
+  { tags: [CONTENT_TAG], revalidate: 3600 }
+);
 
 export async function saveContent(content: SiteContent): Promise<void> {
   await writePublicJson(CONTENT_KEY, content);
