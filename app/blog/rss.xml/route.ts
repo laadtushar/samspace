@@ -1,4 +1,4 @@
-import { getPublishedPosts } from "@/lib/blog";
+import { getCachedPublishedPosts } from "@/lib/blog";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -14,7 +14,7 @@ function xml(value: string): string {
 }
 
 export async function GET() {
-  const posts = await getPublishedPosts();
+  const posts = await getCachedPublishedPosts();
   const updated = posts[0]?.publishedAt || new Date().toISOString();
 
   const items = posts

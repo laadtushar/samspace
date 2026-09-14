@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
-import { getPublishedPosts } from "@/lib/blog";
+import { getCachedPublishedPosts } from "@/lib/blog";
 
 /** The last time the homepage copy actually changed. */
 const HOME_LAST_EDITED = "2026-09-14";
@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // HOME_LAST_EDITED moves when the homepage copy itself changes — the
   // sliding-scale rates, the FAQ, the services list. Bump it then, not on
   // a refactor that leaves the page reading identically.
-  const posts = await getPublishedPosts().catch(() => []);
+  const posts = await getCachedPublishedPosts().catch(() => []);
   const newestPost = posts[0]?.updatedAt;
 
   return [

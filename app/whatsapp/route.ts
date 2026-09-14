@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getContent } from "@/lib/content";
+import { getCachedContent } from "@/lib/content";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -19,7 +19,7 @@ import { SITE_URL } from "@/lib/site";
 export const revalidate = 3600;
 
 export async function GET() {
-  const content = await getContent().catch(() => null);
+  const content = await getCachedContent().catch(() => null);
   const target = content?.contact?.whatsappLink;
   // No handle configured, or a stored link the schema now refuses: send them to
   // the contact section rather than nowhere.

@@ -1,9 +1,11 @@
+import { unstable_cache } from "next/cache";
 import {
   readConfidentialJson,
   writeConfidentialJson,
   listBlobs,
   deleteBlob,
 } from "@/lib/blob";
+import { bustCache } from "@/lib/content";
 import type { BlogPostInput } from "@/lib/validation";
 
 /**
@@ -92,6 +94,22 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 }
 
 /** Published posts only, newest first. Safe for public pages. */
+export const POSTS_TAG = "blog-posts";
+
+/**
+ * Published posts, read from storage at most once an hour.
+ *
+ * This is the costly one: a list, then one read per post. Seven posts is eight
+ * blob requests, and the homepage, the archive, every post page, the sitemap
+ * and the feed all call it. Publishing busts the tag, so a new post still goes
+ * live the moment it is published.
+ */
+export const getCachedPublishedPosts = unstable_cache(
+  () => getPublishedPosts(),
+  [POSTS_TAG],
+  { tags: [POSTS_TAG], revalidate: 3600 }
+);
+
 export async function getPublishedPosts(): Promise<BlogPost[]> {
   const posts = await getAllPosts();
   return posts.filter((p) => p.status === "published");
@@ -137,6 +155,7 @@ export async function savePost(
   };
 
   await writeConfidentialJson(postPath(post.slug), post);
+  bustCache(POSTS_TAG);
 
   // A renamed slug leaves its old object behind, which would serve a stale
   // duplicate at the old URL.
@@ -149,6 +168,7 @@ export async function savePost(
 
 export async function deletePost(slug: string): Promise<void> {
   await deleteBlob(postPath(slug));
+  bustCache(POSTS_TAG);
 }
 
 /** Distinct tags across published posts, most used first. */

@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import {
   readConfidentialJson,
   readPublicJson,
@@ -372,8 +373,46 @@ export async function getContent(): Promise<SiteContent> {
   return mergeContent(stored);
 }
 
+export const CONTENT_TAG = "site-content";
+
+/**
+ * The same read, but billed once an hour instead of once per regeneration.
+ *
+ * Blob is metered per request, and every public page reads content. With the
+ * homepage revalidating each minute that is ~1,400 reads a day from one route,
+ * against a free tier of 10,000 a month — which is how the account reached 75%
+ * of it in a fortnight.
+ *
+ * Caching on a timer alone would mean an edit taking up to an hour to show, so
+ * saving busts the tag: the dashboard stays instant and the meter stays still.
+ *
+ * The admin dashboard deliberately keeps using getContent — it must always see
+ * what is actually stored, not what was stored an hour ago.
+ */
+export const getCachedContent = unstable_cache(getContent, [CONTENT_TAG], {
+  tags: [CONTENT_TAG],
+  revalidate: 3600,
+});
+
 export async function saveContent(content: SiteContent): Promise<void> {
   await writePublicJson(CONTENT_KEY, content);
+  bustCache(CONTENT_TAG);
+}
+
+/**
+ * Clears a cache tag without letting that failure undo a successful write.
+ *
+ * revalidateTag throws outside a request context — a script, a test, a future
+ * background job — and losing a saved edit because the cache could not be
+ * cleared would be the wrong trade every time. The tag expires on its own
+ * within the hour.
+ */
+export function bustCache(tag: string): void {
+  try {
+    revalidateTag(tag);
+  } catch {
+    // Saved either way.
+  }
 }
 
 // ─── Intake submissions ────────────────────────────

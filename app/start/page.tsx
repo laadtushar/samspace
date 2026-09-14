@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getContent, toPublicContent } from "@/lib/content";
-import { getPublishedPosts } from "@/lib/blog";
+import { getCachedContent, toPublicContent } from "@/lib/content";
+import { getCachedPublishedPosts } from "@/lib/blog";
 import StartPage from "@/components/StartPage";
 
 export const revalidate = 60;
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
 
 export default async function Start() {
   const [content, posts] = await Promise.all([
-    getContent(),
-    getPublishedPosts().catch(() => []),
+    getCachedContent(),
+    getCachedPublishedPosts().catch(() => []),
   ]);
 
   return (
