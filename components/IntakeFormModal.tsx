@@ -16,7 +16,7 @@ import {
   embedUrlFor,
   isBookingConfirmation,
 } from "@/lib/scheduling";
-import { priceRangeOf, isStudentRate } from "@/lib/rates";
+import { isStudentRate } from "@/lib/rates";
 
 interface IntakeData {
   name: string;
@@ -97,13 +97,32 @@ export default function IntakeFormModal({
   // Named for Calendly for storage-compatibility; any supported provider works.
   calendlyUrl = "",
   studentNote = defaultStudentNote,
+  intakeForm,
 }: {
   isOpen: boolean;
   onClose: () => void;
   slidingScale?: string[];
   calendlyUrl?: string;
   studentNote?: string;
+  intakeForm?: {
+    heading: string;
+    intro: string;
+    assurances: string[];
+    footnote: string;
+  };
 }) {
+  /*
+    The opening screen's copy comes from content. Optional, because a caller
+    rendering this modal without it should still get a usable form rather than
+    a blank panel — and because a content document written before the field
+    existed has no value for it.
+  */
+  const copy = {
+    heading: intakeForm?.heading || "Therapy Intake Form",
+    intro: intakeForm?.intro || "",
+    assurances: intakeForm?.assurances ?? [],
+    footnote: intakeForm?.footnote || "",
+  };
   // Default params only apply to `undefined`; an empty array (e.g. admin cleared
   // all options) would otherwise leave no price buttons and block submission.
   const slidingScale =
@@ -148,11 +167,6 @@ export default function IntakeFormModal({
       ? { amount: match[1], label: match[2] }
       : { amount: option, label: null as string | null };
   };
-
-  // The headline range reads the first rupee figure in each entry rather than
-  // every digit in it. Two rates run onto one line — "₹500 (Student)  ₹600" —
-  // otherwise read as ₹500600 and the form advertises a scale ending in it.
-  const priceRange = priceRangeOf(slidingScale);
 
   // Cheapest non-student rate — offered as the one-tap alternative to someone
   // who realises the student rate isn't theirs to take.
@@ -437,24 +451,30 @@ export default function IntakeFormModal({
                           <Heart className="w-8 h-8 text-cream" />
                         </motion.div>
                         <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-forest text-center mb-4">
-                          Therapy Intake Form
+                          {copy.heading}
                         </h2>
-                        <p className="font-sans text-sm text-forest/60 leading-relaxed text-center mb-4">
-                          I&apos;m Priyanka Varma, a psychologist working under supervision
-                          with a master&apos;s degree in clinical psychology. I use an
-                          eclectic and personalised approach integrating CBT, Humanistic,
-                          Trauma-Informed Care, and mindfulness-based practices.
-                        </p>
-                        <div className="bg-forest/5 rounded-xl p-4 mb-4">
-                          <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
-                            🌿 Sessions are conducted online &nbsp;·&nbsp;
-                            💫 Sliding scale {priceRange} &nbsp;·&nbsp;
-                            🔒 All information remains confidential
+                        {copy.intro && (
+                          <p className="font-sans text-sm text-forest/60 leading-relaxed text-center mb-4">
+                            {copy.intro}
                           </p>
-                        </div>
-                        <p className="font-sans text-xs text-forest/40 text-center italic">
-                          This form helps me understand your needs and check availability.
-                        </p>
+                        )}
+                        {copy.assurances.length > 0 && (
+                          <div className="bg-forest/5 rounded-xl p-4 mb-4">
+                            <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
+                              {copy.assurances.map((line, i) => (
+                                <span key={line}>
+                                  {i > 0 && <>&nbsp;·&nbsp;</>}
+                                  {line}
+                                </span>
+                              ))}
+                            </p>
+                          </div>
+                        )}
+                        {copy.footnote && (
+                          <p className="font-sans text-xs text-forest/40 text-center italic">
+                            {copy.footnote}
+                          </p>
+                        )}
                       </div>
                     )}
 

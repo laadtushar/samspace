@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mergeContent, defaultContent } from "@/lib/content";
+import { mergeContent, defaultContent, resolveContentTokens } from "@/lib/content";
 import { siteContentSchema } from "@/lib/validation";
 
 /**
@@ -70,5 +70,35 @@ describe("the session walkthrough survives a round trip through the dashboard", 
     expect(parsed.sessionStructure.steps).toEqual([
       { title: "One", desc: "Then the other." },
     ]);
+  });
+});
+
+describe("the intake form's opening screen is content, not code", () => {
+  it("is served from the defaults for a document written before it existed", () => {
+    const merged = mergeContent({ hero: { headline: "Edited" } });
+    expect(merged.intakeForm.heading).toBeTruthy();
+    expect(merged.intakeForm.assurances.length).toBeGreaterThan(0);
+  });
+
+  it("survives a save, so editing anything else does not erase it", () => {
+    const parsed = siteContentSchema.parse(defaultContent);
+    expect(parsed.intakeForm).toEqual(defaultContent.intakeForm);
+  });
+
+  it("quotes the rate with a token rather than a figure", () => {
+    // The point of the token system: the rates list is the only place a price
+    // is typed, so this screen cannot drift from it.
+    const assurances = defaultContent.intakeForm.assurances.join(" ");
+    expect(assurances).toContain("{{rate.range}}");
+    expect(assurances).not.toMatch(/₹\d/);
+  });
+
+  it("resolves that token for the public site", () => {
+    const resolved = resolveContentTokens({
+      ...defaultContent,
+      slidingScale: ["₹400 (Student)", "₹900"],
+    });
+    expect(resolved.intakeForm.assurances.join(" ")).toContain("₹400–₹900");
+    expect(resolved.intakeForm.assurances.join(" ")).not.toContain("{{");
   });
 });

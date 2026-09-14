@@ -2047,6 +2047,58 @@ export default function AdminPage() {
                 )}
 
                 <div className="space-y-6">
+                  <ContentSection title="Intake Form — Opening Screen">
+                    {/*
+                      The one screen between a visitor and booking. It used to
+                      live in the code, so changing a word meant a deployment.
+                    */}
+                    <ContentField
+                      label="Heading"
+                      value={(content as any).intakeForm?.heading || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          intakeForm: { ...(content as any).intakeForm, heading: v },
+                        })
+                      }
+                    />
+                    <ContentField
+                      label="Introduction"
+                      value={(content as any).intakeForm?.intro || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          intakeForm: { ...(content as any).intakeForm, intro: v },
+                        })
+                      }
+                      textarea
+                    />
+                    <ContentField
+                      label="Assurances, one per line — {{rate.range}} fills in the current scale"
+                      value={((content as any).intakeForm?.assurances || []).join("\n")}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          intakeForm: {
+                            ...(content as any).intakeForm,
+                            assurances: v.split("\n").filter((x: string) => x.trim()),
+                          },
+                        })
+                      }
+                      textarea
+                    />
+                    <ContentField
+                      label="Closing note"
+                      value={(content as any).intakeForm?.footnote || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          intakeForm: { ...(content as any).intakeForm, footnote: v },
+                        })
+                      }
+                    />
+                  </ContentSection>
+
                   <ContentSection title="First Session Walkthrough">
                     {/*
                       Shown on the homepage under "How sessions work". It is

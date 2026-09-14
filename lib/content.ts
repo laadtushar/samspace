@@ -74,6 +74,19 @@ export interface SiteContent {
     links: { label: string; description: string; href: string }[];
   };
   /**
+   * The intake form's opening screen.
+   *
+   * This was written into the component, which meant the one screen standing
+   * between a visitor and booking could not be changed without a deployment.
+   * The assurances can use pricing tokens, so the rate is not typed here either.
+   */
+  intakeForm: {
+    heading: string;
+    intro: string;
+    assurances: string[];
+    footnote: string;
+  };
+  /**
    * What a first session actually looks like.
    *
    * A new top-level key, which matters: `mergeContent` spreads the defaults
@@ -256,6 +269,19 @@ export const defaultContent: SiteContent = {
         href: "/#about",
       },
     ],
+  },
+  intakeForm: {
+    heading: "Therapy Intake Form",
+    intro:
+      "I'm Priyanka Varma, a psychologist working under supervision with a master's degree in clinical psychology. I use an eclectic and personalised approach integrating CBT, Humanistic, Trauma-Informed Care, and mindfulness-based practices.",
+    // {{rate.range}} rather than the figure, so the rates list stays the only
+    // place a price is typed.
+    assurances: [
+      "🌿 Sessions are conducted online",
+      "💫 Sliding scale {{rate.range}}",
+      "🔒 All information remains confidential",
+    ],
+    footnote: "This form helps me understand your needs and check availability.",
   },
   sessionStructure: {
     heading: "What actually happens in a first session",
