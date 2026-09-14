@@ -4,12 +4,32 @@ import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import MagneticButton from "./MagneticButton";
 import TextReveal from "./TextReveal";
+import RelatedReading, { type PostLink } from "./RelatedReading";
 
 interface IssuesProps {
   issues: { heading: string; intro: string; items: string[] };
+  posts?: PostLink[];
 }
 
-export default function Issues({ issues }: IssuesProps) {
+export default function Issues({ issues, posts = [] }: IssuesProps) {
+  /*
+    The areas above are pills with no way in. Someone reading "anxiety &
+    overthinking" and wondering whether theirs counts has, at that moment, no
+    next step short of booking — so the posts that answer exactly that question
+    go here, rather than three clicks away under a separate nav item.
+
+    Matched by tag against what is published, so this is never a list to
+    maintain, and shows nothing when nothing matches.
+  */
+  const suggested = posts
+    .filter((post) =>
+      post.tags.some((tag) =>
+        ["anxiety", "overthinking", "starting therapy", "self-doubt"].includes(
+          tag.toLowerCase()
+        )
+      )
+    )
+    .slice(0, 3);
   return (
     <section className="bg-white py-28 relative overflow-hidden">
       {/* Animated background orb */}
@@ -38,6 +58,11 @@ export default function Issues({ issues }: IssuesProps) {
             <p className="font-sans text-base text-forest/55 leading-relaxed">
               {issues.intro}
             </p>
+            <RelatedReading
+              posts={suggested}
+              label="Not sure if this applies to you?"
+              className="mt-8 pt-8 border-t border-sage/15"
+            />
           </AnimatedSection>
 
           {/* Right — magnetic pills */}

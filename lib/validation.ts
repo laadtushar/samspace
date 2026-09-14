@@ -196,6 +196,13 @@ export const siteContentSchema = z.object({
     subtext: trimmed(600),
     links: z.array(startLinkSchema).max(10),
   }),
+  sessionStructure: z.object({
+    heading: trimmed(200),
+    intro: trimmed(1000),
+    steps: z
+      .array(z.object({ title: trimmed(120), desc: trimmed(600) }))
+      .max(8),
+  }),
   slidingScale: z.array(trimmed(60)).max(12),
   calendlyUrl: bookingUrl,
   studentNote: trimmed(2000),

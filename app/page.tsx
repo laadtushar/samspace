@@ -1,11 +1,24 @@
 import { getContent, toPublicContent } from "@/lib/content";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
+import { getPublishedPosts } from "@/lib/blog";
 import HomePage from "@/components/HomePage";
 
 export const revalidate = 60;
 
 export default async function Home() {
   const content = await getContent();
+
+  /*
+    The homepage links a few posts from the sections where someone is deciding.
+    They come from what is actually published, not a list kept here: a hardcoded
+    slug becomes a 404 the moment a post is renamed or withdrawn, and the
+    homepage is the worst place on the site to serve one.
+  */
+  const posts = (await getPublishedPosts().catch(() => [])).map((post) => ({
+    slug: post.slug,
+    title: post.title,
+    tags: post.tags,
+  }));
 
   /*
     The FAQ structured data is built here rather than in the root layout, for
@@ -37,7 +50,7 @@ export default async function Home() {
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       )}
-      <HomePage content={toPublicContent(content)} />
+      <HomePage content={toPublicContent(content)} posts={posts} />
     </>
   );
 }

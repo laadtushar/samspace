@@ -15,6 +15,7 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
 import MarqueeDivider from "@/components/MarqueeDivider";
+import type { PostLink } from "@/components/RelatedReading";
 
 // The modal is only ever opened on interaction, so it stays out of the initial
 // bundle entirely.
@@ -22,7 +23,13 @@ const IntakeFormModal = dynamic(() => import("@/components/IntakeFormModal"), {
   ssr: false,
 });
 
-export default function HomePage({ content }: { content: PublicSiteContent }) {
+export default function HomePage({
+  content,
+  posts = [],
+}: {
+  content: PublicSiteContent;
+  posts?: PostLink[];
+}) {
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   // Phase 4 — shareable intake URL. Read from `window` rather than
@@ -60,10 +67,10 @@ export default function HomePage({ content }: { content: PublicSiteContent }) {
           text2="Burnout · Overthinking · Identity · Transitions"
           className="bg-white"
         />
-        <Issues issues={content.issues} />
+        <Issues issues={content.issues} posts={posts} />
         <Mentoring mentoring={content.mentoring} />
         <Faq faq={content.faq} />
-        <SessionInfo />
+        <SessionInfo structure={content.sessionStructure} posts={posts} />
         <Contact contact={content.contact} onBookSession={openIntake} />
       </main>
       <Footer

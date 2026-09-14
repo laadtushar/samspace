@@ -2038,6 +2038,76 @@ export default function AdminPage() {
                 )}
 
                 <div className="space-y-6">
+                  <ContentSection title="First Session Walkthrough">
+                    {/*
+                      Shown on the homepage under "How sessions work". It is
+                      what someone reads while deciding whether to book, so it
+                      is worth keeping in your own words.
+                    */}
+                    <ContentField
+                      label="Heading"
+                      value={(content as any).sessionStructure?.heading || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          sessionStructure: {
+                            ...(content as any).sessionStructure,
+                            heading: v,
+                          },
+                        })
+                      }
+                    />
+                    <ContentField
+                      label="Opening paragraph"
+                      value={(content as any).sessionStructure?.intro || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          sessionStructure: {
+                            ...(content as any).sessionStructure,
+                            intro: v,
+                          },
+                        })
+                      }
+                      textarea
+                    />
+                    {((content as any).sessionStructure?.steps ?? []).map(
+                      (step: { title: string; desc: string }, i: number) => {
+                        const patch = (next: { title?: string; desc?: string }) => {
+                          const steps = [
+                            ...((content as any).sessionStructure?.steps ?? []),
+                          ];
+                          steps[i] = { ...steps[i], ...next };
+                          setContent({
+                            ...content,
+                            sessionStructure: {
+                              ...(content as any).sessionStructure,
+                              steps,
+                            },
+                          });
+                        };
+                        return (
+                          <div
+                            key={i}
+                            className="border-t border-sage/15 pt-4 space-y-3"
+                          >
+                            <ContentField
+                              label={`Step ${i + 1} — title`}
+                              value={step.title}
+                              onChange={(v) => patch({ title: v })}
+                            />
+                            <ContentField
+                              label={`Step ${i + 1} — what happens`}
+                              value={step.desc}
+                              onChange={(v) => patch({ desc: v })}
+                              textarea
+                            />
+                          </div>
+                        );
+                      }
+                    )}
+                  </ContentSection>
+
                   <ContentSection title="Session Rates">
                     <ContentField
                       label="Rates, one per line — add (Student) to mark the concessional rate"

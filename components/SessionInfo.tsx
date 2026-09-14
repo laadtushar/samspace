@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import RelatedReading, { type PostLink } from "./RelatedReading";
 
 const stats = [
   { icon: "🕐", label: "Duration", value: "45–50 mins" },
@@ -9,7 +10,29 @@ const stats = [
   { icon: "🔒", label: "Privacy", value: "Fully Confidential" },
 ];
 
-export default function SessionInfo() {
+interface SessionInfoProps {
+  structure?: {
+    heading: string;
+    intro: string;
+    steps: { title: string; desc: string }[];
+  };
+  posts?: PostLink[];
+}
+
+export default function SessionInfo({ structure, posts = [] }: SessionInfoProps) {
+  /*
+    Three icons reading "45–50 mins / Online Only / Confidential" answer the
+    logistics and none of the hesitation. What stops people who have already
+    decided to book is not knowing what the hour is, so the walkthrough belongs
+    here — at the point of the decision — rather than only in the post.
+
+    Optional, because this section rendered without props before and a stored
+    content document written before the field existed has no value for it.
+  */
+  const steps = structure?.steps ?? [];
+  const fullPost = posts.find(
+    (post) => post.slug === "what-happens-first-therapy-session"
+  );
   return (
     <section className="bg-white py-28 relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-6">
@@ -56,6 +79,55 @@ export default function SessionInfo() {
             ))}
           </div>
         </AnimatedSection>
+
+        {steps.length > 0 && (
+          <AnimatedSection delay={0.1}>
+            <div className="max-w-3xl mx-auto mb-14">
+              <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-forest text-center mb-3">
+                {structure!.heading}
+              </h3>
+              <p className="font-sans text-sm text-forest/55 text-center leading-relaxed mb-10">
+                {structure!.intro}
+              </p>
+
+              <ol className="relative border-l border-sage/25 ml-3 space-y-7">
+                {steps.map((step, i) => (
+                  <motion.li
+                    key={step.title}
+                    initial={{ opacity: 0, x: 16 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{
+                      duration: 0.5,
+                      delay: i * 0.1,
+                      ease: [0.23, 0.86, 0.39, 0.96],
+                    }}
+                    className="pl-7"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="absolute -left-[7px] w-3.5 h-3.5 rounded-full bg-clay/70 ring-4 ring-white"
+                    />
+                    <p className="font-sans text-sm font-semibold text-forest mb-1.5">
+                      {step.title}
+                    </p>
+                    <p className="font-sans text-sm text-forest/60 leading-relaxed">
+                      {step.desc}
+                    </p>
+                  </motion.li>
+                ))}
+              </ol>
+
+              {fullPost && (
+                <RelatedReading
+                  posts={[fullPost]}
+                  label="The longer version, including how people tend to feel afterwards:"
+                  className="mt-9 pt-7 border-t border-sage/15"
+                />
+              )}
+            </div>
+          </AnimatedSection>
+        )}
 
         <AnimatedSection delay={0.2}>
           <motion.div
