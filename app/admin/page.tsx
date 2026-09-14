@@ -40,7 +40,7 @@ import {
   priceRangeOf,
 } from "@/lib/rates";
 import { TOKENS, fillTokens, rateValues } from "@/lib/tokens";
-import { slugify, readingMinutes, type BlogPost } from "@/lib/blog";
+import { slugify, readingMinutes, type BlogPost } from "@/lib/blog-format";
 import { SLUG_PATTERN } from "@/lib/validation";
 
 type AdminTab =
