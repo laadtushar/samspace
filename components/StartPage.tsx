@@ -177,6 +177,7 @@ export default function StartPage({
         slidingScale={content.slidingScale}
         calendlyUrl={content.calendlyUrl}
         studentNote={content.studentNote}
+        intakeForm={content.intakeForm}
       />
     </main>
   );

@@ -136,6 +136,22 @@ describe("resolving tokens for the public site", () => {
   });
 
   it("leaves content without tokens exactly as it was", () => {
-    expect(resolveContentTokens(defaultContent)).toEqual(defaultContent);
+    /*
+      This used to compare resolveContentTokens(defaultContent) against
+      defaultContent, which held only while the shipped copy contained no
+      tokens. It now does — the intake form quotes {{rate.range}} — so the
+      fixture is stripped of tokens first, which is what the claim was always
+      about.
+    */
+    const noTokens = JSON.parse(
+      JSON.stringify(defaultContent).replace(/\{\{[^}]*\}\}/g, "the scale")
+    );
+    expect(resolveContentTokens(noTokens)).toEqual(noTokens);
+  });
+
+  it("leaves a field alone when only a sibling holds a token", () => {
+    const resolved = resolveContentTokens(defaultContent);
+    expect(resolved.intakeForm.intro).toBe(defaultContent.intakeForm.intro);
+    expect(resolved.hero.headline).toBe(defaultContent.hero.headline);
   });
 });

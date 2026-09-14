@@ -191,6 +191,12 @@ export const siteContentSchema = z.object({
     subtext: trimmed(600),
     links: z.array(startLinkSchema).max(10),
   }),
+  intakeForm: z.object({
+    heading: trimmed(120),
+    intro: trimmed(1500),
+    assurances: z.array(trimmed(120)).max(6),
+    footnote: trimmed(300),
+  }),
   sessionStructure: z.object({
     heading: trimmed(200),
     intro: trimmed(1000),
