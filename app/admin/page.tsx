@@ -31,6 +31,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { providerFor, SCHEDULING_PROVIDERS } from "@/lib/scheduling";
+import { whatsappLinkProblem } from "@/lib/whatsapp";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog";
 import { SLUG_PATTERN } from "@/lib/validation";
 
@@ -2138,6 +2139,19 @@ export default function AdminPage() {
 
                   <ContentSection title="Contact Details">
                     <ContentField
+                      label="WhatsApp username or short link — a link containing your phone number is refused"
+                      value={(content as any).contact?.whatsappLink || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          contact: { ...(content as any).contact, whatsappLink: v.trim() },
+                        })
+                      }
+                      error={whatsappLinkProblem(
+                        ((content as any).contact?.whatsappLink as string) || ""
+                      )}
+                    />
+                    <ContentField
                       label="Email"
                       value={(content as any).contact?.email}
                       onChange={(v) =>
@@ -2149,16 +2163,6 @@ export default function AdminPage() {
                       value={(content as any).contact?.phone}
                       onChange={(v) =>
                         setContent({ ...content, contact: { ...(content as any).contact, phone: v } })
-                      }
-                    />
-                    <ContentField
-                      label="WhatsApp link (wa.me/… — anything else is discarded on save)"
-                      value={(content as any).contact?.whatsappLink}
-                      onChange={(v) =>
-                        setContent({
-                          ...content,
-                          contact: { ...(content as any).contact, whatsappLink: v.trim() },
-                        })
                       }
                     />
                   </ContentSection>
@@ -2280,8 +2284,6 @@ export default function AdminPage() {
                         or a full https link. The shortcuts:{" "}
                         <code className="text-forest/60">/?intake=true</code>{" "}
                         opens the intake form,{" "}
-                        <code className="text-forest/60">/whatsapp</code> starts a
-                        WhatsApp chat without exposing your number,{" "}
                         <code className="text-forest/60">/blog</code> is the
                         writing, and <code className="text-forest/60">/#about</code>{" "}
                         jumps to the About section. Anything that isn&apos;t a

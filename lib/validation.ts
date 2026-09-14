@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeWhatsappLink } from "@/lib/whatsapp";
 import { SCHEDULING_HOSTS } from "@/lib/scheduling";
 
 /**
@@ -68,8 +69,8 @@ export function safeExternalUrl(
  * Instagram hands out ?igsh= and LinkedIn ?utm_source=share_via when you use
  * their share sheets; both identify who did the sharing. Keeping them would
  * pass that on to every visitor who clicks, and the profile resolves
- * identically without them. WhatsApp and booking links keep their query
- * strings, because there it carries the prefilled message or booking details.
+ * identically without them. Booking links keep their query strings, because
+ * there it carries the booking details.
  */
 export function safeProfileUrl(
   value: unknown,
@@ -113,12 +114,6 @@ const startLinkSchema = z.object({
   description: trimmed(160),
   href: z.unknown().transform(safeLinkHref),
 });
-
-const whatsappUrl = z
-  .unknown()
-  .transform((v) =>
-    safeExternalUrl(v, ["wa.me", "whatsapp.com", "api.whatsapp.com"])
-  );
 
 /*
   The stored key is still `calendlyUrl`, because renaming a top-level key would
@@ -185,7 +180,7 @@ export const siteContentSchema = z.object({
     subtext: trimmed(1000),
     email: trimmed(254),
     phone: trimmed(40),
-    whatsappLink: whatsappUrl,
+    whatsappLink: z.unknown().transform(safeWhatsappLink),
   }),
   social: z.object({
     instagram: instagramUrl,

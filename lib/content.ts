@@ -49,7 +49,15 @@ export interface SiteContent {
     heading: string;
     subtext: string;
     email: string;
+    /**
+     * Never served to the public site — toPublicContent strips it. Kept so the
+     * practitioner has her own number on the record somewhere she controls.
+     */
     phone: string;
+    /**
+     * A WhatsApp username or Business short link — never a wa.me/<number>,
+     * which the schema refuses. Safe to put in an href, so it is served.
+     */
     whatsappLink: string;
   };
   social: {
@@ -217,9 +225,8 @@ export const defaultContent: SiteContent = {
     heading: "Ready to take the first step?",
     subtext: "Reach out to schedule your session. I'll respond within 24 hours.",
     email: "Priyankavarma785@gmail.com",
-    phone: "+91 91307 43144",
-    whatsappLink:
-      "https://wa.me/919130743144?text=Hi%20Priyanka%2C%20I%27d%20like%20to%20book%20a%20session%20at%20Samvriti.Space.",
+    phone: "",
+    whatsappLink: "",
   },
   social: {
     instagram: "https://www.instagram.com/samvriti.space",
@@ -234,11 +241,6 @@ export const defaultContent: SiteContent = {
         label: "Book a therapy session",
         description: "Fill the intake form — takes about three minutes",
         href: "/?intake=true",
-      },
-      {
-        label: "Message on WhatsApp",
-        description: "For a quick question before you book",
-        href: "/whatsapp",
       },
       {
         label: "Read the writing",
@@ -288,14 +290,15 @@ export const defaultContent: SiteContent = {
  * passing the whole content object put the phone number and the wa.me link
  * into the HTML whether or not either was rendered — which is exactly what
  * address harvesters read. The public pages get this shape instead, and the
- * WhatsApp link is reached through the /whatsapp redirect.
+ * The practitioner's own phone number never reaches the browser. The WhatsApp
+ * link does, because it names a handle rather than a number.
  */
 export type PublicSiteContent = Omit<SiteContent, "contact"> & {
-  contact: Omit<SiteContent["contact"], "phone" | "whatsappLink">;
+  contact: Omit<SiteContent["contact"], "phone">;
 };
 
 export function toPublicContent(content: SiteContent): PublicSiteContent {
-  const { phone: _phone, whatsappLink: _link, ...contact } = content.contact;
+  const { phone: _phone, ...contact } = content.contact;
   return { ...content, contact };
 }
 

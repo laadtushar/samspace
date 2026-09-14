@@ -3,34 +3,25 @@ import { getContent } from "@/lib/content";
 import { SITE_URL } from "@/lib/site";
 
 /**
- * Redirect to WhatsApp, so the number never appears in the page.
+ * A tombstone, not a feature.
  *
- * A wa.me link carries the phone number in the URL itself, which means linking
- * to it directly puts the number in the served HTML whether or not it is shown
- * as text — where address harvesters, which read hrefs rather than rendered
- * pages, will find it.
+ * This route used to look up the practitioner's wa.me link and redirect to it,
+ * which kept the number out of the markup but handed it to anyone who followed
+ * the link. The number is gone now — from the defaults, from the schema, and
+ * from the contact card.
  *
- * Linking to this route instead leaves only "/whatsapp" in the markup. The
- * number is resolved server-side at the moment someone clicks, so a visitor
- * lands in the same conversation with the same prefilled message, while a
- * crawler that never follows the link never sees a number at all.
- *
- * Excluded from the sitemap and disallowed in robots.txt: it is a doorway, not
- * a page.
+ * The route stays because a stored /start link may still point here, and a dead
+ * link on the one page an Instagram bio points at is worse than a redirect. It
+ * forwards to the configured handle, or to the contact section when there is
+ * none — and it can no longer forward to a number, because the schema will not
+ * store one. Cached for an hour: it is a doorway, and blob reads are metered.
  */
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function GET() {
   const content = await getContent().catch(() => null);
   const target = content?.contact?.whatsappLink;
-
-  if (!target) {
-    // Nothing configured — send them to the contact section rather than
-    // nowhere, so the click still lands somewhere useful.
-    return NextResponse.redirect(`${SITE_URL}/#contact`, 302);
-  }
-
-  // 302 rather than 301: the destination is editable from the dashboard, and a
-  // permanent redirect would be cached by browsers long after it changed.
-  return NextResponse.redirect(target, 302);
+  // No handle configured, or a stored link the schema now refuses: send them to
+  // the contact section rather than nowhere.
+  return NextResponse.redirect(target || `${SITE_URL}/#contact`, 302);
 }
