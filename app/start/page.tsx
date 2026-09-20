@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCachedContent, toPublicContent } from "@/lib/content";
 import { getCachedPublishedPosts } from "@/lib/blog";
+import { publicPosts } from "@/lib/posts-public";
 import StartPage from "@/components/StartPage";
 
 export const revalidate = 60;
@@ -23,10 +24,11 @@ export const metadata: Metadata = {
 };
 
 export default async function Start() {
-  const [content, posts] = await Promise.all([
+  const [content, stored] = await Promise.all([
     getCachedContent(),
     getCachedPublishedPosts().catch(() => []),
   ]);
+  const posts = publicPosts(stored, content.slidingScale);
 
   return (
     <StartPage

@@ -72,3 +72,35 @@ export function priceRangeOf(rates: readonly string[]): string {
   if (amounts.length === 0) return "";
   return `₹${Math.min(...amounts)}–₹${Math.max(...amounts)}`;
 }
+
+/**
+ * The scale the site ships with: one concessional rate for students, and a band
+ * for everyone else.
+ *
+ * It lives here rather than only in `defaultContent` because the intake form is
+ * a client component — importing site content there would pull the storage
+ * client, and with it `fs` and `net`, into the browser bundle. Both sides read
+ * this instead, so the fallback the form renders cannot drift from the default
+ * the server serves.
+ */
+export const DEFAULT_SLIDING_SCALE: readonly string[] = [
+  "₹500 (Student)",
+  "₹800",
+  "₹900",
+  "₹1000",
+];
+
+/** The concessional entries on a scale. */
+export function studentRates(rates: readonly string[]): string[] {
+  return rates.filter(isStudentRate);
+}
+
+/**
+ * Everything that is not concessional — the band a working adult chooses from.
+ *
+ * A scale with no concessional entry returns all of it, which is the honest
+ * answer: every rate is then a full rate.
+ */
+export function fullRates(rates: readonly string[]): string[] {
+  return rates.filter((rate) => !isStudentRate(rate));
+}

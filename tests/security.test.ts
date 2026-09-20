@@ -768,14 +768,16 @@ describe("the Business Profile reference", () => {
 });
 
 /**
- * The sliding scale is quoted in six places that nothing links together.
+ * A rupee figure is typed in one place.
  *
- * The student rate lives in the content defaults, in the intake form's
- * fallback, in the search description, in the social card, in the structured
- * data's priceRange and minPrice, and in every blog post's closing line. When
- * a rate changes each of those has to agree, and by hand each one is a place to miss.
- * These tests fail the next time one of them is missed, which is the only
- * mechanism that catches a stale price before a reader does.
+ * It used to be typed in six that nothing linked together — the content
+ * defaults, the intake form's fallback, the search description, the social card,
+ * the structured data's priceRange and minPrice, and the closing line of every
+ * post — and each one was a place to miss when a rate changed. Missing one is
+ * not theoretical: the site advertised ₹500 and ₹600 at the same time.
+ *
+ * Now the scale is DEFAULT_SLIDING_SCALE and everything else either references
+ * it or writes {{rate.range}}. These tests fail if a figure is typed back in.
  */
 describe("the sliding scale is quoted consistently", () => {
   const read = async (path: string) => {
@@ -783,14 +785,14 @@ describe("the sliding scale is quoted consistently", () => {
     return readFileSync(path, "utf8");
   };
 
-  /** The lowest rate, taken from the content defaults rather than hardcoded. */
-  const lowestRate = async () => {
-    const { defaultContent } = await import("@/lib/content");
-    const first = defaultContent.slidingScale[0];
-    const amount = first.match(/₹(\d+)/)?.[1];
-    expect(amount, `could not read a rate from "${first}"`).toBeTruthy();
-    return Number(amount);
-  };
+  /**
+   * Source with comments removed.
+   *
+   * A comment naming ₹500 as an example is documentation, not a published
+   * price, and banning it would only push the examples out of the code.
+   */
+  const code = (src: string) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
   it("marks the cheapest rate as the student one", async () => {
     const { defaultContent } = await import("@/lib/content");
@@ -801,47 +803,97 @@ describe("the sliding scale is quoted consistently", () => {
     expect(Math.min(...amounts)).toBe(amounts[0]);
   });
 
-  it("uses the same lowest rate in the structured data", async () => {
-    const layout = await read("app/layout.tsx");
-    const low = await lowestRate();
-    expect(layout).toContain(`minPrice: ${low}`);
-    expect(layout).toContain(`priceRange: "₹${low}–₹1000"`);
+  it("ships the same scale to the server and to the intake form", async () => {
+    const { defaultContent } = await import("@/lib/content");
+    const { DEFAULT_SLIDING_SCALE } = await import("@/lib/rates");
+    // The form's fallback is the same constant, so the two cannot disagree.
+    expect(defaultContent.slidingScale).toEqual([...DEFAULT_SLIDING_SCALE]);
+    const form = code(await read("components/IntakeFormModal.tsx"));
+    expect(form).toContain("DEFAULT_SLIDING_SCALE");
+    expect(form).not.toMatch(/₹\s*\d/);
   });
 
-  it("uses the same lowest rate in the search and social descriptions", async () => {
-    const layout = await read("app/layout.tsx");
-    const low = await lowestRate();
-    // The OG description, the Twitter description and priceRange all quote it.
-    const quoted = layout.match(/₹\d+–₹1000/g) ?? [];
-    expect(quoted.length).toBeGreaterThanOrEqual(3);
-    for (const q of quoted) expect(q).toBe(`₹${low}–₹1000`);
+  it("names a rupee figure in content only where a rate is declared", async () => {
+    const { defaultContent } = await import("@/lib/content");
+    const { walkStrings } = await import("@/lib/price-audit");
+
+    const typed: string[] = [];
+    walkStrings(defaultContent, (path, text) => {
+      if (!text.includes("₹")) return;
+      // The scale and a service's own price are the declarations. Everything
+      // else — the FAQ answer, the assurances, the cards — uses a token.
+      const declares =
+        /^slidingScale\[\d+\]$/.test(path) ||
+        /^services\.items\[\d+\]\.price$/.test(path);
+      if (!declares) typed.push(`${path}: ${text}`);
+    });
+    expect(typed).toEqual([]);
   });
 
-  it("uses the same lowest rate in the services card and the FAQ answer", async () => {
-    const content = await read("lib/content.ts");
-    const low = await lowestRate();
-    for (const q of content.match(/₹\d+–₹1000/g) ?? []) {
-      expect(q).toBe(`₹${low}–₹1000`);
-    }
-    // The FAQ explains which rate is the student one by naming the amount.
-    expect(content).toContain(`The ₹${low} rate is reserved for students`);
-  });
-
-  it("uses the same lowest rate in every shipped post", async () => {
+  it("keeps rupee figures out of the head and the shipped posts", async () => {
     const { STARTER_POSTS } = await import("@/lib/starter-posts");
-    const low = await lowestRate();
+    expect(code(await read("app/layout.tsx"))).not.toMatch(/₹\s*\d/);
     for (const post of STARTER_POSTS) {
-      const quoted = post.content.match(/₹\d+–₹1000/g) ?? [];
-      expect(quoted.length, `${post.slug} never quotes the rate`).toBeGreaterThan(0);
-      for (const q of quoted) expect(q, post.slug).toBe(`₹${low}–₹1000`);
+      expect(post.content, post.slug).not.toMatch(/₹\s*\d/);
+      // Each still quotes the scale — as a token, so it tracks the rates list.
+      expect(post.content, `${post.slug} never quotes the rate`).toContain(
+        "{{rate.range}}"
+      );
     }
   });
 
-  it("uses the same lowest rate in the intake form's fallback", async () => {
-    const form = await read("components/IntakeFormModal.tsx");
-    const low = await lowestRate();
-    for (const q of form.match(/₹\d+ \(Student\)/g) ?? []) {
-      expect(q).toBe(`₹${low} (Student)`);
+  it("has nothing for the drift audit to report", async () => {
+    const { defaultContent } = await import("@/lib/content");
+    const { STARTER_POSTS } = await import("@/lib/starter-posts");
+    const { auditPrices } = await import("@/lib/price-audit");
+
+    // The audit reads stored copy, which is what the dashboard shows and saves.
+    const scale = defaultContent.slidingScale;
+    expect(auditPrices(defaultContent, scale)).toEqual([]);
+    expect(auditPrices([...STARTER_POSTS], scale)).toEqual([]);
+  });
+
+  it("resolves every token it writes, to a price the scale has", async () => {
+    const { defaultContent, resolveContentTokens } = await import("@/lib/content");
+    const { STARTER_POSTS } = await import("@/lib/starter-posts");
+    const { walkStrings } = await import("@/lib/price-audit");
+    const { fillDeep, rateValues } = await import("@/lib/tokens");
+
+    const values = rateValues(defaultContent.slidingScale);
+    const allowed = new Set(Object.values(values));
+    const amounts = new Set(
+      defaultContent.slidingScale.map((r) => r.match(/₹(\d+)/)?.[1])
+    );
+
+    const resolved = [
+      resolveContentTokens(defaultContent),
+      fillDeep([...STARTER_POSTS], values),
+    ];
+    let quoted = 0;
+    for (const tree of resolved) {
+      walkStrings(tree, (path, text) => {
+        if (text.includes("₹")) quoted += 1;
+        // Nothing reaches a reader still in braces.
+        expect(text, path).not.toMatch(/\{\{/);
+        for (const [match] of text.matchAll(/₹\d+(?:\s*[–—]\s*₹\d+)?/g)) {
+          const single = match.match(/^₹(\d+)$/);
+          if (single) {
+            // A lone figure is either a rate on the scale or a service's own price.
+            expect(
+              amounts.has(single[1]) || allowed.has(match) || path.endsWith(".price"),
+              `${path} names ${match}`
+            ).toBe(true);
+            continue;
+          }
+          expect(allowed, `${path} quotes ${match}`).toContain(
+            match.replace(/\s/g, "")
+          );
+        }
+      });
     }
+    // The test is only worth anything if it looked at prices. Content quotes the
+    // scale in the services card, the FAQ and the assurances; each post closes
+    // with it.
+    expect(quoted).toBeGreaterThanOrEqual(10);
   });
 });

@@ -16,7 +16,7 @@ import {
   embedUrlFor,
   isBookingConfirmation,
 } from "@/lib/scheduling";
-import { isStudentRate } from "@/lib/rates";
+import { isStudentRate, DEFAULT_SLIDING_SCALE } from "@/lib/rates";
 
 interface IntakeData {
   name: string;
@@ -93,7 +93,7 @@ const isStudentOption = isStudentRate;
 export default function IntakeFormModal({
   isOpen,
   onClose,
-  slidingScale: rawSlidingScale = ["₹500 (Student)", "₹800", "₹900", "₹1000"],
+  slidingScale: rawSlidingScale = [...DEFAULT_SLIDING_SCALE],
   // Named for Calendly for storage-compatibility; any supported provider works.
   calendlyUrl = "",
   studentNote = defaultStudentNote,
@@ -126,9 +126,7 @@ export default function IntakeFormModal({
   // Default params only apply to `undefined`; an empty array (e.g. admin cleared
   // all options) would otherwise leave no price buttons and block submission.
   const slidingScale =
-    rawSlidingScale.length > 0
-      ? rawSlidingScale
-      : ["₹500 (Student)", "₹800", "₹900", "₹1000"];
+    rawSlidingScale.length > 0 ? rawSlidingScale : [...DEFAULT_SLIDING_SCALE];
   const [step, setStep] = useState(0);
   const [data, setData] = useState<IntakeData>(initialData);
   const [isLoading, setIsLoading] = useState(false);

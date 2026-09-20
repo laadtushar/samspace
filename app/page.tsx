@@ -1,6 +1,7 @@
 import { getCachedContent, toPublicContent } from "@/lib/content";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
 import { getCachedPublishedPosts } from "@/lib/blog";
+import { publicPosts } from "@/lib/posts-public";
 import HomePage from "@/components/HomePage";
 
 export const revalidate = 60;
@@ -14,11 +15,10 @@ export default async function Home() {
     slug becomes a 404 the moment a post is renamed or withdrawn, and the
     homepage is the worst place on the site to serve one.
   */
-  const posts = (await getCachedPublishedPosts().catch(() => [])).map((post) => ({
-    slug: post.slug,
-    title: post.title,
-    tags: post.tags,
-  }));
+  const posts = publicPosts(
+    await getCachedPublishedPosts().catch(() => []),
+    content.slidingScale
+  ).map((post) => ({ slug: post.slug, title: post.title, tags: post.tags }));
 
   /*
     The FAQ structured data is built here rather than in the root layout, for
