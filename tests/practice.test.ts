@@ -327,6 +327,56 @@ suite("sessions", () => {
     expect(s.paid).toBe(false);
   });
 
+  it("records what currency the amount is in", async () => {
+    /*
+      rate_amount was a bare integer meaning rupees by convention and nowhere
+      else. An amount that does not say which money it is has to be guessed at
+      from when it was written, which is how money data goes wrong.
+    */
+    const s = await practice.createSession({
+      clientId,
+      startsAt: "2026-09-01T10:00:00.000Z",
+      rateAmount: 800,
+    });
+    expect(s.rate_amount).toBe(800);
+    expect(s.currency).toBe(practice.PRACTICE_CURRENCY);
+    expect(s.currency).toBe("INR");
+  });
+
+  it("takes a currency that is not the practice's own", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: "2026-09-01T12:00:00.000Z",
+      rateAmount: 40,
+      currency: "AED",
+    });
+    expect(s.currency).toBe("AED");
+  });
+
+  it("refuses a symbol where a currency code belongs", async () => {
+    // The column is checked against ISO 4217 in the database, so a pasted
+    // symbol cannot get in even past this function.
+    await expect(
+      practice.createSession({
+        clientId,
+        startsAt: "2026-09-01T14:00:00.000Z",
+        rateAmount: 800,
+        currency: "₹",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("changes a currency without being told the amount again", async () => {
+    const s = await practice.createSession({
+      clientId,
+      startsAt: "2026-09-01T16:00:00.000Z",
+      rateAmount: 800,
+    });
+    const updated = await practice.updateSession(s.id, { currency: "AED" });
+    expect(updated?.currency).toBe("AED");
+    expect(updated?.rate_amount).toBe(800);
+  });
+
   it("honours an explicit length", async () => {
     const s = await practice.createSession({
       clientId,
