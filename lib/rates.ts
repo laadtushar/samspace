@@ -12,6 +12,8 @@
  * them to offer the fix.
  */
 
+import { formatMoney, formatMoneyRange } from "@/lib/money";
+
 const AMOUNT = /₹\s*(\d{1,7})/g;
 const LABEL = /\(([^)]*)\)/;
 
@@ -43,8 +45,9 @@ export function rateAmount(raw: unknown): number | null {
 export function formatRate(amount: number | string, label = ""): string {
   const digits = String(amount).replace(/\D/g, "");
   if (!digits) return "";
+  const shown = formatMoney(Number(digits));
   const trimmed = label.trim();
-  return trimmed ? `₹${digits} (${trimmed})` : `₹${digits}`;
+  return trimmed ? `${shown} (${trimmed})` : shown;
 }
 
 /**
@@ -70,7 +73,7 @@ export function priceRangeOf(rates: readonly string[]): string {
     .map(rateAmount)
     .filter((n): n is number => n !== null && n > 0);
   if (amounts.length === 0) return "";
-  return `₹${Math.min(...amounts)}–₹${Math.max(...amounts)}`;
+  return formatMoneyRange(Math.min(...amounts), Math.max(...amounts));
 }
 
 /**
@@ -84,10 +87,10 @@ export function priceRangeOf(rates: readonly string[]): string {
  * the server serves.
  */
 export const DEFAULT_SLIDING_SCALE: readonly string[] = [
-  "₹500 (Student)",
-  "₹800",
-  "₹900",
-  "₹1000",
+  formatRate(500, "Student"),
+  formatRate(800),
+  formatRate(900),
+  formatRate(1000),
 ];
 
 /** The concessional entries on a scale. */

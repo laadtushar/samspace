@@ -1,4 +1,5 @@
 import { sql, dbConfigured } from "@/lib/db";
+import { PRACTICE_CURRENCY } from "@/lib/money";
 import type { IntakeSubmission } from "@/lib/content";
 
 /**
@@ -237,13 +238,9 @@ export class SessionClash extends Error {
 /** Default length, matching what the site tells people a session is. */
 export const SESSION_MINUTES = 50;
 
-/**
- * What this practice charges in.
- *
- * One constant rather than a literal at each insert, so the day a second
- * currency is recorded there is a single place that says what the default was.
- */
-export const PRACTICE_CURRENCY = "INR";
+// The practice's own currency lives with the money primitive, so the column
+// default and every rendered price name the same constant.
+export { PRACTICE_CURRENCY };
 
 export async function createSession(input: {
   clientId: string;
