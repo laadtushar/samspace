@@ -14,9 +14,21 @@ const addSubmission = vi.fn();
 const sendEmail = vi.fn();
 const isLikelyBot = vi.fn();
 
+/*
+  Content is read through the same cached accessor the public pages use, which
+  needs a Next request context to run. Stubbed here with the real shipped
+  content, so the rate check is tested against a real scale rather than a
+  fixture that could drift from it.
+*/
+const siteContent = vi.fn();
+
 vi.mock("@/lib/content", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/content")>();
-  return { ...actual, addSubmission: (...a: unknown[]) => addSubmission(...a) };
+  return {
+    ...actual,
+    addSubmission: (...a: unknown[]) => addSubmission(...a),
+    getCachedContent: () => siteContent(),
+  };
 });
 vi.mock("@/lib/email", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/email")>();
@@ -56,6 +68,10 @@ const valid = {
 };
 
 beforeEach(() => {
+  siteContent.mockReset().mockImplementation(async () => {
+    const { defaultContent, resolveContentTokens } = await import("@/lib/content");
+    return resolveContentTokens(defaultContent);
+  });
   addSubmission.mockReset().mockResolvedValue(undefined);
   sendEmail.mockReset().mockResolvedValue({ sent: true });
   isLikelyBot.mockReset().mockResolvedValue(false);
@@ -157,5 +173,76 @@ describe("POST /api/intake", () => {
     }
     expect(results.filter((s) => s === 200).length).toBe(10);
     expect(results.at(-1)).toBe(429);
+  });
+});
+
+/**
+ * The rate someone says they are paying has to be one that is offered.
+ *
+ * It used to be free text — the schema took any string up to sixty characters —
+ * so a request that skipped the form could name any figure and have it recorded,
+ * emailed and treated as agreed. Survivable while every rate was rupees and a
+ * person read the email; not survivable once an amount can mean different things
+ * in different places.
+ */
+describe("the chosen rate is one the practice offers", () => {
+  it("accepts a rate on the scale", async () => {
+    const res = await POST(post({ ...valid, slidingScale: "₹900" }));
+    expect(res.status).toBe(200);
+  });
+
+  it("refuses a figure nobody is charging", async () => {
+    const res = await POST(post({ ...valid, slidingScale: "₹50" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      error: expect.stringContaining("not one currently offered"),
+    });
+    expect(addSubmission).not.toHaveBeenCalled();
+  });
+
+  it("refuses a rate that is merely close to a real one", async () => {
+    // "₹800" is offered; "₹8000" and "₹80" are not, and a substring check would
+    // have let at least one of them through.
+    for (const rate of ["₹8000", "₹80", "₹800 (Student)", "800"]) {
+      const res = await POST(post({ ...valid, slidingScale: rate }));
+      expect(res.status, rate).toBe(400);
+    }
+  });
+
+  it("refuses the student rate claimed without its confirmation", async () => {
+    // Unchanged behaviour, retested here because the rate check runs first now
+    // and must not have swallowed it.
+    const res = await POST(
+      post({ ...valid, slidingScale: "₹500 (Student)", studentConfirmed: false })
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      error: expect.stringContaining("student status"),
+    });
+  });
+
+  it("accepts the student rate with it", async () => {
+    const res = await POST(
+      post({ ...valid, slidingScale: "₹500 (Student)", studentConfirmed: true })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("does not refuse a booking because content could not be read", async () => {
+    /*
+      A deliberate trade. If the scale cannot be read the check cannot run, and
+      turning every booking away because storage hiccuped is the wrong failure
+      on this route — the origin check, the schema, the rate limit and the
+      student confirmation all still apply.
+    */
+    siteContent.mockRejectedValue(new Error("blob unavailable"));
+    const res = await POST(post({ ...valid, slidingScale: "₹777" }));
+    expect(res.status).toBe(200);
+  });
+
+  it("does not refuse a booking when the scale is empty", async () => {
+    siteContent.mockResolvedValue({ slidingScale: [] });
+    const res = await POST(post({ ...valid, slidingScale: "₹777" }));
+    expect(res.status).toBe(200);
   });
 });

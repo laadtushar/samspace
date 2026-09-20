@@ -3,7 +3,11 @@ import { isLikelyBot } from "@/lib/bot-check";
 import { log, newRef, errorFields } from "@/lib/log";
 import { dbConfigured } from "@/lib/db";
 import { recordSubmission } from "@/lib/practice";
-import { addSubmission, type IntakeSubmission } from "@/lib/content";
+import {
+  addSubmission,
+  getCachedContent,
+  type IntakeSubmission,
+} from "@/lib/content";
 import { intakeSchema, firstIssue } from "@/lib/validation";
 import { rateLimit, clientKey, isSameOrigin } from "@/lib/rate-limit";
 import {
@@ -98,6 +102,37 @@ export async function POST(req: Request) {
     );
   }
   const data = parsed.data;
+
+  /*
+    The rate has to be one the practice actually offers.
+
+    It arrived as free text: the schema accepted any string up to sixty
+    characters, so a request that skipped the form could name any figure it
+    liked and have it recorded, emailed, and treated as agreed. That was
+    survivable while every rate was rupees and a person read the email — it
+    stops being survivable the moment an amount means different things in
+    different places.
+
+    Checked against the scale as stored, not as displayed, and compared exactly:
+    the form sends back the option it was given.
+  */
+  const scale = await getCachedContent()
+    .then((content) => content.slidingScale)
+    .catch(() => [] as string[]);
+
+  // An empty scale means content could not be read. Refusing every booking
+  // because storage hiccuped is the wrong trade; the other checks still apply.
+  if (scale.length > 0 && !scale.includes(data.slidingScale)) {
+    log.warn("intake.rejected", { ref, reason: "rate_not_offered" });
+    return NextResponse.json(
+      {
+        error:
+          "That rate is not one currently offered — please reload the page and choose again.",
+        ref,
+      },
+      { status: 400 }
+    );
+  }
 
   // The concessional rate is only accepted alongside its confirmation, so a
   // request that bypasses the form cannot quietly claim it either.

@@ -206,6 +206,14 @@ export interface SessionRow {
   ends_at: string;
   status: (typeof SESSION_STATUSES)[number];
   rate_amount: number | null;
+  /**
+   * ISO 4217, and the reason rate_amount can be read at all.
+   *
+   * An amount without one is a number whose meaning has to be inferred from
+   * when it was written. Defaults to INR, which is what every row recorded
+   * before this column existed was.
+   */
+  currency: string;
   paid: boolean;
   google_event_id: string | null;
   note: string | null;
@@ -229,11 +237,21 @@ export class SessionClash extends Error {
 /** Default length, matching what the site tells people a session is. */
 export const SESSION_MINUTES = 50;
 
+/**
+ * What this practice charges in.
+ *
+ * One constant rather than a literal at each insert, so the day a second
+ * currency is recorded there is a single place that says what the default was.
+ */
+export const PRACTICE_CURRENCY = "INR";
+
 export async function createSession(input: {
   clientId: string;
   startsAt: string;
   minutes?: number;
   rateAmount?: number | null;
+  /** ISO 4217. Defaults to the practice's own currency. */
+  currency?: string | null;
   note?: string | null;
 }): Promise<SessionRow> {
   const start = new Date(input.startsAt);
@@ -269,10 +287,11 @@ export async function createSession(input: {
   }
 
   const rows = (await sql()`
-    insert into sessions (client_id, starts_at, ends_at, rate_amount, note)
+    insert into sessions (client_id, starts_at, ends_at, rate_amount, currency, note)
     values (
       ${input.clientId}, ${start.toISOString()}, ${end.toISOString()},
-      ${input.rateAmount ?? null}, ${input.note ?? null}
+      ${input.rateAmount ?? null}, ${input.currency || PRACTICE_CURRENCY},
+      ${input.note ?? null}
     )
     returning *
   `) as unknown as SessionRow[];
@@ -311,6 +330,7 @@ export async function updateSession(
     status?: string;
     paid?: boolean;
     rate_amount?: number | null;
+    currency?: string;
     note?: string;
   }
 ): Promise<SessionRow | null> {
@@ -323,6 +343,7 @@ export async function updateSession(
       status      = coalesce(${fields.status ?? null}, status),
       paid        = coalesce(${fields.paid ?? null}, paid),
       rate_amount = coalesce(${fields.rate_amount ?? null}, rate_amount),
+      currency    = coalesce(${fields.currency ?? null}, currency),
       note        = coalesce(${fields.note ?? null}, note),
       updated_at  = now()
     where id = ${id}
