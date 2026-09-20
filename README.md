@@ -159,6 +159,13 @@ published post:
 | `{{rate.lowest}}` | the lowest rate |
 | `{{rate.highest}}` | the highest rate |
 | `{{rate.student}}` | the concessional rate, if there is one |
+| `{{rate.band}}` | the full-rate band, e.g. `₹800–₹1000` |
+| `{{rate.standard}}` | the lowest full rate, e.g. `₹800` |
+
+The last two exist because the scale describes two ranges, not one: the whole of
+it, and what is left once the concessional rate is set aside. Copy saying
+"students pay X, everyone else Y–Z" needs both, and `{{rate.lowest}}` is the
+student rate.
 
 They work in site content and in post bodies and excerpts, and resolve on the
 way out to the public site — not in `getContent`, because the dashboard has to
@@ -176,9 +183,15 @@ another rate ever sees that step.
 
 The figure appears in more than one place: the rates list, the services card,
 the FAQ answer, and the body of any post that quotes it. Those are all stored
-copy, so editing `defaultContent` moves only what the code owns — the
-structured data, the share cards and the intake form's fallback — and leaves
-the live site quoting the old number.
+copy, so editing `defaultContent` changes what a fresh install ships with and
+nothing that is already live.
+
+What the code owns no longer holds a figure at all. `priceRange`, `minPrice`,
+`maxPrice`, the search description and the share cards are derived from the
+rates list at render time (`lib/seo-pricing.ts`), and the intake form's fallback
+is the same `DEFAULT_SLIDING_SCALE` constant the server ships. So a rate change
+in the dashboard moves the structured data with it, and there is nothing left in
+the codebase to forget to update.
 
 **Session Rates → Change a rate everywhere** does the whole set in one pass.
 Type the old and new amounts as plain numbers — the ₹ is printed beside the
@@ -186,6 +199,21 @@ field rather than typed — press **Preview** to see every place that would
 change, then apply. Owner-only, and both values must be whole rupee amounts, so
 it cannot be used as a general find-and-replace over the site. `₹500` will not
 match inside `₹5000`.
+
+### When the copy stops agreeing with the scale
+
+The reason the above is needed at all is that stored copy shadows the codebase
+silently. It went wrong exactly that way: the scale read `₹500 (Student)` while
+the FAQ answer two sections below it explained the ₹600 student rate, live, with
+the page's own structured data saying `minPrice: 500` at the same time.
+
+So **Session Rates** now compares every price in the stored copy against the
+rates on the scale (`lib/price-audit.ts`) and names what disagrees, with the
+built-in wording one press away. It reports a range that is neither the scale
+nor the band it leaves, a figure that is not a rate on the site, and a declared
+price that restates the scale instead of referencing it. It says nothing when
+everything agrees, and nothing at all when there are no rates to compare
+against — a warning that fires on correct copy is one people learn to ignore.
 
 ## Scheduling
 

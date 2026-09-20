@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BotIdClient } from "botid/client";
+import { botIdClientMounted } from "@/lib/bot-check";
 import { Analytics } from "@vercel/analytics/next";
 import MotionPreferences from "@/components/MotionPreferences";
 import {
@@ -130,7 +131,9 @@ const botProtectedRoutes = [
   { path: "/api/contact", method: "POST" },
 ];
 
-const botIdEnforced = process.env.BOTID_ENFORCE === "true";
+// Mounted in observe as well as enforce: the classifier needs this script to
+// have anything to go on, and watching it before acting on it is the point.
+const botIdActive = botIdClientMounted();
 
 export const viewport: Viewport = {
   themeColor: "#2c3a2e",
@@ -280,7 +283,7 @@ const jsonLd = {
   return (
     <html lang="en-IN" className="scroll-smooth">
       <head>
-        {botIdEnforced && <BotIdClient protect={botProtectedRoutes} />}
+        {botIdActive && <BotIdClient protect={botProtectedRoutes} />}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
