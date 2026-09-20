@@ -52,3 +52,34 @@ describe("vercel.json", () => {
     expect(runsMoreThanDaily("30 3 * * 1")).toBe(false);
   });
 });
+
+/**
+ * Search Console proves ownership by fetching one file from the site root.
+ *
+ * Delete it, rename it, or let a formatter add a newline to it and the property
+ * comes unverified — quietly, and the first anyone knows is that the search data
+ * has stopped. It is 53 bytes of text with no other purpose, which is exactly
+ * the kind of file that gets tidied away.
+ */
+describe("Google Search Console verification", () => {
+  const token = "google3cee98c985c30656";
+
+  it("serves the verification file from the site root", () => {
+    const file = readFileSync(
+      new URL(`../public/${token}.html`, import.meta.url),
+      "utf8"
+    );
+    // Google matches the body exactly, trailing whitespace included.
+    expect(file).toBe(`google-site-verification: ${token}.html`);
+  });
+
+  it("is not hidden from crawlers", async () => {
+    const robots = readFileSync(
+      new URL("../app/robots.ts", import.meta.url),
+      "utf8"
+    );
+    // The disallow list names paths; none of them may cover the site root file.
+    expect(robots).not.toContain(token);
+    expect(robots).toContain('allow: "/"');
+  });
+});

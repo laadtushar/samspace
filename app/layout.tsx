@@ -9,7 +9,13 @@ import {
   IS_PRODUCTION_SITE,
   serializeJsonLd,
 } from "@/lib/site";
-import { defaultContent } from "@/lib/content";
+import {
+  defaultContent,
+  getCachedContent,
+  resolveContentTokens,
+  type SiteContent,
+} from "@/lib/content";
+import { pricingFrom } from "@/lib/seo-pricing";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -26,7 +32,20 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+/**
+ * Content for the head, with the built-in copy as a floor.
+ *
+ * A storage hiccup must not take the whole site down: this runs for every route,
+ * where an unhandled read failure is not one blank section but a 500 everywhere.
+ */
+async function headContent(): Promise<SiteContent> {
+  return getCachedContent().catch(() => resolveContentTokens(defaultContent));
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const price = pricingFrom(await headContent());
+
+  return {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Samvriti.Space — Priyanka Varma | Counselling Psychologist & Academic Mentor",
@@ -67,7 +86,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist Priyanka Varma offers online therapy (₹500–₹1000) and academic mentoring for young adults aged 18–35. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.",
+      `Counselling psychologist Priyanka Varma offers online therapy (${price.range}) and academic mentoring for young adults aged 18–35. M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified.`,
     url: SITE_URL,
     siteName: SITE_NAME,
     locale: "en_IN",
@@ -77,7 +96,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Samvriti.Space — Online Therapy & Academic Mentoring",
     description:
-      "Counselling psychologist for young adults 18–35. CBT, Humanistic, Trauma-Informed Care. Sessions ₹500–₹1000. Book online.",
+      `Counselling psychologist for young adults 18–35. CBT, Humanistic, Trauma-Informed Care. Sessions ${price.range}. Book online.`,
   },
   robots: {
     index: IS_PRODUCTION_SITE,
@@ -90,7 +109,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-};
+  };
+}
 
 /**
  * Endpoints BotID watches. Both send email to an address the caller supplies,
@@ -117,11 +137,13 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const price = pricingFrom(await headContent());
+
   // Entities are given @ids and cross-referenced, so search engines read one
   // linked graph — the business, the person behind it, and the site — rather
   // than three unrelated islands. The FAQ mirrors the section rendered on the
@@ -152,7 +174,7 @@ const jsonLd = {
           "Online counselling and academic mentoring for young adults aged 18–35 by Priyanka Varma, M.Sc. Clinical Psychology.",
         url: SITE_URL,
         image: `${SITE_URL}/priyanka.jpeg`,
-        priceRange: "₹500–₹1000",
+        ...(price.range ? { priceRange: price.range } : {}),
         currenciesAccepted: "INR",
         areaServed: { "@type": "Country", name: "India" },
         availableLanguage: ["English", "Hindi"],
@@ -184,8 +206,8 @@ const jsonLd = {
               priceSpecification: {
                 "@type": "PriceSpecification",
                 priceCurrency: "INR",
-                minPrice: 500,
-                maxPrice: 1000,
+                ...(price.lowest !== null ? { minPrice: price.lowest } : {}),
+                ...(price.highest !== null ? { maxPrice: price.highest } : {}),
               },
             },
             {
@@ -193,11 +215,15 @@ const jsonLd = {
               name: "Academic Mentoring Session",
               description:
                 "Career and exam-strategy mentoring for psychology students.",
-              priceSpecification: {
-                "@type": "PriceSpecification",
-                priceCurrency: "INR",
-                price: 1000,
-              },
+              ...(price.mentoring !== null
+                ? {
+                    priceSpecification: {
+                      "@type": "PriceSpecification",
+                      priceCurrency: "INR",
+                      price: price.mentoring,
+                    },
+                  }
+                : {}),
             },
           ],
         },

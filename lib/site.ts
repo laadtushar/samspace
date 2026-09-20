@@ -7,6 +7,29 @@
  */
 const PRODUCTION_URL = "https://samvritispace.com";
 
+/**
+ * The hosts that are the live site.
+ *
+ * www and bare are one site — whichever one the DNS is pointed at, the other
+ * redirects to it — so both have to count as production. They did not: the gate
+ * below compared the whole URL against the bare host, so setting
+ * NEXT_PUBLIC_SITE_URL to the www form (the sensible thing to do if www is what
+ * Vercel serves) would have made the live site look like a preview and served
+ * `Disallow: /` to every crawler. De-indexing the site is not something a
+ * hostname should be able to do.
+ */
+function isProductionHost(url: string): boolean {
+  let host: string;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch {
+    return false;
+  }
+  const production = new URL(PRODUCTION_URL).host.toLowerCase();
+  const bare = (h: string) => h.replace(/^www\./, "");
+  return bare(host) === bare(production);
+}
+
 function resolveSiteUrl(): string {
   // An explicit override always wins — set NEXT_PUBLIC_SITE_URL when the site
   // moves to a new domain or runs somewhere other than Vercel.
@@ -26,7 +49,7 @@ function resolveSiteUrl(): string {
 export const SITE_URL = resolveSiteUrl();
 
 /** True only for the live production site — used to gate indexing. */
-export const IS_PRODUCTION_SITE = SITE_URL === PRODUCTION_URL;
+export const IS_PRODUCTION_SITE = isProductionHost(SITE_URL);
 
 /** Absolute URL for a site-relative path, e.g. absoluteUrl("/blog") */
 export function absoluteUrl(path: string): string {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCachedContent } from "@/lib/content";
-import { fillDeep, rateValues } from "@/lib/tokens";
+import { publicPosts } from "@/lib/posts-public";
 import { getCachedPublishedPosts, readingMinutes } from "@/lib/blog";
 import { SITE_URL, SITE_NAME, serializeJsonLd } from "@/lib/site";
 import Navbar from "@/components/Navbar";
@@ -39,7 +39,7 @@ export default async function BlogIndexPage() {
     getCachedContent(),
   ]);
   // Excerpts quote rates too, so they resolve the same tokens the post body does.
-  const posts = fillDeep(stored, rateValues(content.slidingScale));
+  const posts = publicPosts(stored, content.slidingScale);
 
   const collectionJsonLd = {
     "@context": "https://schema.org",

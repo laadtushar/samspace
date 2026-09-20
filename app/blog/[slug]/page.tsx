@@ -9,7 +9,7 @@ import {
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
 import { getCachedContent } from "@/lib/content";
-import { fillDeep, rateValues } from "@/lib/tokens";
+import { publicPost } from "@/lib/posts-public";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Markdown from "@/components/Markdown";
@@ -27,8 +27,13 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const post = await getPublishedPostBySlug(params.slug);
-  if (!post) return { title: "Post not found", robots: { index: false } };
+  const stored = await getPublishedPostBySlug(params.slug);
+  if (!stored) return { title: "Post not found", robots: { index: false } };
+
+  // The same resolution the page does — an SEO title quoting {{rate.range}}
+  // would otherwise reach the search result with the braces still in it.
+  const content = await getCachedContent();
+  const post = publicPost(stored, content.slidingScale);
 
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt;
@@ -87,7 +92,7 @@ export default async function BlogPostPage({
     token, and the word count and structured data below should describe what a
     reader actually sees.
   */
-  const post = fillDeep(stored, rateValues(content.slidingScale));
+  const post = publicPost(stored, content.slidingScale);
 
   const url = `${SITE_URL}/blog/${post.slug}`;
 

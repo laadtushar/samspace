@@ -1,4 +1,9 @@
-import { rateAmount, isStudentRate, priceRangeOf } from "@/lib/rates";
+import {
+  rateAmount,
+  isStudentRate,
+  priceRangeOf,
+  fullRates,
+} from "@/lib/rates";
 
 /**
  * Prices written once, referenced everywhere.
@@ -30,6 +35,8 @@ export const TOKENS: TokenDoc[] = [
   { token: "{{rate.lowest}}", describes: "The lowest rate on the scale" },
   { token: "{{rate.highest}}", describes: "The highest rate on the scale" },
   { token: "{{rate.student}}", describes: "The concessional rate, if there is one" },
+  { token: "{{rate.band}}", describes: "The full-rate band, e.g. ₹800–₹1000" },
+  { token: "{{rate.standard}}", describes: "The lowest full rate, e.g. ₹800" },
 ];
 
 /** Builds the lookup a set of rates resolves to. */
@@ -47,6 +54,21 @@ export function rateValues(rates: readonly string[]): Record<string, string> {
     values["rate.highest"] = `₹${Math.max(...amounts)}`;
   }
   if (studentAmount !== null) values["rate.student"] = `₹${studentAmount}`;
+
+  /*
+    The scale is two things at once: a concessional rate, and a band a working
+    adult picks from. Copy that says "students pay X, everyone else Y–Z" needs
+    both, and {{rate.lowest}} is the student rate — so the band gets its own
+    tokens rather than being written out by hand and going stale.
+  */
+  const full = fullRates(rates);
+  const fullAmounts = full
+    .map(rateAmount)
+    .filter((n): n is number => n !== null && n > 0);
+  if (fullAmounts.length > 0) {
+    values["rate.band"] = priceRangeOf(full);
+    values["rate.standard"] = `₹${Math.min(...fullAmounts)}`;
+  }
   return values;
 }
 

@@ -40,6 +40,9 @@ import {
   priceRangeOf,
 } from "@/lib/rates";
 import { TOKENS, fillTokens, rateValues } from "@/lib/tokens";
+import { auditPrices, groupFindings } from "@/lib/price-audit";
+import { parsePath, valueAtPath, withValueAtPath } from "@/lib/content-path";
+import { defaultContent } from "@/lib/default-content";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog-format";
 import { SLUG_PATTERN } from "@/lib/validation";
 
@@ -2170,6 +2173,16 @@ export default function AdminPage() {
                   </ContentSection>
 
                   <ContentSection title="Session Rates">
+                    <PriceDrift
+                      content={content}
+                      onFix={(path, value) => {
+                        const segments = parsePath(path);
+                        const next = segments
+                          ? withValueAtPath(content, segments, value)
+                          : null;
+                        if (next) setContent(next);
+                      }}
+                    />
                     <RatesEditor
                       rates={((content as any).slidingScale as string[]) || []}
                       onChange={(slidingScale) =>
@@ -3258,6 +3271,72 @@ function AmountField({
         aria-label={label}
         className="w-28 pl-7 pr-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
       />
+    </div>
+  );
+}
+
+/**
+ * Copy that quotes a price the scale no longer has.
+ *
+ * Stored copy shadows the codebase: correcting a rate here does not touch a
+ * sentence that was saved with the old figure typed into it, and nothing said
+ * so. The live site ran for days with the scale starting at ₹500 and the FAQ
+ * two sections below it explaining the ₹600 student rate.
+ *
+ * Silent when everything agrees — a warning that shows up on correct copy is
+ * one people learn to scroll past.
+ */
+function PriceDrift({
+  content,
+  onFix,
+}: {
+  content: unknown;
+  onFix: (path: string, value: string) => void;
+}) {
+  const grouped = useMemo(
+    () =>
+      groupFindings(
+        auditPrices(content, ((content as any)?.slidingScale as string[]) || [])
+      ),
+    [content]
+  );
+
+  if (grouped.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-amber-300/70 bg-amber-50/60 p-4 space-y-3">
+      <p className="font-sans text-sm font-medium text-amber-900">
+        {grouped.length === 1
+          ? "One piece of copy quotes a price that is not on the scale"
+          : `${grouped.length} pieces of copy quote a price that is not on the scale`}
+      </p>
+      {grouped.map(({ path, text, problems }) => {
+        const segments = parsePath(path);
+        const builtIn = segments ? valueAtPath(defaultContent, segments) : undefined;
+        return (
+          <div key={path} className="space-y-1.5">
+            <p className="font-sans text-xs text-amber-900/80">
+              <code className="font-mono">{path}</code> {problems.join("; ")}
+            </p>
+            <p className="font-sans text-xs text-forest/70 bg-white/70 rounded-lg px-3 py-2">
+              {text}
+            </p>
+            {typeof builtIn === "string" && builtIn !== text && (
+              <button
+                type="button"
+                onClick={() => onFix(path, builtIn)}
+                className="font-sans text-xs text-forest/80 hover:text-forest px-3 py-1.5 rounded-lg border border-sage/40 hover:border-sage/70 transition-colors"
+              >
+                Use the built-in wording
+              </button>
+            )}
+          </div>
+        );
+      })}
+      <p className="font-sans text-[11px] text-amber-900/70">
+        The built-in wording references the rates list instead of naming a figure,
+        so it cannot go stale again. Changes still need saving.
+      </p>
     </div>
   );
 }

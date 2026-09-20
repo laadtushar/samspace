@@ -88,7 +88,7 @@ You don't need certainty before booking a first session. A first session is ofte
 
 If the hesitation you're sitting with looks more like a loop you can't put down, it may be worth reading [overthinking versus anxiety](/blog/overthinking-vs-anxiety) as well, since the two often travel together.
 
-If you've been going back and forth on this, that back-and-forth is usually the clearest signal available. I work with young adults navigating exactly this kind of "is this worth bringing up" hesitation, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around what you bring rather than a fixed idea of what counts. Sessions run on a sliding scale (₹500–₹1000), so cost doesn't have to be part of the hesitation either. [You can read more or book a session here.](/?intake=true)
+If you've been going back and forth on this, that back-and-forth is usually the clearest signal available. I work with young adults navigating exactly this kind of "is this worth bringing up" hesitation, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around what you bring rather than a fixed idea of what counts. Sessions run on a sliding scale ({{rate.range}}), so cost doesn't have to be part of the hesitation either. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -163,7 +163,7 @@ And if the loop mostly shows up as doing more rather than doing less — everyth
 
 If this has been sitting with you for a while, or you're genuinely not sure which of these fits what you're going through, that's a reasonable thing to bring to a session. I work with young adults on exactly this kind of overthinking-anxiety overlap, drawing from CBT, humanistic therapy, and trauma-informed care, shaped around what you're actually bringing, not a fixed script.
 
-Sessions run on a sliding scale (₹500–₹1000), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
+Sessions run on a sliding scale ({{rate.range}}), so cost shouldn't be the reason this stays unaddressed. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -222,7 +222,7 @@ This is the part that often confuses people the most, including the person exper
 
 Attachment style isn't a fixed sentence. It's a pattern that developed for a reason, and patterns that developed can shift with the right kind of work, usually a combination of understanding where it came from and practising new responses in real relationships as they come up.
 
-If you've recognised yourself in this, especially if it's been affecting how safe your relationships feel, that's worth bringing to a session. I work with young adults on attachment patterns and relationship anxiety, drawing from CBT, humanistic therapy, and trauma-informed care, since attachment work often benefits from looking at both present-day patterns and where they started. Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+If you've recognised yourself in this, especially if it's been affecting how safe your relationships feel, that's worth bringing to a session. I work with young adults on attachment patterns and relationship anxiety, drawing from CBT, humanistic therapy, and trauma-informed care, since attachment work often benefits from looking at both present-day patterns and where they started. Sessions run on a sliding scale ({{rate.range}}). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -285,7 +285,7 @@ If holding the line leaves you replaying the conversation for days afterwards, t
 
 If you're in the middle of that kind of boundary right now, and the guilt or the pushback is bigger than you expected, that's worth working through with someone rather than white-knuckling it alone. A lot of what makes these conversations hard isn't the script, it's everything underneath it: old patterns, old fears about disappointing your parents, and sometimes grief about a relationship that isn't quite what you wish it were.
 
-I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+I work with young adults on exactly this kind of family dynamic, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, shaped around your specific family rather than a generic script. Sessions run on a sliding scale ({{rate.range}}). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -342,7 +342,7 @@ Someone who remembers you over time. Someone who can push back, not just agree. 
 
 That last distinction is the real answer to ChatGPT versus a therapist for anxiety. It isn't that one is clever and the other isn't. It's that only one of them is responsible for you.
 
-If any of this is landing, that's usually enough of a sign to take the next step. I work with young adults on exactly this kind of anxiety and overthinking, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, and I'm genuinely not going to make you feel bad for having used ChatGPT to get this far. Sessions run on a sliding scale (₹500–₹1000), specifically so cost isn't the reason this stays a conversation with a chatbot instead of a person. [You can read more or book a session here.](/?intake=true)
+If any of this is landing, that's usually enough of a sign to take the next step. I work with young adults on exactly this kind of anxiety and overthinking, using an approach drawn from CBT, humanistic therapy, and trauma-informed care, and I'm genuinely not going to make you feel bad for having used ChatGPT to get this far. Sessions run on a sliding scale ({{rate.range}}), specifically so cost isn't the reason this stays a conversation with a chatbot instead of a person. [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -407,7 +407,7 @@ I work with young adults, and most of my clients are coming into therapy for the
 
 If the hesitation sitting underneath this is less about the hour itself and more about whether any of it is worth bringing up, [do I need therapy, or am I overreacting](/blog/do-i-need-therapy-or-overreacting) takes that on directly. And if you've been leaning on ChatGPT to think things through so far, [here's where it helps and where it runs out](/blog/chatgpt-vs-therapist-for-anxiety).
 
-Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+Sessions run on a sliding scale ({{rate.range}}). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },
@@ -474,7 +474,7 @@ If this pattern sounds familiar, that's a reasonable thing to bring into a sessi
 
 If you're still not sure this counts as something worth addressing, since nothing looks obviously wrong from the outside, [this piece on "am I overreacting"](/blog/do-i-need-therapy-or-overreacting) speaks to exactly that hesitation. And if the achievement-driven loop sounds like it also shows up as constant mental replay, [overthinking vs. anxiety](/blog/overthinking-vs-anxiety) breaks down that related pattern.
 
-Sessions run on a sliding scale (₹500–₹1000). [You can read more or book a session here.](/?intake=true)
+Sessions run on a sliding scale ({{rate.range}}). [You can read more or book a session here.](/?intake=true)
 
 ${CRISIS_NOTE}`,
   },

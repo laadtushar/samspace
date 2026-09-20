@@ -1,4 +1,6 @@
 import { getCachedPublishedPosts } from "@/lib/blog";
+import { getCachedContent } from "@/lib/content";
+import { publicPosts } from "@/lib/posts-public";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -14,7 +16,13 @@ function xml(value: string): string {
 }
 
 export async function GET() {
-  const posts = await getCachedPublishedPosts();
+  // Titles and excerpts can quote a rate as {{rate.range}}, and a subscriber
+  // must be sent the figure rather than the token.
+  const [stored, content] = await Promise.all([
+    getCachedPublishedPosts(),
+    getCachedContent(),
+  ]);
+  const posts = publicPosts(stored, content.slidingScale);
   const updated = posts[0]?.publishedAt || new Date().toISOString();
 
   const items = posts
