@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import RelatedReading, { type PostLink } from "./RelatedReading";
 
-const stats = [
-  { icon: "🕐", label: "Duration", value: "45–50 mins" },
+const SHIPPED_SESSION_LENGTH = "45–50 minutes";
+
+/** Duration comes from content; the other two are what this practice is. */
+const statsFor = (sessionLength: string) => [
+  { icon: "🕐", label: "Duration", value: sessionLength },
   { icon: "💻", label: "Mode", value: "Online Only" },
   { icon: "🔒", label: "Privacy", value: "Fully Confidential" },
 ];
@@ -20,6 +23,7 @@ interface SessionInfoProps {
     notice: string;
     helplines: { name: string; number: string; note: string }[];
   };
+  sessionLength?: string;
   posts?: PostLink[];
 }
 
@@ -43,16 +47,18 @@ const FALLBACK_CRISIS = {
 export default function SessionInfo({
   structure,
   crisis,
+  sessionLength,
   posts = [],
 }: SessionInfoProps) {
+  const stats = statsFor(sessionLength?.trim() || SHIPPED_SESSION_LENGTH);
   const notice = crisis?.notice?.trim() || FALLBACK_CRISIS.notice;
   const helplines =
     crisis?.helplines && crisis.helplines.length > 0
       ? crisis.helplines
       : FALLBACK_CRISIS.helplines;
   /*
-    Three icons reading "45–50 mins / Online Only / Confidential" answer the
-    logistics and none of the hesitation. What stops people who have already
+    The three icons — duration, mode, confidentiality — answer the logistics and
+    none of the hesitation. What stops people who have already
     decided to book is not knowing what the hour is, so the walkthrough belongs
     here — at the point of the decision — rather than only in the post.
 

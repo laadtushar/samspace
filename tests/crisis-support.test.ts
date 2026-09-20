@@ -83,3 +83,55 @@ describe("crisis support", () => {
     expect(occurrences).toBe(1);
   });
 });
+
+/**
+ * How long a session runs.
+ *
+ * Typed into the hero badge, the session card, the services tags, the FAQ answer
+ * and the structured data — and already drifted into two forms, "45–50 mins" and
+ * "45–50 minutes". The three that were code now read one content field.
+ */
+describe("session length", () => {
+  it("ships one value", () => {
+    expect(defaultContent.sessionLength).toBe("45–50 minutes");
+  });
+
+  it("reaches a document written before the field existed", () => {
+    expect(mergeContent({ hero: { headline: "Edited" } }).sessionLength).toBe(
+      defaultContent.sessionLength
+    );
+  });
+
+  it("never renders as an empty badge", () => {
+    for (const component of ["components/Hero.tsx", "components/SessionInfo.tsx"]) {
+      const source = read(component);
+      // A badge reading " · Online Sessions" is worse than one slightly out of
+      // date, so the shipped value is a floor rather than a default.
+      expect(source, component).toContain("SHIPPED_SESSION_LENGTH");
+    }
+  });
+
+  it("is read from content by the structured data", () => {
+    const layout = read("app/layout.tsx");
+    expect(layout).toContain("head.sessionLength");
+    expect(layout).toContain("${sessionLength} online therapy session");
+  });
+
+  it("ships one form of the words, not two", () => {
+    // "45–50 mins" in the services tags, "45–50 minutes" everywhere else.
+    const serialised = JSON.stringify(defaultContent);
+    expect(serialised).not.toContain("45–50 mins\"");
+    for (const [quoted] of serialised.matchAll(/45–50 [a-z]+/g)) {
+      expect(quoted).toBe(defaultContent.sessionLength);
+    }
+  });
+
+  it("is no longer typed into the components", () => {
+    // One occurrence each: the fallback constant, and nothing in the markup.
+    for (const component of ["components/Hero.tsx", "components/SessionInfo.tsx"]) {
+      const source = read(component);
+      const occurrences = source.split("45–50").length - 1;
+      expect(occurrences, component).toBe(1);
+    }
+  });
+});

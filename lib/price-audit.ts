@@ -178,3 +178,45 @@ export function groupFindings(findings: readonly PriceFinding[]): GroupedFinding
   }
   return [...byPath.values()];
 }
+
+/** A post quoting a price the scale does not have. */
+export interface PostPriceFinding {
+  slug: string;
+  problems: string[];
+}
+
+/**
+ * The same check across published writing.
+ *
+ * Posts are stored copy too, and the seven already published quote the scale as
+ * a literal — correct today, and silently wrong the next time a rate moves. The
+ * reprice tool can rewrite them in one pass, but only if someone knows to; this
+ * is what tells them.
+ *
+ * Only the fields a reader sees. The slug is the post's identity and its URL, so
+ * a figure in it is not a price quote.
+ */
+export function auditPosts(
+  posts: readonly Record<string, unknown>[],
+  scale: readonly string[]
+): PostPriceFinding[] {
+  const found: PostPriceFinding[] = [];
+
+  for (const post of posts) {
+    const readable = {
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      seoTitle: post.seoTitle,
+      seoDescription: post.seoDescription,
+    };
+    const problems = [
+      ...new Set(auditPrices(readable, scale).map((f) => f.problem)),
+    ];
+    if (problems.length > 0) {
+      found.push({ slug: String(post.slug ?? "untitled"), problems });
+    }
+  }
+
+  return found;
+}

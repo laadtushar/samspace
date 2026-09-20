@@ -6,7 +6,12 @@ import {
   priceRangeOf,
 } from "@/lib/rates";
 import { rateValues, TOKENS } from "@/lib/tokens";
-import { auditPrices, groupFindings, walkStrings } from "@/lib/price-audit";
+import {
+  auditPrices,
+  auditPosts,
+  groupFindings,
+  walkStrings,
+} from "@/lib/price-audit";
 import { parsePath, valueAtPath, withValueAtPath } from "@/lib/content-path";
 import { pricingFrom } from "@/lib/seo-pricing";
 import { publicPost, publicPosts } from "@/lib/posts-public";
@@ -177,6 +182,59 @@ describe("auditing copy for a price the scale no longer has", () => {
     const seen: string[] = [];
     walkStrings({ a: { b: ["x", { c: "y" }] }, n: 1 }, (path) => seen.push(path));
     expect(seen).toEqual(["a.b[0]", "a.b[1].c"]);
+  });
+});
+
+describe("auditing published writing", () => {
+  const scale = ["₹500 (Student)", "₹800", "₹900", "₹1000"];
+  const post = (over: Record<string, unknown>) => ({
+    slug: "a-post",
+    title: "A post",
+    excerpt: "",
+    content: "",
+    seoTitle: "",
+    seoDescription: "",
+    ...over,
+  });
+
+  it("says nothing about posts that agree with the scale", () => {
+    expect(
+      auditPosts([post({ content: "Sessions run ₹500–₹1000." })], scale)
+    ).toEqual([]);
+  });
+
+  it("names the post quoting a rate the scale no longer has", () => {
+    const found = auditPosts(
+      [
+        post({ slug: "stale", content: "Sessions run ₹600–₹1000." }),
+        post({ slug: "fine", content: "Sessions run {{rate.range}}." }),
+      ],
+      scale
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0].slug).toBe("stale");
+    expect(found[0].problems[0]).toContain("₹600–₹1000");
+  });
+
+  it("reads every field a reader sees", () => {
+    for (const field of ["title", "excerpt", "content", "seoTitle", "seoDescription"]) {
+      const found = auditPosts([post({ [field]: "from ₹450" })], scale);
+      expect(found, field).toHaveLength(1);
+    }
+  });
+
+  it("does not read a figure in the slug as a price", () => {
+    // The slug is the post's URL, not copy.
+    expect(auditPosts([post({ slug: "therapy-at-450" })], scale)).toEqual([]);
+  });
+
+  it("reports one entry per post, however many ways it is wrong", () => {
+    const found = auditPosts(
+      [post({ content: "₹600–₹1200 today", excerpt: "was ₹450" })],
+      scale
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0].problems.length).toBeGreaterThan(1);
   });
 });
 
