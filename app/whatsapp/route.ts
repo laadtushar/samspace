@@ -14,9 +14,20 @@ import { SITE_URL } from "@/lib/site";
  * link on the one page an Instagram bio points at is worse than a redirect. It
  * forwards to the configured handle, or to the contact section when there is
  * none — and it can no longer forward to a number, because the schema will not
- * store one. Cached for an hour: it is a doorway, and blob reads are metered.
+ * store one.
+ *
+ * Resolved per request, not at build time. With `revalidate` the redirect target
+ * was baked into the build as a response header, and a build renders before it
+ * can read stored content — so a fresh deployment served the fallback, sending
+ * people to the contact section while a perfectly good handle sat in the
+ * dashboard, until the hour elapsed. A redirect whose destination is editable
+ * copy cannot be frozen next to the code.
+ *
+ * This costs nothing at the meter: `getCachedContent` still holds the blob read
+ * for an hour and still clears on save, so the handle is read as rarely as
+ * before and a change to it takes effect at once instead of within the hour.
  */
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const content = await getCachedContent().catch(() => null);
