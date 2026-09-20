@@ -70,7 +70,11 @@ export default function HomePage({
         <Issues issues={content.issues} posts={posts} />
         <Mentoring mentoring={content.mentoring} />
         <Faq faq={content.faq} />
-        <SessionInfo structure={content.sessionStructure} posts={posts} />
+        <SessionInfo
+          structure={content.sessionStructure}
+          crisis={content.crisis}
+          posts={posts}
+        />
         <Contact contact={content.contact} onBookSession={openIntake} />
       </main>
       <Footer

@@ -159,14 +159,48 @@ describe("safeExternalUrl", () => {
   });
 });
 
+/**
+ * A serialised object with the published crisis helplines taken out of it.
+ *
+ * Those two numbers are meant to be published — they are the whole point of the
+ * crisis card — so a guard reading "no number anywhere" would now fail on the
+ * one kind of number that belongs there. Removing exactly the declared helplines
+ * first makes the claim stricter than it was rather than weaker: the only
+ * numbers this site publishes are the ones on that card, and any other number,
+ * the practitioner's included, still fails every assertion below.
+ */
+function withoutHelplines(value: unknown): string {
+  let serialised = JSON.stringify(value);
+  for (const line of defaultContent.crisis.helplines) {
+    serialised = serialised.split(line.number).join("<published-helpline>");
+  }
+  return serialised;
+}
+
 describe("the practitioner's own number is not in the codebase", () => {
   it("ships no phone number in the defaults", () => {
     // It was in lib/content.ts, in a public repository, which is a worse
     // exposure than the redirect that was hiding it from the markup.
-    const serialised = JSON.stringify(defaultContent);
+    const serialised = withoutHelplines(defaultContent);
     expect(serialised).not.toMatch(/\+?9\d[\d\s-]{8,}/);
     expect(serialised).not.toContain("wa.me");
     expect(defaultContent.contact.phone).toBe("");
+  });
+
+  it("still catches a number hidden among the helplines", () => {
+    // Guarding the guard: removing the published numbers must not have opened a
+    // gap for an unpublished one sitting next to them.
+    const serialised = withoutHelplines({
+      ...defaultContent,
+      crisis: {
+        ...defaultContent.crisis,
+        helplines: [
+          ...defaultContent.crisis.helplines,
+          { name: "Mine", number: "9130743144", note: "" },
+        ],
+      },
+    });
+    expect(serialised).toMatch(/\+?9\d[\d\s-]{8,}/);
   });
 });
 
@@ -492,7 +526,7 @@ describe("contact details kept out of the browser", () => {
       being meaningless. It checks for the shape instead, so it still fails if a
       number is ever put back into the defaults.
     */
-    const serialised = JSON.stringify(publicContent);
+    const serialised = withoutHelplines(publicContent);
     expect(serialised).not.toMatch(/\+?9\d[\d\s-]{8,}/);
     expect(serialised).not.toContain("wa.me");
   });
