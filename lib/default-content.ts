@@ -101,6 +101,18 @@ export interface SiteContent {
     intro: string;
     steps: { title: string; desc: string }[];
   };
+  /**
+   * The crisis notice and the numbers under it.
+   *
+   * The most consequential text on the site, and it was written into a
+   * component — so a helpline that changed its number, or a service that shut
+   * down, needed a deployment to correct. A helpline is the one thing here that
+   * has to be right on the day someone reads it.
+   */
+  crisis: {
+    notice: string;
+    helplines: { name: string; number: string; note: string }[];
+  };
   slidingScale: string[];
   /**
    * Booking link — Calendly or Cal ID. Empty string hides the scheduling step.
@@ -315,6 +327,16 @@ export const defaultContent: SiteContent = {
     to the public site, so a price cannot be changed in one place and left
     behind in another.
   */
+  crisis: {
+    notice:
+      "These sessions are not crisis or emergency care. If you are experiencing severe distress, suicidal thoughts, or require emergency support, please seek immediate help.",
+    // Verbatim from the page this moved out of. Nothing added: which services to
+    // name is a clinical decision, not a refactor.
+    helplines: [
+      { name: "iCall", number: "9152987821", note: "" },
+      { name: "Vandrevala Foundation", number: "1860-2662-345", note: "24/7" },
+    ],
+  },
   slidingScale: [...DEFAULT_SLIDING_SCALE],
   calendlyUrl: "",
   studentNote:

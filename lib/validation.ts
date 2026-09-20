@@ -204,6 +204,20 @@ export const siteContentSchema = z.object({
       .array(z.object({ title: trimmed(120), desc: trimmed(600) }))
       .max(8),
   }),
+  crisis: z.object({
+    notice: trimmed(1000),
+    // A helpline with no number is worse than no helpline: it reads as help
+    // that exists and cannot be reached. Both fields are required.
+    helplines: z
+      .array(
+        z.object({
+          name: trimmed(120).min(1),
+          number: trimmed(40).min(1),
+          note: trimmed(60),
+        })
+      )
+      .max(8),
+  }),
   slidingScale: z.array(trimmed(60)).max(12),
   calendlyUrl: bookingUrl,
   studentNote: trimmed(2000),

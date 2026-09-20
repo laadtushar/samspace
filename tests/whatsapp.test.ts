@@ -3,6 +3,24 @@ import { safeWhatsappLink, whatsappLinkProblem } from "@/lib/whatsapp";
 import { siteContentSchema } from "@/lib/validation";
 import { defaultContent, toPublicContent, mergeContent } from "@/lib/content";
 
+/**
+ * A serialised object with the published crisis helplines taken out of it.
+ *
+ * Those two numbers are meant to be published — they are the whole point of the
+ * crisis card — so a guard reading "no number anywhere" would now fail on the
+ * one kind of number that belongs there. Removing exactly the declared helplines
+ * first makes the claim stricter than it was rather than weaker: the only
+ * numbers this site publishes are the ones on that card, and any other number,
+ * the practitioner's included, still fails every assertion below.
+ */
+function withoutHelplines(value: unknown): string {
+  let serialised = JSON.stringify(value);
+  for (const line of defaultContent.crisis.helplines) {
+    serialised = serialised.split(line.number).join("<published-helpline>");
+  }
+  return serialised;
+}
+
 describe("a WhatsApp link that cannot be a phone number", () => {
   it("refuses wa.me/<number>, which is how the number leaked before", () => {
     expect(safeWhatsappLink("https://wa.me/919130743144")).toBe("");
@@ -90,7 +108,8 @@ describe("the schema and the shipped defaults", () => {
   it("ships no WhatsApp link and no number of its own", () => {
     expect(defaultContent.contact.whatsappLink).toBe("");
     expect(defaultContent.contact.phone).toBe("");
-    expect(JSON.stringify(defaultContent)).not.toMatch(/\+?9\d[\d\s-]{8,}/);
+    // The crisis helplines are published on purpose; nothing else is.
+    expect(withoutHelplines(defaultContent)).not.toMatch(/\+?9\d[\d\s-]{8,}/);
   });
 
   it("serves the handle to the browser, because a handle is not a number", () => {
@@ -125,7 +144,7 @@ describe("a number already in storage never reaches the page", () => {
   });
 
   it("leaves no trace of it in what the browser receives", () => {
-    const serialised = JSON.stringify(toPublicContent(mergeContent(stored)));
+    const serialised = withoutHelplines(toPublicContent(mergeContent(stored)));
     expect(serialised).not.toContain("wa.me");
     // Not a bare \d{7,}: the LinkedIn profile URL legitimately ends in nine
     // digits, and an assertion that flags that is one nobody will trust.

@@ -16,10 +16,40 @@ interface SessionInfoProps {
     intro: string;
     steps: { title: string; desc: string }[];
   };
+  crisis?: {
+    notice: string;
+    helplines: { name: string; number: string; note: string }[];
+  };
   posts?: PostLink[];
 }
 
-export default function SessionInfo({ structure, posts = [] }: SessionInfoProps) {
+/**
+ * What this section says when content has not reached it.
+ *
+ * The crisis notice is the one piece of copy on this site that must not be able
+ * to render empty. A storage failure, or a content document written before this
+ * field existed, has to leave the numbers on the page rather than take them off
+ * it — so the shipped wording is the floor, not the default.
+ */
+const FALLBACK_CRISIS = {
+  notice:
+    "These sessions are not crisis or emergency care. If you are experiencing severe distress, suicidal thoughts, or require emergency support, please seek immediate help.",
+  helplines: [
+    { name: "iCall", number: "9152987821", note: "" },
+    { name: "Vandrevala Foundation", number: "1860-2662-345", note: "24/7" },
+  ],
+};
+
+export default function SessionInfo({
+  structure,
+  crisis,
+  posts = [],
+}: SessionInfoProps) {
+  const notice = crisis?.notice?.trim() || FALLBACK_CRISIS.notice;
+  const helplines =
+    crisis?.helplines && crisis.helplines.length > 0
+      ? crisis.helplines
+      : FALLBACK_CRISIS.helplines;
   /*
     Three icons reading "45–50 mins / Online Only / Confidential" answer the
     logistics and none of the hesitation. What stops people who have already
@@ -145,18 +175,22 @@ export default function SessionInfo({ structure, posts = [] }: SessionInfoProps)
             />
 
             <p className="font-sans text-sm text-forest/75 leading-relaxed max-w-2xl mx-auto">
-              <span className="font-semibold">⚠️ Important:</span> These
-              sessions are not crisis or emergency care. If you are experiencing
-              severe distress, suicidal thoughts, or require emergency support,
-              please seek immediate help.
+              <span className="font-semibold">⚠️ Important:</span> {notice}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
-              <span className="font-sans text-sm text-forest/65 bg-white/60 rounded-full px-4 py-2">
-                📞 <strong>iCall:</strong> 9152987821
-              </span>
-              <span className="font-sans text-sm text-forest/65 bg-white/60 rounded-full px-4 py-2">
-                📞 <strong>Vandrevala Foundation:</strong> 1860-2662-345 (24/7)
-              </span>
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 mt-6">
+              {helplines.map((line) => (
+                <a
+                  key={`${line.name}-${line.number}`}
+                  // Dialable. On a phone, in the moment this text is for,
+                  // reading a number off the screen and typing it is a step too
+                  // many.
+                  href={`tel:${line.number.replace(/[^\d+]/g, "")}`}
+                  className="font-sans text-sm text-forest/65 bg-white/60 rounded-full px-4 py-2 hover:bg-white hover:text-forest transition-colors"
+                >
+                  📞 <strong>{line.name}:</strong> {line.number}
+                  {line.note ? ` (${line.note})` : ""}
+                </a>
+              ))}
             </div>
           </motion.div>
         </AnimatedSection>

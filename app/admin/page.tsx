@@ -2102,6 +2102,36 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
+                  <ContentSection title="Crisis Support">
+                    {/*
+                      The notice and the numbers under it, on the homepage. The
+                      most consequential text on the site: it is what someone
+                      reads on the worst day they will spend here, so a helpline
+                      that changes its number is worth correcting the same day
+                      rather than at the next deployment.
+                    */}
+                    <ContentField
+                      label="Notice — shown above the numbers"
+                      value={(content as any).crisis?.notice || ""}
+                      onChange={(v) =>
+                        setContent({
+                          ...content,
+                          crisis: { ...(content as any).crisis, notice: v },
+                        })
+                      }
+                      textarea
+                    />
+                    <HelplinesEditor
+                      helplines={((content as any).crisis?.helplines as Helpline[]) || []}
+                      onChange={(helplines) =>
+                        setContent({
+                          ...content,
+                          crisis: { ...(content as any).crisis, helplines },
+                        })
+                      }
+                    />
+                  </ContentSection>
+
                   <ContentSection title="First Session Walkthrough">
                     {/*
                       Shown on the homepage under "How sessions work". It is
@@ -3337,6 +3367,100 @@ function PriceDrift({
         The built-in wording references the rates list instead of naming a figure,
         so it cannot go stale again. Changes still need saving.
       </p>
+    </div>
+  );
+}
+
+interface Helpline {
+  name: string;
+  number: string;
+  note: string;
+}
+
+/**
+ * The helplines on the crisis card.
+ *
+ * A row at a time, like the rates, and for the same reason: a textarea lets two
+ * entries run together invisibly. Here that would mean a number nobody can dial.
+ *
+ * A row with a name and no number, or the reverse, is refused rather than saved
+ * — half a helpline reads as help that exists and cannot be reached, which is
+ * worse on this card than one fewer number.
+ */
+function HelplinesEditor({
+  helplines,
+  onChange,
+}: {
+  helplines: Helpline[];
+  onChange: (next: Helpline[]) => void;
+}) {
+  const update = (i: number, patch: Partial<Helpline>) =>
+    onChange(helplines.map((line, n) => (n === i ? { ...line, ...patch } : line)));
+
+  const half = helplines.some(
+    (line) => Boolean(line.name?.trim()) !== Boolean(line.number?.trim())
+  );
+
+  return (
+    <div className="space-y-3">
+      <p className="font-sans text-xs text-forest/50">
+        Shown as tappable numbers. Leave the list empty and the built-in numbers
+        are shown instead — this card never renders without help on it.
+      </p>
+
+      {helplines.map((line, i) => (
+        <div key={i} className="flex flex-wrap items-center gap-2">
+          <input
+            value={line.name || ""}
+            onChange={(e) => update(i, { name: e.target.value })}
+            placeholder="iCall"
+            aria-label={`Helpline ${i + 1} name`}
+            className="flex-1 min-w-[10rem] px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+          />
+          <input
+            value={line.number || ""}
+            onChange={(e) => update(i, { number: e.target.value })}
+            // Not restricted to digits: 1860-2662-345 is how a person reads it
+            // back, and the tel: link strips the rest.
+            inputMode="tel"
+            placeholder="9152987821"
+            aria-label={`Helpline ${i + 1} number`}
+            className="w-44 px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+          />
+          <input
+            value={line.note || ""}
+            onChange={(e) => update(i, { note: e.target.value })}
+            placeholder="24/7"
+            aria-label={`Helpline ${i + 1} note`}
+            className="w-24 px-3 py-2 rounded-lg border border-sage/25 font-sans text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(helplines.filter((_, n) => n !== i))}
+            aria-label={`Remove helpline ${i + 1}`}
+            className="text-forest/40 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+
+      {half && (
+        <p className="font-sans text-[11px] text-red-600">
+          Every helpline needs both a name and a number. A row with one of them
+          reads as help that exists and cannot be reached.
+        </p>
+      )}
+
+      {helplines.length < 8 && (
+        <button
+          type="button"
+          onClick={() => onChange([...helplines, { name: "", number: "", note: "" }])}
+          className="font-sans text-xs text-forest/70 hover:text-forest px-3 py-2 rounded-lg border border-sage/40 hover:border-sage/70 transition-colors"
+        >
+          Add a helpline
+        </button>
+      )}
     </div>
   );
 }
