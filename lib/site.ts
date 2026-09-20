@@ -5,7 +5,20 @@
  * a preview deployment that claims to be production de-indexes itself into the
  * production URL. Everything derives from here instead of hardcoding the host.
  */
-const PRODUCTION_URL = "https://samvritispace.com";
+/*
+  www, because that is the host that serves.
+
+  Vercel holds two domains for this project: www.samvritispace.com, which serves
+  the deployment, and samvritispace.com, configured as a 308 redirect to it. This
+  said the bare domain, so every canonical, every sitemap entry, every JSON-LD
+  @id and every OG url pointed at a host that only redirects — and Search
+  Console reports a sitemap of redirects as a sitemap of problems.
+
+  Not a preference between the two forms: the redirect already chose, and this is
+  what agreeing with it looks like. Changing which host serves is a change in
+  Vercel's domain settings, and this constant follows it.
+*/
+const PRODUCTION_URL = "https://www.samvritispace.com";
 
 /**
  * The hosts that are the live site.
