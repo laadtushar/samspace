@@ -145,7 +145,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const price = pricingFrom(await headContent());
+  const head = await headContent();
+  const price = pricingFrom(head);
+  const sessionLength = head.sessionLength || "45–50 minutes";
 
   // Entities are given @ids and cross-referenced, so search engines read one
   // linked graph — the business, the person behind it, and the site — rather
@@ -205,7 +207,7 @@ const jsonLd = {
             {
               "@type": "Offer",
               name: "Therapy Session",
-              description: "45–50 minute online therapy session, sliding scale.",
+              description: `${sessionLength} online therapy session, sliding scale.`,
               priceSpecification: {
                 "@type": "PriceSpecification",
                 priceCurrency: "INR",

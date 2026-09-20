@@ -55,7 +55,11 @@ export default function HomePage({
       <Navbar onBookSession={openIntake} />
       <ScrollProgress />
       <main>
-        <Hero hero={content.hero} onBookSession={openIntake} />
+        <Hero
+          hero={content.hero}
+          sessionLength={content.sessionLength}
+          onBookSession={openIntake}
+        />
         <MarqueeDivider
           text1="Therapy · Mentoring · Growth · Healing"
           text2="CBT · Humanistic · Trauma-Informed · Care"
@@ -73,6 +77,7 @@ export default function HomePage({
         <SessionInfo
           structure={content.sessionStructure}
           crisis={content.crisis}
+          sessionLength={content.sessionLength}
           posts={posts}
         />
         <Contact contact={content.contact} onBookSession={openIntake} />

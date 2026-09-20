@@ -109,6 +109,14 @@ export interface SiteContent {
    * down, needed a deployment to correct. A helpline is the one thing here that
    * has to be right on the day someone reads it.
    */
+  /**
+   * How long a session runs, as a reader sees it.
+   *
+   * It was typed into the hero badge, the session card, the services tags, the
+   * FAQ answer and the structured data. The first three are code — a change
+   * meant a deployment — and the numbers had already drifted into two forms.
+   */
+  sessionLength: string;
   crisis: {
     notice: string;
     helplines: { name: string; number: string; note: string }[];
@@ -174,7 +182,9 @@ export const defaultContent: SiteContent = {
         title: "Session Structure",
         price: null,
         unit: null,
-        tags: ["45–50 mins", "Online Only", "Supervised", "Confidential"],
+        // Same wording as sessionLength. Two forms of the same fact shipped for
+        // a while — "mins" here, "minutes" everywhere else.
+        tags: ["45–50 minutes", "Online Only", "Supervised", "Confidential"],
       },
     ],
   },
@@ -327,6 +337,7 @@ export const defaultContent: SiteContent = {
     to the public site, so a price cannot be changed in one place and left
     behind in another.
   */
+  sessionLength: "45–50 minutes",
   crisis: {
     notice:
       "These sessions are not crisis or emergency care. If you are experiencing severe distress, suicidal thoughts, or require emergency support, please seek immediate help.",

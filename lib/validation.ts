@@ -204,6 +204,7 @@ export const siteContentSchema = z.object({
       .array(z.object({ title: trimmed(120), desc: trimmed(600) }))
       .max(8),
   }),
+  sessionLength: trimmed(60),
   crisis: z.object({
     notice: trimmed(1000),
     // A helpline with no number is worse than no helpline: it reads as help

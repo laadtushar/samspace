@@ -40,7 +40,7 @@ import {
   priceRangeOf,
 } from "@/lib/rates";
 import { TOKENS, fillTokens, rateValues } from "@/lib/tokens";
-import { auditPrices, groupFindings } from "@/lib/price-audit";
+import { auditPrices, auditPosts, groupFindings } from "@/lib/price-audit";
 import { parsePath, valueAtPath, withValueAtPath } from "@/lib/content-path";
 import { defaultContent } from "@/lib/default-content";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog-format";
@@ -2102,6 +2102,19 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
+                  <ContentSection title="Session Length">
+                    {/*
+                      One field, read by the hero badge, the session card and
+                      the structured data. It used to be typed into all three
+                      and had already drifted into two forms.
+                    */}
+                    <ContentField
+                      label="How long a session runs — e.g. 45–50 minutes"
+                      value={(content as any).sessionLength || ""}
+                      onChange={(v) => setContent({ ...content, sessionLength: v })}
+                    />
+                  </ContentSection>
+
                   <ContentSection title="Crisis Support">
                     {/*
                       The notice and the numbers under it, on the homepage. The
@@ -2205,6 +2218,7 @@ export default function AdminPage() {
                   <ContentSection title="Session Rates">
                     <PriceDrift
                       content={content}
+                      posts={posts}
                       onFix={(path, value) => {
                         const segments = parsePath(path);
                         const next = segments
@@ -3318,28 +3332,42 @@ function AmountField({
  */
 function PriceDrift({
   content,
+  posts = [],
   onFix,
 }: {
   content: unknown;
+  posts?: BlogPost[];
   onFix: (path: string, value: string) => void;
 }) {
+  const scale = ((content as any)?.slidingScale as string[]) || [];
   const grouped = useMemo(
-    () =>
-      groupFindings(
-        auditPrices(content, ((content as any)?.slidingScale as string[]) || [])
-      ),
+    () => groupFindings(auditPrices(content, scale)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [content]
   );
 
-  if (grouped.length === 0) return null;
+  /*
+    Published posts quote the scale too, and the ones written before tokens
+    existed quote it as a literal — correct until a rate moves, then wrong in
+    seven places at once with nothing on the page to say so.
+  */
+  const stalePosts = useMemo(
+    () => auditPosts(posts as unknown as Record<string, unknown>[], scale),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [posts, content]
+  );
+
+  if (grouped.length === 0 && stalePosts.length === 0) return null;
 
   return (
     <div className="rounded-xl border border-amber-300/70 bg-amber-50/60 p-4 space-y-3">
-      <p className="font-sans text-sm font-medium text-amber-900">
-        {grouped.length === 1
-          ? "One piece of copy quotes a price that is not on the scale"
-          : `${grouped.length} pieces of copy quote a price that is not on the scale`}
-      </p>
+      {grouped.length > 0 && (
+        <p className="font-sans text-sm font-medium text-amber-900">
+          {grouped.length === 1
+            ? "One piece of copy quotes a price that is not on the scale"
+            : `${grouped.length} pieces of copy quote a price that is not on the scale`}
+        </p>
+      )}
       {grouped.map(({ path, text, problems }) => {
         const segments = parsePath(path);
         const builtIn = segments ? valueAtPath(defaultContent, segments) : undefined;
@@ -3363,10 +3391,32 @@ function PriceDrift({
           </div>
         );
       })}
-      <p className="font-sans text-[11px] text-amber-900/70">
-        The built-in wording references the rates list instead of naming a figure,
-        so it cannot go stale again. Changes still need saving.
-      </p>
+      {grouped.length > 0 && (
+        <p className="font-sans text-[11px] text-amber-900/70">
+          The built-in wording references the rates list instead of naming a
+          figure, so it cannot go stale again. Changes still need saving.
+        </p>
+      )}
+
+      {stalePosts.length > 0 && (
+        <div className="space-y-1.5 pt-1">
+          <p className="font-sans text-sm font-medium text-amber-900">
+            {stalePosts.length === 1
+              ? "One post quotes a price that is not on the scale"
+              : `${stalePosts.length} posts quote a price that is not on the scale`}
+          </p>
+          {stalePosts.map((post) => (
+            <p key={post.slug} className="font-sans text-xs text-amber-900/80">
+              <code className="font-mono">{post.slug}</code>{" "}
+              {post.problems.join("; ")}
+            </p>
+          ))}
+          <p className="font-sans text-[11px] text-amber-900/70">
+            Change a rate everywhere, below, rewrites published posts in the same
+            pass — preview it first.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

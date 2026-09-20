@@ -25,10 +25,19 @@ const credentials = [
 
 interface HeroProps {
   hero: { headline: string; subtext: string; quoteText: string };
+  sessionLength?: string;
   onBookSession?: () => void;
 }
 
-export default function Hero({ hero, onBookSession }: HeroProps) {
+const SHIPPED_SESSION_LENGTH = "45–50 minutes";
+
+export default function Hero({
+  hero,
+  // The shipped value is the floor, not the default: a badge reading
+  // " · Online Sessions" is worse than one that is slightly out of date.
+  sessionLength = SHIPPED_SESSION_LENGTH,
+  onBookSession,
+}: HeroProps) {
   const handleScroll = (href: string) => {
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -208,7 +217,7 @@ export default function Hero({ hero, onBookSession }: HeroProps) {
             <div className="flex flex-wrap gap-3 justify-center lg:justify-end">
               {[
                 { emoji: "🔒", text: "Confidential & Ethical" },
-                { emoji: "🕐", text: "45–50 min · Online Sessions" },
+                { emoji: "🕐", text: `${sessionLength} · Online Sessions` },
               ].map((badge, i) => (
                 <motion.div
                   key={badge.text}
