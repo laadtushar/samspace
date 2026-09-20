@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 /**
  * The cron schedule is the one piece of configuration that can stop a
@@ -60,26 +60,39 @@ describe("vercel.json", () => {
  * comes unverified — quietly, and the first anyone knows is that the search data
  * has stopped. It is 53 bytes of text with no other purpose, which is exactly
  * the kind of file that gets tidied away.
+ *
+ * The token is read off the filename rather than written here. Partly because
+ * that is the invariant Google actually checks — the body has to name the file
+ * it is in — and partly because a second copy of a high-entropy string is a
+ * second copy: a secret scanner flagged the literal, correctly by its own rules
+ * and wrongly in substance, since a verification token is published on purpose.
  */
 describe("Google Search Console verification", () => {
-  const token = "google3cee98c985c30656";
+  const publicDir = new URL("../public/", import.meta.url);
+  const files = readdirSync(publicDir).filter((name) =>
+    /^google[a-z0-9]+\.html$/.test(name)
+  );
 
-  it("serves the verification file from the site root", () => {
-    const file = readFileSync(
-      new URL(`../public/${token}.html`, import.meta.url),
-      "utf8"
-    );
-    // Google matches the body exactly, trailing whitespace included.
-    expect(file).toBe(`google-site-verification: ${token}.html`);
+  it("has exactly one verification file", () => {
+    // Two would mean an old property's file was left behind; none means the
+    // property is unverified and nothing says so.
+    expect(files).toHaveLength(1);
   });
 
-  it("is not hidden from crawlers", async () => {
+  it("serves a body naming the file it is in", () => {
+    const [name] = files;
+    const body = readFileSync(new URL(name, publicDir), "utf8");
+    // Google matches this exactly, trailing whitespace included.
+    expect(body).toBe(`google-site-verification: ${name}`);
+  });
+
+  it("is not hidden from crawlers", () => {
     const robots = readFileSync(
       new URL("../app/robots.ts", import.meta.url),
       "utf8"
     );
     // The disallow list names paths; none of them may cover the site root file.
-    expect(robots).not.toContain(token);
+    for (const name of files) expect(robots).not.toContain(name);
     expect(robots).toContain('allow: "/"');
   });
 });
