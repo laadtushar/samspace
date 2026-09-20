@@ -83,3 +83,30 @@ describe("Google Search Console verification", () => {
     expect(robots).toContain('allow: "/"');
   });
 });
+
+/**
+ * A redirect whose destination is editable copy must not be frozen at build time.
+ *
+ * `/whatsapp` forwards to the handle stored in the dashboard. With `revalidate`
+ * the target was baked into the build as a response header — and a build renders
+ * before it can read stored content, so a fresh deployment sent people to the
+ * contact-section fallback while a perfectly good handle sat in the dashboard,
+ * for as long as the revalidate window. The content read is cached either way, so
+ * resolving per request costs nothing at the meter.
+ */
+describe("the WhatsApp doorway", () => {
+  const route = readFileSync(
+    new URL("../app/whatsapp/route.ts", import.meta.url),
+    "utf8"
+  );
+
+  it("resolves its target per request rather than at build time", () => {
+    expect(route).toContain('export const dynamic = "force-dynamic"');
+    expect(route).not.toMatch(/^export const revalidate/m);
+  });
+
+  it("reads the handle through the cache, so the meter does not move", () => {
+    // Dynamic rendering without this would mean a blob read on every visit.
+    expect(route).toContain("getCachedContent");
+  });
+});
