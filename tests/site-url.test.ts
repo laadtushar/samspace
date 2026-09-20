@@ -37,18 +37,25 @@ afterAll(() => {
 });
 
 describe("the site's own origin", () => {
-  it("defaults to the production domain", async () => {
+  it("defaults to the host that actually serves", async () => {
+    // Vercel serves www and 308-redirects the bare domain to it, so canonical
+    // URLs have to say www or they all point at a redirect.
     const { SITE_URL, IS_PRODUCTION_SITE } = await load({});
-    expect(SITE_URL).toBe("https://samvritispace.com");
+    expect(SITE_URL).toBe("https://www.samvritispace.com");
     expect(IS_PRODUCTION_SITE).toBe(true);
   });
 
-  it("counts www as the live site, so crawling stays allowed", async () => {
-    const { SITE_URL, IS_PRODUCTION_SITE } = await load({
-      NEXT_PUBLIC_SITE_URL: "https://www.samvritispace.com",
-    });
-    expect(SITE_URL).toBe("https://www.samvritispace.com");
-    expect(IS_PRODUCTION_SITE).toBe(true);
+  it("counts either form as the live site, so crawling stays allowed", async () => {
+    for (const host of [
+      "https://www.samvritispace.com",
+      "https://samvritispace.com",
+    ]) {
+      const { SITE_URL, IS_PRODUCTION_SITE } = await load({
+        NEXT_PUBLIC_SITE_URL: host,
+      });
+      expect(SITE_URL).toBe(host);
+      expect(IS_PRODUCTION_SITE, host).toBe(true);
+    }
   });
 
   it("drops a trailing slash from the override", async () => {

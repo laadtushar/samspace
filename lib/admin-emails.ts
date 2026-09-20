@@ -1,4 +1,5 @@
 import { sendEmail, esc, emailShell } from "@/lib/email";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * The two messages the admin login flow sends.
@@ -15,7 +16,9 @@ function siteUrl(): string {
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : null);
-  return (configured ?? "https://samvritispace.com").replace(/\/$/, "");
+  // Falling back to SITE_URL rather than a second copy of the domain: a login
+  // link pointing at a host the site no longer uses is a link nobody can use.
+  return (configured ?? SITE_URL).replace(/\/$/, "");
 }
 
 const NOTE_STYLE =
