@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/money";
 import {
   rateAmount,
   isStudentRate,
@@ -50,10 +51,10 @@ export function rateValues(rates: readonly string[]): Record<string, string> {
   const values: Record<string, string> = {};
   if (amounts.length > 0) {
     values["rate.range"] = priceRangeOf(rates);
-    values["rate.lowest"] = `₹${Math.min(...amounts)}`;
-    values["rate.highest"] = `₹${Math.max(...amounts)}`;
+    values["rate.lowest"] = formatMoney(Math.min(...amounts));
+    values["rate.highest"] = formatMoney(Math.max(...amounts));
   }
-  if (studentAmount !== null) values["rate.student"] = `₹${studentAmount}`;
+  if (studentAmount !== null) values["rate.student"] = formatMoney(studentAmount);
 
   /*
     The scale is two things at once: a concessional rate, and a band a working
@@ -67,7 +68,7 @@ export function rateValues(rates: readonly string[]): Record<string, string> {
     .filter((n): n is number => n !== null && n > 0);
   if (fullAmounts.length > 0) {
     values["rate.band"] = priceRangeOf(full);
-    values["rate.standard"] = `₹${Math.min(...fullAmounts)}`;
+    values["rate.standard"] = formatMoney(Math.min(...fullAmounts));
   }
   return values;
 }
