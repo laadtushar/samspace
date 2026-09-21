@@ -6,14 +6,6 @@ import { log, errorFields } from "@/lib/log";
 import { isNextSignal } from "@/lib/next-signals";
 import { sql, dbConfigured } from "@/lib/db";
 import { defaultContent, type SiteContent } from "@/lib/default-content";
-import {
-  readConfidentialJson,
-  readPublicJson,
-  writeConfidentialJson,
-  writePublicJson,
-  listBlobs,
-  deleteBlob,
-} from "@/lib/blob";
 
 // The copy and its shape live in a module with no dependencies, so the dashboard
 // can import them without pulling the storage client into the browser. Server
@@ -58,16 +50,6 @@ export interface IntakeSubmission {
   /** "booked" | "skipped" | "" (scheduling step not shown) */
   scheduling?: string;
 }
-
-// ─── Blob keys ─────────────────────────────────────
-const CONTENT_KEY = "site-content.json";
-/** Each submission is its own private blob under this prefix. */
-const SUBMISSIONS_PREFIX = "submissions/";
-/**
- * The single public JSON that every submission used to be appended to. Still
- * read so existing records stay visible until they are migrated off it.
- */
-const LEGACY_SUBMISSIONS_KEY = "intake-submissions.json";
 
 // ─── Site content ──────────────────────────────────
 
@@ -167,60 +149,32 @@ async function writeContentToDb(content: SiteContent): Promise<void> {
 }
 
 /**
- * Copies content out of blob the first time the database is asked for it.
+ * Content as stored.
  *
- * Not a convenience. Without it there is a state that loses everything: the
- * table empty and blob holding the real content, the dashboard opening on the
- * shipped defaults because the blob read failed, and the first save writing
- * those defaults in as though they were the content. The booking link, the
- * WhatsApp handle and every edited word would be gone, with nothing to show
- * that anything had been overwritten.
+ * Postgres, and only Postgres. This used to read the blob store, then read
+ * Postgres and keep blob underneath as a fallback. Blob is gone: it was billed
+ * per operation, deployments rather than visitors spent a month's allowance in
+ * a fortnight, and going over pauses the store — which is how the site came to
+ * be serving its shipped defaults to everyone with no booking link.
  *
- * Only ever called for a read that succeeded and found nothing. Best effort on
- * the way past: a failure to copy still serves what it read.
- */
-async function backfillFromBlob(stored: unknown): Promise<void> {
-  try {
-    await writeContentToDb(mergeContent(stored));
-    log.info("content.backfilled");
-  } catch (error) {
-    log.warn("content.backfill_failed", errorFields(error));
-  }
-}
-
-/**
- * Content as stored, from wherever it lives.
+ * A second store that can fail independently was never buying reliability
+ * here. It bought two ways for the same question to be answered differently,
+ * and a failure mode where the copy that mattered was the one that could not be
+ * read.
  *
- * The database first, because blob is billed per operation and content is read
- * on every deployment — ten routes read it, each read is a head plus a fetch,
- * and the cache key is scoped to the build so every deployment starts cold.
- * That is what spent a monthly allowance in a fortnight, with two visitors in
- * the hour the limit was reached. A store that can be paused for going over
- * must not be the only copy of the booking link.
- *
- * Blob stays as the layer underneath, for three situations: no database
- * configured at all, which keeps a fresh clone, local development and CI
- * working exactly as before; the table still empty, where the content is copied
- * across on the way past; and a database that cannot be read, where whatever
- * blob last held is closer to the truth than the shipped defaults are.
- *
- * Both stores failing is left to throw. `publicContent` turns that into the
- * shipped copy for a visitor, while the dashboard is shown the error rather
- * than an empty form it could save over the top of.
+ * Nothing is caught. A database that cannot be read is a fact the caller has to
+ * decide about: `publicContent` turns it into the shipped copy for a visitor,
+ * and the dashboard is shown the error rather than an empty form it could save
+ * over the top of.
  */
 export async function getContent(): Promise<SiteContent> {
-  if (!dbConfigured()) {
-    return mergeContent(await readPublicJson<unknown>(CONTENT_KEY, null));
-  }
+  if (!dbConfigured()) return mergeContent(null);
 
-  const read = await contentFromDb();
-  if (read.state === "stored") return mergeContent(read.content);
+  const rows = (await sql()`
+    select content from site_content where id = 'site'
+  `) as unknown as { content: unknown }[];
 
-  const stored = await readPublicJson<unknown>(CONTENT_KEY, null);
-  // Never on "unreadable": the database may hold newer content than blob does,
-  // and copying over it because one read failed is how an edit disappears.
-  if (read.state === "empty" && stored !== null) await backfillFromBlob(stored);
-  return mergeContent(stored);
+  return mergeContent(rows[0]?.content ?? null);
 }
 
 export const CONTENT_TAG = "site-content";
@@ -296,20 +250,20 @@ export async function publicContent(): Promise<SiteContent> {
 }
 
 /**
- * Stores content wherever it is being read from.
+ * Stores content.
  *
- * Deliberately not written to both. A save has to keep working while blob is
- * paused — that is the state this move exists for — and a write to a store that
- * refuses it would fail the save and lose the edit. Once there is a database it
- * holds the copy that counts, and the blob object is left where it is as the
- * record of what the content was when the move happened.
+ * Throws without a database rather than pretending. There is nowhere else to
+ * put it now, and a save that reports success while going nowhere is worse than
+ * one that fails: the editor would close, the wording would look saved, and the
+ * site would keep serving what it served before.
  */
 export async function saveContent(content: SiteContent): Promise<void> {
-  if (dbConfigured()) {
-    await writeContentToDb(content);
-  } else {
-    await writePublicJson(CONTENT_KEY, content);
+  if (!dbConfigured()) {
+    throw new Error(
+      "No database configured — set DATABASE_URL before saving content."
+    );
   }
+  await writeContentToDb(content);
   bustCache(CONTENT_TAG);
 }
 
@@ -327,121 +281,4 @@ export function bustCache(tag: string): void {
   } catch {
     // Saved either way.
   }
-}
-
-// ─── Intake submissions ────────────────────────────
-
-/**
- * One blob per submission. The previous design appended to a single JSON
- * document, so two people submitting at once could overwrite each other, and a
- * transient read failure could replace the whole history with one record. A
- * write that only ever creates its own object cannot lose anyone else's.
- *
- * The timestamp leads the pathname, so the listing sorts newest-first without
- * opening a single file.
- */
-function submissionPath(submission: IntakeSubmission): string {
-  return `${SUBMISSIONS_PREFIX}${submission.timestamp}-${submission.id}.json`;
-}
-
-export async function addSubmission(
-  submission: IntakeSubmission
-): Promise<void> {
-  await writeConfidentialJson(submissionPath(submission), submission);
-}
-
-/** Runs `fn` over items with a bounded number of blob requests in flight. */
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (cursor < items.length) {
-        const index = cursor++;
-        results[index] = await fn(items[index]);
-      }
-    }
-  );
-  await Promise.all(workers);
-  return results;
-}
-
-export async function getSubmissions(): Promise<IntakeSubmission[]> {
-  const [perBlob, legacy] = await Promise.all([
-    listBlobs(SUBMISSIONS_PREFIX).then((blobs) =>
-      mapWithConcurrency(
-        blobs.map((b) => b.pathname),
-        8,
-        (pathname) => readConfidentialJson<IntakeSubmission | null>(pathname, null)
-      )
-    ),
-    readLegacySubmissions(),
-  ]);
-
-  return [...perBlob.filter((s): s is IntakeSubmission => s !== null), ...legacy].sort(
-    (a, b) => b.timestamp.localeCompare(a.timestamp)
-  );
-}
-
-/** The original single document, still plaintext until the migration runs. */
-async function readLegacySubmissions(): Promise<IntakeSubmission[]> {
-  return (
-    (await readConfidentialJson<IntakeSubmission[] | null>(
-      LEGACY_SUBMISSIONS_KEY,
-      null
-    ).catch(() => null)) ?? []
-  );
-}
-
-/**
- * Removes one submission, wherever it lives.
- *
- * Records written since the per-submission change are their own object and are
- * simply deleted. Anything still inside the original combined document has to
- * be rewritten without it — which is a read-modify-write, and is only safe here
- * because that document is frozen: nothing appends to it any more.
- *
- * Returns false when no record with that id exists, so the caller can answer
- * honestly rather than reporting a delete that never happened.
- */
-export async function deleteSubmission(id: string): Promise<boolean> {
-  const blobs = await listBlobs(SUBMISSIONS_PREFIX);
-  const match = blobs.find((b) => b.pathname.includes(id));
-  if (match) {
-    await deleteBlob(match.pathname);
-    return true;
-  }
-
-  const legacy = await readLegacySubmissions();
-  const remaining = legacy.filter((s) => s.id !== id);
-  if (remaining.length === legacy.length) return false;
-
-  await writeConfidentialJson(LEGACY_SUBMISSIONS_KEY, remaining);
-  return true;
-}
-
-/**
- * Moves any records still in the single legacy blob into per-submission private
- * blobs, then deletes the legacy blob. Safe to run more than once.
- *
- * Note for whoever runs this: the legacy blob was plaintext in a public store,
- * so reading it required no credentials. Treat its contents as disclosed.
- */
-export async function migrateLegacySubmissions(): Promise<{
-  migrated: number;
-}> {
-  const legacy = await readLegacySubmissions();
-  if (legacy.length === 0) return { migrated: 0 };
-
-  for (const submission of legacy) {
-    await writeConfidentialJson(submissionPath(submission), submission);
-  }
-  await deleteBlob(LEGACY_SUBMISSIONS_KEY);
-
-  return { migrated: legacy.length };
 }

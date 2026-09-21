@@ -66,10 +66,11 @@ describe("the WhatsApp redirect stands on the shipped floor", () => {
       ...(await importOriginal<typeof import("next/cache")>()),
       unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
     }));
-    vi.doMock("@/lib/blob", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/blob")>()),
-      readPublicJson: () => {
-        throw new Error("Blob fetch failed for site-content.json: 403");
+    vi.doMock("@/lib/db", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/db")>()),
+      dbConfigured: () => true,
+      sql: () => {
+        throw new Error("database unreachable");
       },
     }));
 

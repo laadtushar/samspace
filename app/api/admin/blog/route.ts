@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
+import { dbConfigured } from "@/lib/db";
+import { log } from "@/lib/log";
 import { blogPostSchema, firstIssue } from "@/lib/validation";
 import { getAllPosts, getPostBySlug, savePost, deletePost } from "@/lib/blog";
 import { revalidatePath } from "next/cache";
@@ -10,6 +12,21 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
+
+  /*
+    Asked here rather than in getAllPosts, which answers empty without a
+    database so a build with no connection string can still render an empty
+    archive. On this screen the two are not the same: "no posts yet" invites
+    someone to write one, and doing that on top of posts nobody can currently
+    see is how a draft gets overwritten.
+  */
+  if (!dbConfigured()) {
+    log.error("blog.no_database");
+    return NextResponse.json(
+      { error: "Post storage is not configured." },
+      { status: 503 }
+    );
+  }
 
   return NextResponse.json(await getAllPosts());
 }

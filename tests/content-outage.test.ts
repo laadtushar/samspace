@@ -4,10 +4,14 @@ import { readFileSync } from "node:fs";
 /**
  * What the public site does when its storage is unavailable.
  *
- * The read raises on anything that is not a 404 — a paused store, an expired
- * token, a bad gateway — and five public routes awaited it without catching.
- * An outage did not degrade this site, it took it down, and the first sign
- * would have been a 500 on the page someone books from.
+ * The read raises on anything that is not "no row" — an unreachable database,
+ * a migration that has not run, a bad gateway — and five public routes awaited
+ * it without catching. An outage did not degrade this site, it took it down,
+ * and the first sign would have been a 500 on the page someone books from.
+ *
+ * Written against the database because that is now the only store. It was blob
+ * when these were first written, and blob is exactly what proved the point:
+ * it passed its limit, answered 403, and the live site served its defaults.
  */
 const read = (path: string) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -20,10 +24,11 @@ afterEach(() => {
 describe("a storage outage degrades rather than breaks", () => {
   it("serves the shipped copy when the read fails", async () => {
     vi.resetModules();
-    vi.doMock("@/lib/blob", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/blob")>()),
-      readPublicJson: () => {
-        throw new Error("store paused");
+    vi.doMock("@/lib/db", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/db")>()),
+      dbConfigured: () => true,
+      sql: () => {
+        throw new Error("database unreachable");
       },
     }));
 
@@ -38,10 +43,11 @@ describe("a storage outage degrades rather than breaks", () => {
 
   it("resolves tokens in the fallback, so no price renders as braces", async () => {
     vi.resetModules();
-    vi.doMock("@/lib/blob", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/blob")>()),
-      readPublicJson: () => {
-        throw new Error("store paused");
+    vi.doMock("@/lib/db", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/db")>()),
+      dbConfigured: () => true,
+      sql: () => {
+        throw new Error("database unreachable");
       },
     }));
 
@@ -59,10 +65,11 @@ describe("a storage outage degrades rather than breaks", () => {
       only the public one absorbs it.
     */
     vi.resetModules();
-    vi.doMock("@/lib/blob", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/blob")>()),
-      readPublicJson: () => {
-        throw new Error("store paused");
+    vi.doMock("@/lib/db", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/db")>()),
+      dbConfigured: () => true,
+      sql: () => {
+        throw new Error("database unreachable");
       },
     }));
 
@@ -123,9 +130,10 @@ describe("Next's own signals are not treated as an outage", () => {
       ...(await importOriginal<typeof import("next/cache")>()),
       unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
     }));
-    vi.doMock("@/lib/blob", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/blob")>()),
-      readPublicJson: () => {
+    vi.doMock("@/lib/db", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/db")>()),
+      dbConfigured: () => true,
+      sql: () => {
         throw error;
       },
     }));
