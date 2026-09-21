@@ -3,6 +3,7 @@ import { SITE_URL, serializeJsonLd } from "@/lib/site";
 import { getCachedPublishedPosts } from "@/lib/blog";
 import { publicPosts } from "@/lib/posts-public";
 import HomePage from "@/components/HomePage";
+import { localCurrencyEnabled } from "@/lib/local-currency";
 
 export const revalidate = 60;
 
@@ -50,7 +51,11 @@ export default async function Home() {
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       )}
-      <HomePage content={toPublicContent(content)} posts={posts} />
+      <HomePage
+        content={toPublicContent(content)}
+        posts={posts}
+        localCurrency={localCurrencyEnabled()}
+      />
     </>
   );
 }

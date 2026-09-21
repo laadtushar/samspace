@@ -26,9 +26,12 @@ const IntakeFormModal = dynamic(() => import("@/components/IntakeFormModal"), {
 export default function HomePage({
   content,
   posts = [],
+  localCurrency = false,
 }: {
   content: PublicSiteContent;
   posts?: PostLink[];
+  /** The rollout switch, read on the server. Off renders rupees, as before. */
+  localCurrency?: boolean;
 }) {
   const [intakeOpen, setIntakeOpen] = useState(false);
 
@@ -65,7 +68,7 @@ export default function HomePage({
           text2="CBT · Humanistic · Trauma-Informed · Care"
         />
         <About about={content.about} />
-        <Services services={content.services} />
+        <Services services={content.services} localCurrency={localCurrency} />
         <MarqueeDivider
           text1="Academic Stress · Anxiety · Self-Esteem · Boundaries"
           text2="Burnout · Overthinking · Identity · Transitions"
