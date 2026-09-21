@@ -2,6 +2,7 @@ import { unstable_cache, revalidateTag } from "next/cache";
 import { fillDeep, rateValues } from "@/lib/tokens";
 import { safeWhatsappLink } from "@/lib/whatsapp";
 import { BUILD_ID } from "@/lib/build-id";
+import { log, errorFields } from "@/lib/log";
 import { defaultContent, type SiteContent } from "@/lib/default-content";
 import {
   readConfidentialJson,
@@ -169,6 +170,33 @@ export const getCachedContent = unstable_cache(
   [CONTENT_TAG, BUILD_ID],
   { tags: [CONTENT_TAG], revalidate: 3600 }
 );
+
+/**
+ * Content for a public page, which never throws.
+ *
+ * The storage read raises on anything that is not a 404 — a paused store, an
+ * expired token, a bad gateway — and five public routes awaited it without
+ * catching: the homepage, /start, the archive, every post and the feed. A
+ * storage outage did not degrade this site, it took it down, and the first sign
+ * would have been a 500 on the page someone books from.
+ *
+ * Not caught inside the cache, deliberately. `unstable_cache` stores what the
+ * function returns, so catching in there would pin the shipped defaults for an
+ * hour after one bad second. Out here the fallback lasts exactly as long as the
+ * failure does.
+ *
+ * The shipped copy is a genuine floor rather than an empty page: prices,
+ * crisis numbers and contact details all render, and what a visitor loses is
+ * whatever was edited in the dashboard since the last deployment.
+ */
+export async function publicContent(): Promise<SiteContent> {
+  try {
+    return await getCachedContent();
+  } catch (error) {
+    log.error("content.unavailable", errorFields(error));
+    return resolveContentTokens(defaultContent);
+  }
+}
 
 export async function saveContent(content: SiteContent): Promise<void> {
   await writePublicJson(CONTENT_KEY, content);
