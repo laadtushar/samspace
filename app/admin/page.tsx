@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { StoredRate } from "@/lib/fx-store";
+import {
+  rateAgeDays,
+  rateIsFresh,
+  MAX_MANUAL_RATE_AGE_DAYS,
+} from "@/lib/convert";
 import {
   anyRejectedWith,
   everyFailed,
@@ -2340,6 +2346,10 @@ export default function AdminPage() {
                     {me?.role === "owner" && <RepriceEverywhere />}
                   </ContentSection>
 
+                  <ContentSection title="Currency shown to visitors abroad">
+                    <CurrencyRates />
+                  </ContentSection>
+
                   <ContentSection title="Scheduling (Calendly)">
                     <SchedulingSettings
                       value={((content as any).calendlyUrl as string) || ""}
@@ -3587,6 +3597,183 @@ function HelplinesEditor({
           Add a helpline
         </button>
       )}
+    </div>
+  );
+}
+
+/**
+ * What the rupee prices read as for someone abroad.
+ *
+ * There is no rate feed — none is reachable from here — so the practice sets
+ * these. A currency with no rate is quoted in rupees, which is never wrong,
+ * only less helpful to someone deciding whether they can afford a session.
+ *
+ * The rupee amount is always what is charged. These change what a visitor
+ * reads, never what the invoice says.
+ */
+function CurrencyRates() {
+  const [rates, setRates] = useState<StoredRate[]>([]);
+  const [currency, setCurrency] = useState("");
+  const [perRupee, setPerRupee] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await apiFetch("/api/admin/rates");
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not load rates"));
+        return;
+      }
+      const body = (await res.json()) as { rates?: StoredRate[] };
+      setRates(Array.isArray(body.rates) ? body.rates : []);
+      setError("");
+    } catch {
+      setError("Connection error — rates could not be loaded.");
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const save = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await apiFetch("/api/admin/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency, perRupee }),
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not save that rate"));
+        return;
+      }
+      const body = (await res.json()) as { rates?: StoredRate[] };
+      setRates(Array.isArray(body.rates) ? body.rates : []);
+      setCurrency("");
+      setPerRupee("");
+    } catch {
+      setError("Connection error — nothing was saved.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (code: string) => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await apiFetch(
+        `/api/admin/rates?currency=${encodeURIComponent(code)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not remove that rate"));
+        return;
+      }
+      const body = (await res.json()) as { rates?: StoredRate[] };
+      setRates(Array.isArray(body.rates) ? body.rates : []);
+    } catch {
+      setError("Connection error — nothing was removed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="font-sans text-xs text-forest/45 max-w-2xl leading-relaxed">
+        Someone visiting from abroad sees your rupee prices converted into their
+        own currency, marked as approximate. Sessions are still billed in
+        rupees — this only changes what the figure reads as. A currency with no
+        rate here stays in rupees.
+      </p>
+
+      {error && <p className="font-sans text-xs text-red-500">{error}</p>}
+
+      {loaded && rates.length === 0 && !error && (
+        <p className="font-sans text-xs text-forest/40">
+          No rates set — every visitor sees rupees.
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {rates.map((r) => {
+          const age = rateAgeDays(r) ?? 0;
+          const stale = !rateIsFresh(r);
+          const ageing = !stale && age > MAX_MANUAL_RATE_AGE_DAYS * 0.75;
+          return (
+            <div
+              key={r.currency}
+              className="flex items-center gap-3 flex-wrap bg-white border border-sage/20 rounded-xl px-4 py-3"
+            >
+              <span className="font-sans text-sm font-medium text-forest w-14">
+                {r.currency}
+              </span>
+              <span className="font-sans text-sm text-forest/70">
+                ₹1 = {r.perRupee} {r.currency}
+              </span>
+              <span
+                className={`font-sans text-xs ${
+                  stale
+                    ? "text-red-500"
+                    : ageing
+                      ? "text-amber-600"
+                      : "text-forest/40"
+                }`}
+              >
+                {stale
+                  ? "Too old to use — visitors see rupees. Set it again."
+                  : `set ${Math.round(age)} day${Math.round(age) === 1 ? "" : "s"} ago`}
+              </span>
+              <button
+                onClick={() => void remove(r.currency)}
+                disabled={busy}
+                className="ml-auto font-sans text-xs text-forest/40 hover:text-red-500 transition-colors disabled:opacity-60"
+              >
+                Remove
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-end gap-3 flex-wrap">
+        <label className="flex flex-col gap-1">
+          <span className="font-sans text-xs text-forest/50">Currency</span>
+          <input
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+            placeholder="USD"
+            maxLength={3}
+            className="w-24 font-sans text-sm border border-sage/25 rounded-lg px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-sans text-xs text-forest/50">
+            What ₹1 buys
+          </span>
+          <input
+            value={perRupee}
+            onChange={(e) => setPerRupee(e.target.value)}
+            placeholder="0.0115"
+            inputMode="decimal"
+            className="w-36 font-sans text-sm border border-sage/25 rounded-lg px-3 py-2"
+          />
+        </label>
+        <button
+          onClick={() => void save()}
+          disabled={busy || !currency.trim() || !perRupee.trim()}
+          className="font-sans text-sm font-medium bg-forest text-cream px-4 py-2 rounded-xl hover:bg-forest-deep transition-colors disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save rate"}
+        </button>
+      </div>
     </div>
   );
 }

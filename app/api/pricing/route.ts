@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { countryFromHeaders, COUNTRY_HEADER } from "@/lib/geo";
 import { pricingFor } from "@/lib/pricing";
 import { publicContent } from "@/lib/content";
+import { currencyForCountry } from "@/lib/country-currency";
+import { rateFor } from "@/lib/fx-store";
+import { log, errorFields } from "@/lib/log";
 
 /**
  * The scale, priced for whoever is asking.
@@ -42,11 +45,21 @@ export async function GET(request: Request) {
   const content = await publicContent();
 
   /*
-    No rate source is configured yet, so this always prices in rupees. The
-    tier rules still apply — the concessional rate is offered at home and
-    nowhere else, and that has never depended on a rate being available.
+    The rate comes from the practice's own table. A currency with no rate in it
+    is simply quoted in rupees — which is what every currency did before there
+    was anywhere to keep one, and is never wrong, only less helpful.
+
+    Read failures are swallowed on purpose. The tier rules do not depend on a
+    rate, so a database hiccup should cost the conversion and nothing else:
+    prices still render, in the currency they are actually billed in.
   */
-  const view = pricingFor(content.slidingScale, country, null);
+  const currency = currencyForCountry(country);
+  const rate = await rateFor(currency).catch((error) => {
+    log.error("pricing.rate_unreadable", { currency, ...errorFields(error) });
+    return null;
+  });
+
+  const view = pricingFor(content.slidingScale, country, rate);
 
   return NextResponse.json(view, {
     headers: {
