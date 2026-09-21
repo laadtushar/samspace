@@ -47,15 +47,12 @@ const nextConfig = {
       },
     ];
   },
-  images: {
-    remotePatterns: [
-      {
-        // Blog cover images are uploaded to Vercel Blob's public CDN.
-        protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
-      },
-    ],
-  },
+  /*
+    No remotePatterns. Blog images are stored in Postgres and served from
+    /media on this origin, which next/image optimises without being told about
+    a host — one fewer place for an image to come from, and nothing to keep in
+    step with a storage provider.
+  */
 };
 
 // withBotId adds the proxy rewrites BotID needs to classify traffic.

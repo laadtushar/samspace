@@ -261,8 +261,6 @@ export default function AdminPage() {
   const [savingSession, setSavingSession] = useState<string | null>(null);
   const [bookFor, setBookFor] = useState("");
   const [bookAt, setBookAt] = useState("");
-  const [migrating, setMigrating] = useState(false);
-  const [migrateMessage, setMigrateMessage] = useState("");
 
   // ─── Blog editor state ───────────────────────────
   const [blogView, setBlogView] = useState<"list" | "editor">("list");
@@ -528,25 +526,6 @@ export default function AdminPage() {
       else setSaveError("Connection error — nothing was saved.");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleMigrate = async () => {
-    setMigrating(true);
-    setMigrateMessage("");
-    try {
-      const res = await apiFetch("/api/admin/migrate", { method: "POST" });
-      const body = await res.json().catch(() => null);
-      setMigrateMessage(
-        res.ok
-          ? body?.message || "Migration finished."
-          : body?.error || "Migration failed."
-      );
-    } catch (err) {
-      if (err instanceof SessionExpired) endSession();
-      else setMigrateMessage("Connection error — nothing was migrated.");
-    } finally {
-      setMigrating(false);
     }
   };
 
@@ -2492,32 +2471,6 @@ export default function AdminPage() {
                     />
                   </ContentSection>
 
-                  <ContentSection title="Maintenance">
-                <div>
-                  <p className="font-sans text-xs text-forest/40 mb-2 max-w-xl leading-relaxed">
-                    Older submissions were stored in public storage. This moves any
-                    that remain into private storage and removes the public copy.
-                    Safe to run more than once.
-                  </p>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={handleMigrate}
-                      disabled={migrating}
-                      className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors disabled:opacity-60"
-                    >
-                      {migrating ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Upload className="w-3.5 h-3.5" />
-                      )}
-                      Migrate legacy submissions
-                    </button>
-                    {migrateMessage && (
-                      <span className="font-sans text-xs text-forest/50">{migrateMessage}</span>
-                    )}
-                  </div>
-                </div>
-                  </ContentSection>
                 </div>
               </div>
             )}

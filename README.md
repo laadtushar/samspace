@@ -24,18 +24,17 @@ npm run dev
 
 Open http://localhost:3000. The dashboard is at http://localhost:3000/admin.
 
-Without `BLOB_READ_WRITE_TOKEN` the site still renders — content falls back to
-the defaults in `lib/content.ts` — but nothing can be saved.
+Without `DATABASE_URL` the site still renders — content falls back to the
+shipped copy in `lib/default-content.ts`, which is a working site rather than an
+empty one — but nothing can be saved and the dashboard's lists are empty.
 
 ## Environment variables
 
-Every variable is documented in [`.env.example`](.env.example). The three that
+Every variable is documented in [`.env.example`](.env.example). The two that
 must be set for the site to be usable in production:
 
 - `DATABASE_URL` — Neon Postgres. Migrations run from the build script, so a
   deployment without it fails at build rather than quietly at runtime.
-- `BLOB_READ_WRITE_TOKEN` — Vercel Blob storage. Set automatically when a Blob
-  store is linked to the project on Vercel.
 - `ADMIN_PASSWORD` — the bootstrap way into the dashboard, and only until the
   first real account exists. Once one administrator has a password and is
   enabled it stops being accepted, because keeping it alive alongside real
@@ -61,82 +60,94 @@ Two stores, and which one holds what matters.
 reminders, administrator accounts — and the blog. Schema in `db/migrations/`,
 applied at deploy time by `scripts/migrate.mjs` against a `_migrations` ledger.
 
-**Vercel Blob** holds site content, images, and the submissions archive.
+Postgres holds everything. There is no second store.
 
-| What | Where | Access |
-| --- | --- | --- |
-| Blog posts | Postgres, `blog_posts` | access-controlled |
-| Intake submissions | Postgres, `submissions` | access-controlled |
-| Site content | blob, `site-content.json` | public |
-| Blog images | blob, `blog-images/*` | public |
-| Submissions archive | blob, `submissions/<timestamp>-<id>.json` | **encrypted** |
+| What | Where |
+| --- | --- |
+| Blog posts | Postgres, `blog_posts` |
+| Intake submissions | Postgres, `submissions` |
+| Site content | Postgres, `site_content` |
+| Blog images | Postgres, `blog_images`, served from `/media/<id>` |
 
-### Why the blog moved
+### Why there is only one store
 
-Blob is billed per request, and reading the blog cost a list plus one request
-per post — seven posts was eight requests, from the homepage, the archive,
-every post page, the sitemap and the feed. That is what took the account to 75%
-of a monthly free tier. One query returns the same rows.
+Everything used to live in Vercel Blob. Blob is billed **per operation**, and
+the reads added up in a way that had nothing to do with traffic: content was
+read by ten routes, each read was a `head` plus a `fetch`, and the cache key was
+scoped to the build so every deployment started cold. Reading the blog cost a
+list plus one request per post. That spent a monthly allowance in a fortnight —
+two visitors in the hour the limit was reached.
 
-Posts are stored in plain text there, unlike in blob. They were encrypted
-because the blob store is public at the store level — its access level is fixed
-at creation, every object is fetchable by anyone holding its URL, and a draft is
-hidden from the site but not from storage. A database reached with a connection
-string has none of those properties, so the encryption was guarding against
-something that is no longer true.
+Going over does not throttle the store, it **pauses** it. Every read began
+answering 403, and because content was the only copy of the booking link and the
+WhatsApp handle, the live site served its shipped defaults to everyone with no
+way to book. The dashboard returned 500 on the one request every tab waits for,
+so the practitioner could not reach the blog, the clients or the sessions
+either — all of which were in Postgres and working the whole time.
 
-Blob is still read for posts in two cases: when no database is configured at all
-(a fresh clone, local development, CI), and while `blog_posts` is still empty.
-In that second case the rows are copied across on the way past. That backfill is
-not a convenience — without it there is a state that loses posts, where the
-first edit after deploying writes one row, reads switch to the database because
-it is no longer empty, and every other post disappears from the site.
-`tests/blog-backfill.test.ts` covers exactly that sequence.
+A second store bought no reliability here. It bought two ways for the same
+question to be answered differently, and a state where the copy that mattered
+was the one that could not be read. So there is one store, and the failure modes
+are the ones a database has.
+
+Posts are stored in plain text, where in blob they were encrypted. That was not
+a downgrade: blob fixes a store's access level at creation and this project's
+was public, so every object was fetchable by anyone holding its URL and a draft
+was hidden from the site but not from storage. Confidentiality had to live in
+the payload. A database reached with a connection string has none of those
+properties.
+
+### Images
+
+Blog images are bytes in `blog_images`, served from `/media/<id>`.
+
+Two details that are easy to get wrong. The serving route is deliberately **not**
+under `/api`: `next.config.mjs` sets `Cache-Control: no-store` on every `/api`
+path, which is right for an endpoint that reads a client list and exactly wrong
+for a picture, where it would put a database read in front of every view on
+every page. And an id is generated rather than taken from the uploaded filename
+— the id becomes the URL, so accepting the filename would let whoever is posting
+choose a path, and two uploads of `cover.png` would collide and quietly replace
+one another.
+
+Because an id never names different bytes, the response is immutable in the
+strict sense and is cached for a year. The database is asked once per image per
+edge location.
+
+Uploads are restricted to administrators, checked server-side for type and size:
+the file input's `accept` attribute is a hint to the file picker, not a control.
+What is served is sandboxed by `Content-Security-Policy` and sent with
+`nosniff`, because an SVG is a script host and one served from this origin could
+otherwise read the admin session.
 
 ### Caching
 
-Site content still comes from blob and is read by every public page, so it goes
-through `unstable_cache` with an hour's lifetime. Every write clears its tag
-(`bustCache`), so an edit still appears immediately;
-`tests/cache-invalidation.test.ts` pins that, because a write path that skipped
-it would look like a broken site rather than a warm cache.
+Content is read by every public page, so it goes through `unstable_cache` with
+an hour's lifetime. Every write clears its tag (`bustCache`), so an edit appears
+immediately; `tests/cache-invalidation.test.ts` pins that, because a write path
+that skipped it would look like a broken site rather than a warm cache.
 
 The cache key includes the commit sha. Without it an entry outlives the
 deployment that wrote it, and a deployment that adds a field goes on serving an
 object shaped by the previous one — which happened, and presented as new copy
 simply not appearing.
 
+`publicContent` is the accessor every public page uses. It falls back to the
+shipped copy when the store cannot be read, and — this is the part worth knowing
+— it **rethrows Next's own signals** rather than answering them with the
+fallback. A bare `catch` around the read swallows `DYNAMIC_SERVER_USAGE`, which
+is not a failure but Next asking for the route to be rendered on demand.
+Answering it with the defaults does not degrade the page, it changes what the
+page is: Next prerenders happily, and what it prerenders is the fallback, frozen
+into the deployment until the next one. That is exactly how the shipped defaults
+ended up on the live homepage.
+
 The dashboard deliberately reads `getContent` and `getAllPosts` uncached: it has
-to show what is stored, not what was stored an hour ago.
-
-Two decisions worth knowing about:
-
-**Submissions are encrypted and one-blob-per-record.** They contain
-mental-health information. Vercel Blob fixes a store's access level when the
-store is created, and this project's store is public — `access: "private"` is
-rejected outright — so every object is fetchable by anyone holding its URL no
-matter what the code asks for. Confidentiality therefore lives in the payload:
-records are encrypted with AES-256-GCM (`lib/crypto.ts`) before being written,
-which makes the URL worthless without `SUBMISSIONS_ENCRYPTION_KEY`. Blog posts
-are encrypted the same way so drafts are not readable from storage.
-
-Each submission is also its own object — the earlier design appended to a
-single shared JSON document, which meant two people submitting at the same
-moment could overwrite each other and a transient read failure could replace
-the whole history with one record.
-
-If you would rather rely on access control than on encryption, create a store
-with `vercel blob create-store <name> --access private` and point the project
-at it. Note that blog cover images would then need to be served through an API
-route, since a private store has no public CDN URLs.
-
-**If you are upgrading an existing deployment**, submissions written before this
-change are still in a public blob at `intake-submissions.json`. Log into
-`/admin`, open the Submissions tab, and use **Migrate legacy submissions** — it
-copies them into private storage and deletes the public copy. That file was
-readable by anyone who knew its URL, so afterwards rotate
-`BLOB_READ_WRITE_TOKEN` in the Vercel dashboard and treat the old contents as
-disclosed.
+to show what is stored, not what was stored an hour ago. When the store cannot
+be read it is served the shipped copy with an `X-Content-Stored: false` header
+and shows a banner saying so — it opens during an outage rather than locking its
+owner out, and the protection moves to the save, which is then a decision rather
+than an accident.
 
 ## Sliding scale and the student rate
 

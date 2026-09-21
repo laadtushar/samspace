@@ -10,7 +10,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  * cannot reach a therapist.
  */
 
-const addSubmission = vi.fn();
 const recordSubmission = vi.fn();
 const sendEmail = vi.fn();
 const isLikelyBot = vi.fn();
@@ -36,7 +35,6 @@ vi.mock("@/lib/content", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/content")>();
   return {
     ...actual,
-    addSubmission: (...a: unknown[]) => addSubmission(...a),
     getCachedContent: () => siteContent(),
   };
 });
@@ -91,7 +89,6 @@ beforeEach(() => {
     return resolveContentTokens(defaultContent);
   });
   databaseConfigured = true;
-  addSubmission.mockReset().mockResolvedValue(undefined);
   recordSubmission.mockReset().mockResolvedValue("client-1");
   sendEmail.mockReset().mockResolvedValue({ sent: true });
   isLikelyBot.mockReset().mockResolvedValue(false);
@@ -105,9 +102,9 @@ describe("POST /api/intake", () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.ref).toBeTruthy();
-    expect(addSubmission).toHaveBeenCalledTimes(1);
+    expect(recordSubmission).toHaveBeenCalledTimes(1);
 
-    const stored = addSubmission.mock.calls[0][0];
+    const stored = recordSubmission.mock.calls[0][0];
     expect(stored.name).toBe("Test Person");
     expect(stored.id).toBeTruthy();
     expect(stored.timestamp).toBeTruthy();
@@ -124,74 +121,45 @@ describe("POST /api/intake", () => {
     sendEmail.mockResolvedValue({ sent: false, error: "provider down" });
     const res = await POST(post(valid));
     expect(res.status).toBe(200);
-    expect(addSubmission).toHaveBeenCalledTimes(1);
+    expect(recordSubmission).toHaveBeenCalledTimes(1);
   });
 
-  it("fails loudly and does not claim success when nowhere will take it", async () => {
-    addSubmission.mockRejectedValue(new Error("blob exploded"));
+  it("fails loudly and does not claim success when the store refuses", async () => {
+    /*
+      There is one store now. Telling someone their enquiry arrived when it did
+      not is worse than asking them to try again, so a failed write fails the
+      request rather than being logged and swallowed.
+    */
     recordSubmission.mockRejectedValue(new Error("database down"));
     const res = await POST(post(valid));
     const body = await res.json();
+
     expect(res.status).toBe(500);
     expect(body.success).toBeUndefined();
     expect(body.ref).toBeTruthy();
   });
 
-  it("keeps the submission when blob refuses but the database accepts", async () => {
-    /*
-      The case this exists for. Blob began answering 403, and every enquiry
-      arriving while it does was refused with a 500 — someone told to try again,
-      nothing kept — although Postgres was up and stores every field of a
-      submission rather than a reduced copy.
-    */
-    addSubmission.mockRejectedValue(new Error("Blob fetch failed: 403"));
-    const res = await POST(post(valid));
-
-    expect(res.status).toBe(200);
-    expect((await res.json()).success).toBe(true);
-    expect(recordSubmission).toHaveBeenCalledTimes(1);
-    expect(recordSubmission.mock.calls[0][0].email).toBe("test@example.com");
-  });
-
-  it("keeps the submission when the database refuses but blob accepts", async () => {
-    // The direction that already worked, held in place: an unreachable or
-    // unmigrated database must not cost anyone their enquiry either.
-    recordSubmission.mockRejectedValue(new Error("relation does not exist"));
-    const res = await POST(post(valid));
-
-    expect(res.status).toBe(200);
-    expect((await res.json()).success).toBe(true);
-    expect(addSubmission).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not treat an absent database as a store that refused", async () => {
-    /*
-      A fresh clone configures no database, and blob alone is then the whole
-      answer. "Not configured" must not count as a store that accepted the
-      record, or a blob failure would be reported as success and the submission
-      would be gone with the person told it arrived.
-    */
+  it("refuses rather than accepting an enquiry with nowhere to put it", async () => {
+    // No database configured is not "saved somewhere else" — it is nowhere.
+    // Reporting success would lose the enquiry and tell the person it arrived.
     databaseConfigured = false;
-    addSubmission.mockRejectedValue(new Error("blob exploded"));
     const res = await POST(post(valid));
 
     expect(res.status).toBe(500);
     expect(recordSubmission).not.toHaveBeenCalled();
   });
 
-  it("still writes both stores when both are working", async () => {
-    const res = await POST(post(valid));
-    expect(res.status).toBe(200);
-    expect(addSubmission).toHaveBeenCalledTimes(1);
-    expect(recordSubmission).toHaveBeenCalledTimes(1);
-  });
-
-  it("emails the therapist even when blob refused the archive", async () => {
-    // The email is the notification the practice actually acts on, and the
-    // record exists in Postgres by this point.
-    addSubmission.mockRejectedValue(new Error("Blob fetch failed: 403"));
+  it("records every field of the submission, not a reduced copy", async () => {
+    // What made one store sufficient: the row carries everything the archive
+    // used to, so nothing is lost by there no longer being a second copy.
     await POST(post(valid));
-    expect(sendEmail).toHaveBeenCalledTimes(2);
+    const stored = recordSubmission.mock.calls[0][0];
+
+    expect(stored.email).toBe("test@example.com");
+    expect(stored.concerns).toBe(valid.concerns);
+    expect(stored.slidingScale).toBe("₹800");
+    expect(stored.timestamp).toBeTruthy();
+    expect(stored.id).toBeTruthy();
   });
 
   it("refuses the student rate without confirmation, and stores nothing", async () => {
@@ -199,7 +167,7 @@ describe("POST /api/intake", () => {
     const body = await res.json();
     expect(res.status).toBe(400);
     expect(body.error).toMatch(/student/i);
-    expect(addSubmission).not.toHaveBeenCalled();
+    expect(recordSubmission).not.toHaveBeenCalled();
   });
 
   it("accepts the student rate once confirmed and records the confirmation", async () => {
@@ -207,12 +175,12 @@ describe("POST /api/intake", () => {
       post({ ...valid, slidingScale: "₹500 (Student)", studentConfirmed: true })
     );
     expect(res.status).toBe(200);
-    expect(addSubmission.mock.calls[0][0].studentConfirmed).toBe(true);
+    expect(recordSubmission.mock.calls[0][0].studentConfirmed).toBe(true);
   });
 
   it("never marks a paid rate as a student confirmation", async () => {
     await POST(post({ ...valid, studentConfirmed: true }));
-    expect(addSubmission.mock.calls[0][0].studentConfirmed).toBe(false);
+    expect(recordSubmission.mock.calls[0][0].studentConfirmed).toBe(false);
   });
 
   it("rejects a cross-origin post with a reference", async () => {
@@ -220,14 +188,14 @@ describe("POST /api/intake", () => {
     const body = await res.json();
     expect(res.status).toBe(403);
     expect(body.ref).toBeTruthy();
-    expect(addSubmission).not.toHaveBeenCalled();
+    expect(recordSubmission).not.toHaveBeenCalled();
   });
 
   it("rejects a request the bot check refuses", async () => {
     isLikelyBot.mockResolvedValue(true);
     const res = await POST(post(valid));
     expect(res.status).toBe(403);
-    expect(addSubmission).not.toHaveBeenCalled();
+    expect(recordSubmission).not.toHaveBeenCalled();
   });
 
   it("returns a usable message and reference on validation failure", async () => {
@@ -275,7 +243,7 @@ describe("the chosen rate is one the practice offers", () => {
     expect(await res.json()).toMatchObject({
       error: expect.stringContaining("not one currently offered"),
     });
-    expect(addSubmission).not.toHaveBeenCalled();
+    expect(recordSubmission).not.toHaveBeenCalled();
   });
 
   it("refuses a rate that is merely close to a real one", async () => {

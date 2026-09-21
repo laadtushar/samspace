@@ -3,11 +3,7 @@ import { isLikelyBot } from "@/lib/bot-check";
 import { log, newRef, errorFields } from "@/lib/log";
 import { dbConfigured } from "@/lib/db";
 import { recordSubmission } from "@/lib/practice";
-import {
-  addSubmission,
-  getCachedContent,
-  type IntakeSubmission,
-} from "@/lib/content";
+import { getCachedContent, type IntakeSubmission } from "@/lib/content";
 import { intakeSchema, firstIssue } from "@/lib/validation";
 import { rateLimit, clientKey, isSameOrigin } from "@/lib/rate-limit";
 import {
@@ -177,52 +173,35 @@ export async function POST(req: Request) {
   };
 
   /*
-    The submission is written to both stores, and survives if either accepts it.
+    One store. The submission used to be written to blob and then to Postgres,
+    and for a while to either — which was the right answer while both existed
+    and blob was refusing. Blob is gone now, and Postgres holds every field of a
+    submission rather than a reduced copy.
 
-    It used to be blob first and fatally, with the database as a non-fatal
-    extra, on the reasoning that blob was "the path known to work". That
-    reasoning expired: blob began answering 403, and every enquiry arriving
-    while it does would have been refused with a 500 — someone told to try again
-    with nothing kept — although Postgres was up and already stores every field
-    of a submission, not a reduced copy of one.
-
-    Neither store is the one that matters, so neither gets to be the one that
-    loses the record. Both are attempted at once, because a person is waiting on
-    the response, and it is only a failure when both refuse.
+    A failure here is fatal to the request, deliberately. There is nowhere else
+    for the record to be, and telling someone their enquiry arrived when it did
+    not is worse than asking them to try again.
   */
-  const [archived, recorded] = await Promise.all([
-    attempt(() => addSubmission(submission)),
-    dbConfigured()
-      ? attempt(() => recordSubmission(submission))
-      : skipped<string>(),
-  ]);
-
-  if (archived.ok) log.info("intake.stored", { ref, id: submission.id });
-  else {
-    log.error("intake.store_failed", {
-      ref,
-      id: submission.id,
-      ...errorFields(archived.error),
-    });
-  }
+  const recorded = await (dbConfigured()
+    ? attempt(() => recordSubmission(submission))
+    : skipped<string>());
 
   if (recorded.ok) {
-    log.info("intake.db_recorded", {
+    log.info("intake.stored", {
       ref,
       id: submission.id,
       clientId: recorded.value,
     });
-  } else if (!recorded.skipped) {
-    log.error("intake.db_record_failed", {
-      ref,
-      id: submission.id,
-      ...errorFields(recorded.error),
-    });
-  }
-
-  if (!archived.ok && !recorded.ok) {
-    // Nowhere. This is the only outcome the person must be told about, and the
-    // one line to search for when someone says their form would not send.
+  } else {
+    if (recorded.skipped) log.error("intake.no_database", { ref });
+    else {
+      log.error("intake.store_failed", {
+        ref,
+        id: submission.id,
+        ...errorFields(recorded.error),
+      });
+    }
+    // The one line to search for when someone says their form would not send.
     log.error("intake.unsaved", { ref, id: submission.id });
     return NextResponse.json(
       {

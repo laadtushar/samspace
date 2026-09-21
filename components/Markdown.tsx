@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";
+import { MEDIA_PREFIX } from "@/lib/media";
 
 /**
  * Renders post markdown.
@@ -87,12 +88,15 @@ export default function Markdown({ children }: { children: string }) {
               {children}
             </td>
           ),
-          // next/image can only optimise hosts listed in next.config's
-          // remotePatterns; an image pasted from anywhere else still has to
-          // render, so it falls back to a plain tag.
+          /*
+            next/image can only optimise an image it is allowed to fetch. Ours
+            live on this origin under /media, so those are optimised; an image
+            pasted from anywhere else — including one still pointing at the old
+            blob CDN — still has to render, and falls back to a plain tag.
+          */
           img: ({ src, alt }) => {
             if (typeof src !== "string") return null;
-            const optimisable = src.includes(".public.blob.vercel-storage.com");
+            const optimisable = src.startsWith(MEDIA_PREFIX);
             return optimisable ? (
               <Image
                 src={src}

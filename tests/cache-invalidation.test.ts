@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * Blob is billed per request, so public reads are cached for an hour. That is
- * only safe while every write clears the tag — otherwise an edit saved in the
- * dashboard would not appear for up to an hour, which reads as "the site is
- * broken" rather than "the cache is warm".
+ * Public reads are cached for an hour, so the database is asked once rather
+ * than on every render. That is only safe while every write clears the tag —
+ * otherwise an edit saved in the dashboard would not appear for up to an hour,
+ * which reads as "the site is broken" rather than "the cache is warm".
  *
  * These pin the wiring, so a write path added later cannot quietly skip it.
  */
@@ -16,29 +16,38 @@ vi.mock("next/cache", () => ({
   unstable_cache: (fn: (...a: unknown[]) => unknown) => fn,
 }));
 
-const writePublicJson = vi.fn(async () => {});
-const writeConfidentialJson = vi.fn(async () => {});
-const deleteBlob = vi.fn(async () => {});
-vi.mock("@/lib/blob", () => ({
-  writePublicJson: (...a: unknown[]) => writePublicJson(...(a as [])),
-  readPublicJson: async (_k: string, fallback: unknown) => fallback,
-  writeConfidentialJson: (...a: unknown[]) => writeConfidentialJson(...(a as [])),
-  readConfidentialJson: async (_k: string, fallback: unknown) => fallback,
-  listBlobs: async () => [],
-  deleteBlob: (...a: unknown[]) => deleteBlob(...(a as [])),
+/*
+  The database stands in for itself: every statement is recorded and answers
+  with nothing. What is being checked is the wiring around the write, not the
+  SQL, and a real connection would make these tests need one.
+*/
+const statements = vi.fn();
+vi.mock("@/lib/db", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db")>()),
+  dbConfigured: () => true,
+  sql: () => {
+    const tagged = async (strings: TemplateStringsArray, ...values: unknown[]) => {
+      statements(strings.join("?"), values);
+      return [];
+    };
+    tagged.query = async (text: string, params?: unknown[]) => {
+      statements(text, params ?? []);
+      return [];
+    };
+    return tagged as never;
+  },
 }));
 
 beforeEach(() => {
   revalidateTag.mockClear();
-  writePublicJson.mockClear();
-  writeConfidentialJson.mockClear();
+  statements.mockClear();
 });
 
 describe("a write clears the cache it would otherwise outlive", () => {
   it("clears site content when content is saved", async () => {
     const { saveContent, defaultContent, CONTENT_TAG } = await import("@/lib/content");
     await saveContent(defaultContent);
-    expect(writePublicJson).toHaveBeenCalled();
+    expect(statements).toHaveBeenCalled();
     expect(revalidateTag).toHaveBeenCalledWith(CONTENT_TAG);
   });
 
@@ -74,7 +83,7 @@ describe("clearing the cache cannot undo a write", () => {
     });
     const { saveContent, defaultContent } = await import("@/lib/content");
     await expect(saveContent(defaultContent)).resolves.toBeUndefined();
-    expect(writePublicJson).toHaveBeenCalled();
+    expect(statements).toHaveBeenCalled();
   });
 });
 

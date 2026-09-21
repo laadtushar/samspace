@@ -1,11 +1,5 @@
 import { unstable_cache } from "next/cache";
 import { BUILD_ID } from "@/lib/build-id";
-import {
-  readConfidentialJson,
-  writeConfidentialJson,
-  listBlobs,
-  deleteBlob,
-} from "@/lib/blob";
 import { bustCache } from "@/lib/content";
 import { sql, dbConfigured } from "@/lib/db";
 import { log, errorFields, newRef } from "@/lib/log";
@@ -23,22 +17,13 @@ export type { BlogPost } from "@/lib/blog-format";
  * meant reading the blog cost a list plus one request per post — and blob is
  * billed per request. One query returns the same rows.
  *
- * Blob is still read when there is no database configured (a fresh clone, local
- * development, CI) and while the table is still empty, so nothing breaks
- * between this deploying and the rows arriving. See backfillFromBlob.
+ * Postgres, and only Postgres. Posts used to live in the blob store, which
+ * passed its limit and began answering 403 on every read; the rows moved across
+ * and the fallback has been removed with it.
  *
  * The slug is the identity. Renaming one moves the row rather than leaving a
  * copy behind, which keeps "one post, one URL" true.
  */
-
-const POSTS_PREFIX = "blog/";
-
-const postPath = (slug: string) => `${POSTS_PREFIX}${slug}.json`;
-
-async function readPost(pathname: string): Promise<BlogPost | null> {
-  return readConfidentialJson<BlogPost | null>(pathname, null);
-}
-
 
 // ─── Postgres ──────────────────────────────────────
 
@@ -166,40 +151,20 @@ async function backfillFromBlob(posts: BlogPost[]): Promise<void> {
   log.info("blog.backfilled", { ref, count: posts.length });
 }
 
-// ─── Blob, for as long as it is still needed ───────
-
-async function postsFromBlob(): Promise<BlogPost[]> {
-  const blobs = await listBlobs(POSTS_PREFIX);
-  const posts = await Promise.all(blobs.map((b) => readPost(b.pathname)));
-  return posts.filter((p): p is BlogPost => p !== null).sort(byRecency);
-}
-
 /**
- * Every post, drafts included. Admin only.
+ * Every post, drafts included.
  *
- * Database first. Blob only when there is no database at all, or while the
- * table is still empty — and in that second case the rows are copied across on
- * the way past, so it happens once.
+ * Empty without a database, rather than throwing. A fresh clone, local
+ * development and the CI build all run without one, and a build that renders
+ * the archive has to be able to render it with nothing in it.
+ *
+ * "No posts" and "cannot see the posts" do still look identical on a screen,
+ * and the difference still matters — but that is the dashboard's question to
+ * ask, and it asks it with `dbConfigured` before calling this.
  */
 export async function getAllPosts(): Promise<BlogPost[]> {
-  if (!dbConfigured()) return postsFromBlob();
-
-  const stored = await postsFromDb();
-  if (stored.length > 0) return stored;
-
-  // Empty table: either nothing has ever been written, or this is the first
-  // read after the move. Blob answers both.
-  const fromBlob = await postsFromBlob();
-  if (fromBlob.length === 0) return [];
-
-  try {
-    await backfillFromBlob(fromBlob);
-  } catch (error) {
-    // The posts are still correct; only the copy failed. Serving them matters
-    // more than where they came from, and the next read tries again.
-    log.error("blog.backfill_failed", { ...errorFields(error) });
-  }
-  return fromBlob;
+  if (!dbConfigured()) return [];
+  return postsFromDb();
 }
 
 /** Published posts only, newest first. Safe for public pages. */
@@ -226,19 +191,18 @@ export async function getPublishedPosts(): Promise<BlogPost[]> {
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
-  if (!dbConfigured()) return readPost(postPath(slug));
+  // Same as above: without a database there are no posts, which is a state a
+  // build has to be able to render rather than fail on.
+  if (!dbConfigured()) return null;
 
   const rows = (await sql().query(
     `select ${COLUMNS} from blog_posts where lower(slug) = lower($1) limit 1`,
     [slug]
   )) as Record<string, unknown>[];
-  if (rows.length > 0) return rowToPost(rows[0]);
 
-  // Not in the table. Before the backfill has run that is expected rather than
-  // a missing post, so blob still answers — and going through getAllPosts means
-  // the trip also performs the copy.
-  const all = await getAllPosts();
-  return all.find((p) => p.slug.toLowerCase() === slug.toLowerCase()) ?? null;
+  // No row is a missing post, plainly. There is no second store left where it
+  // might still be hiding, so null means null.
+  return rows.length > 0 ? rowToPost(rows[0]) : null;
 }
 
 /** Published post by slug — what the public route should use. */
@@ -286,12 +250,7 @@ export async function savePost(
     */
     await writePostToDb(post);
   } else {
-    await writeConfidentialJson(postPath(post.slug), post);
-    // Without a database the old object is a real file, and leaving it behind
-    // would serve a stale duplicate at the old URL.
-    if (input.previousSlug && input.previousSlug !== post.slug) {
-      await deleteBlob(postPath(input.previousSlug));
-    }
+    throw new Error("No database configured — set DATABASE_URL to save posts.");
   }
 
   bustCache(POSTS_TAG);
@@ -299,20 +258,12 @@ export async function savePost(
 }
 
 export async function deletePost(slug: string): Promise<void> {
-  if (dbConfigured()) {
-    await sql().query(`delete from blog_posts where lower(slug) = lower($1)`, [
-      slug,
-    ]);
-    /*
-      The blob copy goes too, when there is one. Leaving it would mean a post
-      deleted from the dashboard reappearing the next time the table was empty
-      — which the backfill above makes a reachable state, not a theoretical
-      one. A missing object is not an error here.
-    */
-    await deleteBlob(postPath(slug)).catch(() => {});
-  } else {
-    await deleteBlob(postPath(slug));
+  if (!dbConfigured()) {
+    throw new Error("No database configured — set DATABASE_URL to delete posts.");
   }
+  await sql().query(`delete from blog_posts where lower(slug) = lower($1)`, [
+    slug,
+  ]);
   bustCache(POSTS_TAG);
 }
 
