@@ -3,6 +3,7 @@ import { fillDeep, rateValues } from "@/lib/tokens";
 import { safeWhatsappLink } from "@/lib/whatsapp";
 import { BUILD_ID } from "@/lib/build-id";
 import { log, errorFields } from "@/lib/log";
+import { sql, dbConfigured } from "@/lib/db";
 import { defaultContent, type SiteContent } from "@/lib/default-content";
 import {
   readConfidentialJson,
@@ -126,8 +127,98 @@ export function mergeContent(stored: unknown): SiteContent {
   return merged as unknown as SiteContent;
 }
 
+/**
+ * What a database read came back with.
+ *
+ * Three outcomes, not two, and the distinction is the whole reason this type
+ * exists. "Stored" and "empty" are both successful reads; "unreadable" is not,
+ * and treating it as empty would let a transient error copy stale blob content
+ * over content the database already holds. That is silent data loss, so the
+ * caller is made to tell them apart.
+ */
+type DbRead =
+  | { state: "stored"; content: unknown }
+  | { state: "empty" }
+  | { state: "unreadable" };
+
+async function contentFromDb(): Promise<DbRead> {
+  try {
+    const rows = (await sql()`
+      select content from site_content where id = 'site'
+    `) as unknown as { content: unknown }[];
+    const content = rows[0]?.content;
+    return content == null ? { state: "empty" } : { state: "stored", content };
+  } catch (error) {
+    // Reachable on a first deployment whose migration has not run yet, and on
+    // any ordinary outage. Neither should take the site down on its own.
+    log.error("content.db_read_failed", errorFields(error));
+    return { state: "unreadable" };
+  }
+}
+
+async function writeContentToDb(content: SiteContent): Promise<void> {
+  await sql()`
+    insert into site_content (id, content, updated_at)
+    values ('site', ${JSON.stringify(content)}::jsonb, now())
+    on conflict (id) do update
+      set content = excluded.content, updated_at = now()
+  `;
+}
+
+/**
+ * Copies content out of blob the first time the database is asked for it.
+ *
+ * Not a convenience. Without it there is a state that loses everything: the
+ * table empty and blob holding the real content, the dashboard opening on the
+ * shipped defaults because the blob read failed, and the first save writing
+ * those defaults in as though they were the content. The booking link, the
+ * WhatsApp handle and every edited word would be gone, with nothing to show
+ * that anything had been overwritten.
+ *
+ * Only ever called for a read that succeeded and found nothing. Best effort on
+ * the way past: a failure to copy still serves what it read.
+ */
+async function backfillFromBlob(stored: unknown): Promise<void> {
+  try {
+    await writeContentToDb(mergeContent(stored));
+    log.info("content.backfilled");
+  } catch (error) {
+    log.warn("content.backfill_failed", errorFields(error));
+  }
+}
+
+/**
+ * Content as stored, from wherever it lives.
+ *
+ * The database first, because blob is billed per operation and content is read
+ * on every deployment — ten routes read it, each read is a head plus a fetch,
+ * and the cache key is scoped to the build so every deployment starts cold.
+ * That is what spent a monthly allowance in a fortnight, with two visitors in
+ * the hour the limit was reached. A store that can be paused for going over
+ * must not be the only copy of the booking link.
+ *
+ * Blob stays as the layer underneath, for three situations: no database
+ * configured at all, which keeps a fresh clone, local development and CI
+ * working exactly as before; the table still empty, where the content is copied
+ * across on the way past; and a database that cannot be read, where whatever
+ * blob last held is closer to the truth than the shipped defaults are.
+ *
+ * Both stores failing is left to throw. `publicContent` turns that into the
+ * shipped copy for a visitor, while the dashboard is shown the error rather
+ * than an empty form it could save over the top of.
+ */
 export async function getContent(): Promise<SiteContent> {
+  if (!dbConfigured()) {
+    return mergeContent(await readPublicJson<unknown>(CONTENT_KEY, null));
+  }
+
+  const read = await contentFromDb();
+  if (read.state === "stored") return mergeContent(read.content);
+
   const stored = await readPublicJson<unknown>(CONTENT_KEY, null);
+  // Never on "unreadable": the database may hold newer content than blob does,
+  // and copying over it because one read failed is how an edit disappears.
+  if (read.state === "empty" && stored !== null) await backfillFromBlob(stored);
   return mergeContent(stored);
 }
 
@@ -198,8 +289,21 @@ export async function publicContent(): Promise<SiteContent> {
   }
 }
 
+/**
+ * Stores content wherever it is being read from.
+ *
+ * Deliberately not written to both. A save has to keep working while blob is
+ * paused — that is the state this move exists for — and a write to a store that
+ * refuses it would fail the save and lose the edit. Once there is a database it
+ * holds the copy that counts, and the blob object is left where it is as the
+ * record of what the content was when the move happened.
+ */
 export async function saveContent(content: SiteContent): Promise<void> {
-  await writePublicJson(CONTENT_KEY, content);
+  if (dbConfigured()) {
+    await writeContentToDb(content);
+  } else {
+    await writePublicJson(CONTENT_KEY, content);
+  }
   bustCache(CONTENT_TAG);
 }
 
