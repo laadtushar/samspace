@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — Threshold, filled tile</title>
+  <rect width="512" height="512" rx="128" fill="#2c3a2e"/>
+  <title>Samvriti.Space — Threshold</title>
+  <!-- A doorway with no door. The arch is the practice; the warm shape inside
+       is the light already on in the room. Open at the bottom: you can leave. -->
+  <path d="M148 409 L148 238 A108 108 0 0 1 364 238 L364 409"
+        fill="none" stroke="#f7f3ed" stroke-width="56" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="M218 409 L218 318 A38 38 0 0 1 294 318 L294 409 Z" fill="#d4956f"/>
+</svg>
