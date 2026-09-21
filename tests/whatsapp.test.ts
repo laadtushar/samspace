@@ -105,8 +105,20 @@ describe("the schema and the shipped defaults", () => {
     expect(withHandle.contact.whatsappLink).toBe("https://wa.me/samvriti");
   });
 
-  it("ships no WhatsApp link and no number of its own", () => {
-    expect(defaultContent.contact.whatsappLink).toBe("");
+  it("ships a handle and no number of its own", () => {
+    /*
+      The defaults used to ship no link at all. That read as the cautious choice
+      until storage became unreadable and every visitor was served this object
+      with the WhatsApp link missing — so the floor now carries the handle.
+
+      What must never ship is a number, and the sanitiser is the authority on
+      that: a value it returns unchanged has already been through the
+      seven-digit check.
+    */
+    expect(safeWhatsappLink(defaultContent.contact.whatsappLink)).toBe(
+      defaultContent.contact.whatsappLink
+    );
+    expect(defaultContent.contact.whatsappLink).not.toMatch(/\d{7,}/);
     expect(defaultContent.contact.phone).toBe("");
     // The crisis helplines are published on purpose; nothing else is.
     expect(withoutHelplines(defaultContent)).not.toMatch(/\+?9\d[\d\s-]{8,}/);
