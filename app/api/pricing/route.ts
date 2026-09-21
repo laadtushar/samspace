@@ -4,6 +4,7 @@ import { pricingFor } from "@/lib/pricing";
 import { publicContent } from "@/lib/content";
 import { currencyForCountry } from "@/lib/country-currency";
 import { rateFor } from "@/lib/fx-store";
+import { ruleFor } from "@/lib/country-store";
 import { log, errorFields } from "@/lib/log";
 
 /**
@@ -54,12 +55,25 @@ export async function GET(request: Request) {
     prices still render, in the currency they are actually billed in.
   */
   const currency = currencyForCountry(country);
-  const rate = await rateFor(currency).catch((error) => {
-    log.error("pricing.rate_unreadable", { currency, ...errorFields(error) });
-    return null;
-  });
 
-  const view = pricingFor(content.slidingScale, country, rate);
+  /*
+    Both reads swallow their failures, and for the same reason: neither the
+    rate nor the country's settings decide which tiers exist, so a database
+    hiccup should cost the conversion and nothing else. Prices still render,
+    in the currency they are actually billed in.
+  */
+  const [rate, rule] = await Promise.all([
+    rateFor(currency).catch((error) => {
+      log.error("pricing.rate_unreadable", { currency, ...errorFields(error) });
+      return null;
+    }),
+    ruleFor(country).catch((error) => {
+      log.error("pricing.country_unreadable", { country, ...errorFields(error) });
+      return null;
+    }),
+  ]);
+
+  const view = pricingFor(content.slidingScale, country, rate, { rule });
 
   return NextResponse.json(view, {
     headers: {

@@ -10,6 +10,7 @@ import { CONVERTED_NOTE } from "@/lib/pricing";
  */
 const siteContent = vi.fn();
 const storedRate = vi.fn();
+const storedRule = vi.fn();
 
 vi.mock("@/lib/content", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/content")>();
@@ -25,6 +26,23 @@ vi.mock("@/lib/fx-store", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/fx-store")>()),
   rateFor: (currency: string) => storedRate(currency),
 }));
+
+/*
+  Likewise the country settings. A rate existing is not a decision to quote in
+  it — the practice enables a country — so the route has to ask both, and a
+  test that only sets a rate is testing a country nobody turned on.
+*/
+vi.mock("@/lib/country-store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/country-store")>()),
+  ruleFor: (country: unknown) => storedRule(country),
+}));
+
+const enabled = (country: string) => ({
+  country,
+  enabled: true,
+  markupPercent: 0,
+  overrideScale: null,
+});
 
 const { GET } = await import("@/app/api/pricing/route");
 
@@ -42,6 +60,8 @@ beforeEach(() => {
   });
   // No rate stored is the default, and the honest answer then is rupees.
   storedRate.mockReset().mockResolvedValue(null);
+  // Nothing decided about any country is likewise the default: rupees.
+  storedRule.mockReset().mockResolvedValue(null);
 });
 
 describe("pricing a request", () => {
@@ -159,6 +179,7 @@ describe("a rate the practice has set", () => {
       this route passed null and every country was quoted in rupees.
     */
     storedRate.mockResolvedValue(manual("USD", 0.0115));
+    storedRule.mockResolvedValue(enabled("US"));
 
     const res = await ask("US");
     const view = await res.json();
@@ -175,6 +196,7 @@ describe("a rate the practice has set", () => {
     // The converted figure is guidance. The invoice is in rupees, and nothing
     // downstream may re-derive the amount from what was displayed.
     storedRate.mockResolvedValue(manual("USD", 0.0115));
+    storedRule.mockResolvedValue(enabled("US"));
 
     const view = await (await ask("US")).json();
     expect(view.tiers.map((t: { rupees: number }) => t.rupees)).toEqual([
@@ -186,6 +208,7 @@ describe("a rate the practice has set", () => {
     // Policy, not presentation. It is funded by Indian clients choosing to pay
     // more, and a rate feed coming up must never change who it is offered to.
     storedRate.mockResolvedValue(manual("USD", 0.0115));
+    storedRule.mockResolvedValue(enabled("US"));
 
     const view = await (await ask("US")).json();
     expect(view.tiers.some((t: { student: boolean }) => t.student)).toBe(false);
@@ -203,6 +226,7 @@ describe("a rate the practice has set", () => {
   it("stays in rupees when the rate is too old to quote", async () => {
     const old = new Date(Date.now() - 400 * 86_400_000).toISOString();
     storedRate.mockResolvedValue({ ...manual("USD", 0.0115), asOf: old });
+    storedRule.mockResolvedValue(enabled("US"));
 
     const view = await (await ask("US")).json();
     expect(view.currency).toBe("INR");
