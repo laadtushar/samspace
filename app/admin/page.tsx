@@ -191,6 +191,28 @@ async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * Site content, plus whether what came back is what is actually stored.
+ *
+ * The route serves the shipped copy when the store cannot be read, so the
+ * dashboard opens during an outage instead of showing one 500 across every tab.
+ * That only stays safe while the difference is visible: a save replaces the
+ * stored copy wholesale, and this flag is what stops that being an accident.
+ */
+async function fetchContent(): Promise<{
+  content: Record<string, unknown>;
+  stored: boolean;
+}> {
+  const res = await apiFetch("/api/admin/content");
+  if (!res.ok) {
+    throw new Error(await errorMessage(res, `Request failed (${res.status})`));
+  }
+  return {
+    content: (await res.json()) as Record<string, unknown>,
+    stored: res.headers.get("X-Content-Stored") !== "false",
+  };
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -213,6 +235,8 @@ export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>("submissions");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [submissionsIncomplete, setSubmissionsIncomplete] = useState<string[]>([]);
+  /** False when the editor is showing the shipped copy, not the saved one. */
+  const [contentStored, setContentStored] = useState(true);
   const [content, setContent] = useState<Record<string, unknown> | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
@@ -448,7 +472,7 @@ export default function AdminPage() {
     setLoadError("");
     Promise.all([
       apiJson<SubmissionsResponse>("/api/admin/submissions"),
-      apiJson<Record<string, unknown>>("/api/admin/content"),
+      fetchContent(),
       apiJson<BlogPost[]>("/api/admin/blog"),
     ])
       .then(([subs, cont, blog]) => {
@@ -461,7 +485,8 @@ export default function AdminPage() {
             ? subs.unavailable
             : []
         );
-        setContent(cont);
+        setContent(cont.content);
+        setContentStored(cont.stored);
         setPosts(Array.isArray(blog) ? blog : []);
         void refreshStarterCount();
       })
@@ -1371,6 +1396,21 @@ export default function AdminPage() {
                     )}
                   </button>
                 </div>
+
+                {!contentStored && (
+                  <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 mb-4 flex items-start gap-3">
+                    <AlertCircle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+                    <p className="font-sans text-sm text-amber-900 leading-relaxed">
+                      <strong>This is the built-in copy, not your saved
+                      content.</strong>{" "}
+                      Your saved version could not be read just now, so the
+                      fields below are the wording the site ships with. Nothing
+                      has been lost. If you save from here it will replace what
+                      was stored, so reload in a few minutes unless you mean to
+                      do that.
+                    </p>
+                  </div>
+                )}
 
                 {saveError && (
                   <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
