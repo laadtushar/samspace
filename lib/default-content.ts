@@ -266,8 +266,14 @@ export const defaultContent: SiteContent = {
     heading: "Ready to take the first step?",
     subtext: "Reach out to schedule your session. I'll respond within 24 hours.",
     email: "Priyankavarma785@gmail.com",
+    // Deliberately empty, and not to be filled in. The number is private: it is
+    // stripped from anything handed to the browser, and a default would put it
+    // into the HTML of every page on the day stored content stops being
+    // readable — which is exactly what address harvesters read.
     phone: "",
-    whatsappLink: "",
+    // Ships for the same reason the booking link does. A handle rather than a
+    // number, which is why this one is safe to render.
+    whatsappLink: "https://wa.me/samvriti.space",
   },
   social: {
     instagram: "https://www.instagram.com/samvriti.space",
@@ -349,7 +355,23 @@ export const defaultContent: SiteContent = {
     ],
   },
   slidingScale: [...DEFAULT_SLIDING_SCALE],
-  calendlyUrl: "",
+  /*
+    The booking link ships rather than starting empty.
+
+    These defaults are not a placeholder — they are what the site serves whenever
+    stored content cannot be read, and that is not hypothetical: the blob store
+    began answering 403 and every visitor got this object. An empty link here
+    switches the scheduling step off, so someone could fill in the whole intake
+    form with no way to book a time, on the one page the practice exists to be
+    found through.
+
+    A stored value still wins, so editing it in the dashboard works exactly as
+    before; this only decides what a visitor sees when nothing can be read. Kept
+    beside the rest of the shipped copy rather than read from the environment,
+    because this module is imported by the dashboard in the browser, where a
+    server variable resolves to undefined and the two would disagree.
+  */
+  calendlyUrl: "https://cal.id/samvriti.space/therapy-session",
   studentNote:
     "The student rate is kept low on purpose — so someone still studying, without their own income, never has to choose between therapy and affording the month. It works because the people who can pay a little more do. If you're earning, picking a higher rate quietly keeps this slot open for someone who genuinely can't. No proof is asked for. It runs on trust.",
 };

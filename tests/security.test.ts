@@ -12,6 +12,7 @@ import { safeEqual } from "@/lib/auth";
 import { defaultContent, toPublicContent } from "@/lib/content";
 import { serializeJsonLd } from "@/lib/site";
 import { safeProfileUrl, safeLinkHref } from "@/lib/validation";
+import { safeWhatsappLink } from "@/lib/whatsapp";
 import { splitStatements } from "../scripts/migrate.mjs";
 import { encryptJson, decryptJson, isEncrypted } from "@/lib/crypto";
 
@@ -177,14 +178,53 @@ function withoutHelplines(value: unknown): string {
   return serialised;
 }
 
+/**
+ * Every WhatsApp link in a serialised object, so each can be judged on its own.
+ *
+ * Scanning the whole blob for "a wa.me followed by digits" reads as stricter and
+ * is in fact wrong: JSON has no whitespace between fields, so the pattern runs
+ * past the end of the link and matches any number later in the document. Pulling
+ * the links out and checking each one asks the actual question.
+ */
+function whatsappLinksIn(value: unknown): string[] {
+  return JSON.stringify(value).match(/https:\/\/[\w.]*wa\.me\/[^"\\]*/g) ?? [];
+}
+
 describe("the practitioner's own number is not in the codebase", () => {
   it("ships no phone number in the defaults", () => {
     // It was in lib/content.ts, in a public repository, which is a worse
     // exposure than the redirect that was hiding it from the markup.
     const serialised = withoutHelplines(defaultContent);
     expect(serialised).not.toMatch(/\+?9\d[\d\s-]{8,}/);
-    expect(serialised).not.toContain("wa.me");
+    /*
+      This used to forbid the string "wa.me" outright. That was a proxy for the
+      rule, and a stricter one than the rule is: what must never ship is a
+      number, and lib/whatsapp.ts is explicit that a handle names the account
+      without naming the number, which is why it is safe in an href at all.
+
+      The defaults now carry a handle, because an empty one took the WhatsApp
+      link off the live site on the day storage stopped being readable. So the
+      assertion says what it means — no wa.me link with a number in it — using
+      the same seven-digit rule the production code enforces.
+    */
+    const links = whatsappLinksIn(defaultContent);
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link).not.toMatch(/\d{7,}/);
     expect(defaultContent.contact.phone).toBe("");
+  });
+
+  it("still catches a number smuggled in as a WhatsApp link", () => {
+    // Guarding the guard: the narrowed assertion above has to reject the thing
+    // the broad one was standing in for.
+    const links = whatsappLinksIn({
+      ...defaultContent,
+      contact: {
+        ...defaultContent.contact,
+        whatsappLink: "https://wa.me/919130743144",
+      },
+    });
+    expect(links).toContain("https://wa.me/919130743144");
+    expect(links.some((l) => /\d{7,}/.test(l))).toBe(true);
   });
 
   it("still catches a number hidden among the helplines", () => {
@@ -513,10 +553,22 @@ describe("contact details kept out of the browser", () => {
     expect("phone" in publicContent.contact).toBe(false);
   });
 
-  it("ships no WhatsApp link of its own", () => {
-    // A handle is safe to serve; the defaults simply carry none until one is
-    // configured, so nothing ships in the public repository either.
-    expect(publicContent.contact.whatsappLink).toBe("");
+  it("ships a WhatsApp handle, and a handle is not a number", () => {
+    /*
+      The defaults used to carry none, on the reasoning that nothing should ship
+      in a public repository until it was configured. An outage showed the cost
+      of that: stored content became unreadable, every visitor was served this
+      object, and the WhatsApp link disappeared from the site.
+
+      A handle is safe to serve — that is the premise lib/whatsapp.ts is built
+      on — so what matters is that the shipped one carries no number, which the
+      sanitiser is asked directly rather than inferred from the string.
+    */
+    expect(publicContent.contact.whatsappLink).toBeTruthy();
+    expect(safeWhatsappLink(publicContent.contact.whatsappLink)).toBe(
+      publicContent.contact.whatsappLink
+    );
+    expect(publicContent.contact.whatsappLink).not.toMatch(/\d{7,}/);
   });
 
   it("leaves no trace of a number anywhere in the serialised object", () => {
@@ -528,7 +580,11 @@ describe("contact details kept out of the browser", () => {
     */
     const serialised = withoutHelplines(publicContent);
     expect(serialised).not.toMatch(/\+?9\d[\d\s-]{8,}/);
-    expect(serialised).not.toContain("wa.me");
+    // Narrowed from forbidding "wa.me" outright, for the reason given above: a
+    // handle is not a number, and the defaults now ship one.
+    for (const link of whatsappLinksIn(publicContent)) {
+      expect(link).not.toMatch(/\d{7,}/);
+    }
   });
 
   it("would still catch a number put back into the defaults", () => {
