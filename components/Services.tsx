@@ -1,6 +1,7 @@
 "use client";
 
 import AnimatedSection from "./AnimatedSection";
+import Price from "./Price";
 import TiltCard from "./TiltCard";
 import TextReveal from "./TextReveal";
 
@@ -14,9 +15,14 @@ interface ServicesProps {
   services: {
     items: { title: string; price: string | null; unit: string | null; tags: string[] }[];
   };
+  /*
+    Decided on the server and passed down, so the switch is not inlined into
+    every visitor's bundle. Off means Price renders exactly what is here.
+  */
+  localCurrency?: boolean;
 }
 
-export default function Services({ services }: ServicesProps) {
+export default function Services({ services, localCurrency = false }: ServicesProps) {
   return (
     <section id="services" className="bg-cream py-28 relative overflow-hidden">
       {/* Decorative circles */}
@@ -54,9 +60,11 @@ export default function Services({ services }: ServicesProps) {
                     <div className="mb-6 min-h-[3.5rem] flex items-end">
                       {s.price ? (
                         <div>
-                          <span className="font-serif text-4xl font-bold text-clay">
-                            {s.price}
-                          </span>
+                          <Price
+                            rupees={s.price}
+                            enabled={localCurrency}
+                            className="font-serif text-4xl font-bold text-clay"
+                          />
                           <span className="font-sans text-sm text-forest/50">
                             {s.unit}
                           </span>
