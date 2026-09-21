@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCachedContent } from "@/lib/content";
+import { publicContent } from "@/lib/content";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -12,9 +12,9 @@ import { SITE_URL } from "@/lib/site";
  *
  * The route stays because a stored /start link may still point here, and a dead
  * link on the one page an Instagram bio points at is worse than a redirect. It
- * forwards to the configured handle, or to the contact section when there is
- * none — and it can no longer forward to a number, because the schema will not
- * store one.
+ * forwards to the configured handle, falling back to the shipped one and then
+ * to the contact section — and it can no longer forward to a number, because
+ * the schema will not store one and the defaults carry a handle, not a number.
  *
  * Resolved per request, not at build time. With `revalidate` the redirect target
  * was baked into the build as a response header, and a build renders before it
@@ -23,16 +23,22 @@ import { SITE_URL } from "@/lib/site";
  * dashboard, until the hour elapsed. A redirect whose destination is editable
  * copy cannot be frozen next to the code.
  *
- * This costs nothing at the meter: `getCachedContent` still holds the blob read
- * for an hour and still clears on save, so the handle is read as rarely as
- * before and a change to it takes effect at once instead of within the hour.
+ * This costs nothing at the meter: `publicContent` reads through the same hourly
+ * cache and it still clears on save, so the handle is read as rarely as before
+ * and a change to it takes effect at once instead of within the hour.
  */
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const content = await getCachedContent().catch(() => null);
-  const target = content?.contact?.whatsappLink;
-  // No handle configured, or a stored link the schema now refuses: send them to
-  // the contact section rather than nowhere.
-  return NextResponse.redirect(target || `${SITE_URL}/#contact`, 302);
+  /*
+    publicContent, not a catch of its own. This used to fall back to null on a
+    read failure and forward to the contact section — so when storage started
+    refusing, it sent people to a page anchor although a perfectly good handle
+    was sitting in the shipped defaults the rest of the site was already using.
+    The floor is only a floor if everything stands on the same one.
+  */
+  const { contact } = await publicContent();
+  // No handle configured at all, or a stored link the schema now refuses: send
+  // them to the contact section rather than nowhere.
+  return NextResponse.redirect(contact.whatsappLink || `${SITE_URL}/#contact`, 302);
 }

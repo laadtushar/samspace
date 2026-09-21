@@ -12,8 +12,7 @@ import {
 } from "@/lib/site";
 import {
   defaultContent,
-  getCachedContent,
-  resolveContentTokens,
+  publicContent,
   type SiteContent,
 } from "@/lib/content";
 import { pricingFrom } from "@/lib/seo-pricing";
@@ -38,9 +37,13 @@ const dmSans = DM_Sans({
  *
  * A storage hiccup must not take the whole site down: this runs for every route,
  * where an unhandled read failure is not one blank section but a 500 everywhere.
+ *
+ * Through publicContent rather than a catch of its own, because a bare catch
+ * here also swallowed Next's DYNAMIC_SERVER_USAGE — and answering that with the
+ * defaults is what prerendered them into the deployment, where they stayed.
  */
 async function headContent(): Promise<SiteContent> {
-  return getCachedContent().catch(() => resolveContentTokens(defaultContent));
+  return publicContent();
 }
 
 export async function generateMetadata(): Promise<Metadata> {

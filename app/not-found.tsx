@@ -2,11 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import {
-  getCachedContent,
-  defaultContent,
-  resolveContentTokens,
-} from "@/lib/content";
+import { publicContent } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -26,9 +22,7 @@ export const metadata: Metadata = {
  * fault and not worth dwelling on.
  */
 export default async function NotFound() {
-  const content = await getCachedContent().catch(() =>
-    resolveContentTokens(defaultContent)
-  );
+  const content = await publicContent();
 
   return (
     <>
