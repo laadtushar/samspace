@@ -3,6 +3,7 @@ import { fillDeep, rateValues } from "@/lib/tokens";
 import { safeWhatsappLink } from "@/lib/whatsapp";
 import { BUILD_ID } from "@/lib/build-id";
 import { log, errorFields } from "@/lib/log";
+import { isNextSignal } from "@/lib/next-signals";
 import { sql, dbConfigured } from "@/lib/db";
 import { defaultContent, type SiteContent } from "@/lib/default-content";
 import {
@@ -284,6 +285,11 @@ export async function publicContent(): Promise<SiteContent> {
   try {
     return await getCachedContent();
   } catch (error) {
+    // Next's own signals go straight back up. Absorbing DYNAMIC_SERVER_USAGE is
+    // how the shipped defaults ended up prerendered onto the live homepage: the
+    // error is Next asking to render the route on demand instead, and answering
+    // it with a fallback bakes that fallback into the deployment.
+    if (isNextSignal(error)) throw error;
     log.error("content.unavailable", errorFields(error));
     return resolveContentTokens(defaultContent);
   }

@@ -96,3 +96,69 @@ describe("every public route survives the outage", () => {
     }
   });
 });
+
+describe("Next's own signals are not treated as an outage", () => {
+  /*
+    The fallback was absorbing them, and that is how the shipped defaults ended
+    up prerendered onto the live homepage and /start — with an empty booking link
+    and an empty WhatsApp link — for every visitor.
+
+    Reading storage during a prerender throws DynamicServerError, which is Next
+    asking for the route to be rendered on demand instead. Answering it with the
+    defaults does not degrade the page, it changes what the page is: the
+    fallback gets baked into the deployment and stays there until the next one.
+  */
+  const signal = (digest: string) =>
+    Object.assign(new Error(`Dynamic server usage: no-store fetch`), { digest });
+
+  const mockFailingRead = (error: unknown) => {
+    vi.resetModules();
+    /*
+      The cache passes the call straight through. Outside a request context
+      `unstable_cache` throws an invariant of its own before the wrapped function
+      ever runs, which would make every case here pass for the wrong reason — the
+      fallback returned, but because of the cache rather than the read.
+    */
+    vi.doMock("next/cache", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("next/cache")>()),
+      unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+    }));
+    vi.doMock("@/lib/blob", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/blob")>()),
+      readPublicJson: () => {
+        throw error;
+      },
+    }));
+  };
+
+  it.each([
+    ["DYNAMIC_SERVER_USAGE"],
+    ["BAILOUT_TO_CLIENT_SIDE_RENDERING"],
+    ["NEXT_NOT_FOUND"],
+    ["NEXT_REDIRECT;replace;/start;307;"],
+  ])("rethrows %s rather than serving the fallback", async (digest) => {
+    mockFailingRead(signal(digest));
+    const { publicContent } = await import("@/lib/content");
+    await expect(publicContent()).rejects.toMatchObject({ digest });
+  });
+
+  it("still absorbs an ordinary storage failure", async () => {
+    // The distinction has to hold in both directions, or the fix is just the
+    // old bug with the site down instead of stale.
+    mockFailingRead(new Error("store paused"));
+    const { publicContent, defaultContent } = await import("@/lib/content");
+    await expect(publicContent()).resolves.toMatchObject({
+      hero: { headline: defaultContent.hero.headline },
+    });
+  });
+
+  it("does not mistake a numeric digest for a signal", async () => {
+    // Next's digests are strings. A thrown object that happens to carry a
+    // numeric `digest` is not Next asking for anything.
+    mockFailingRead(Object.assign(new Error("store paused"), { digest: 500 }));
+    const { publicContent, defaultContent } = await import("@/lib/content");
+    await expect(publicContent()).resolves.toMatchObject({
+      hero: { headline: defaultContent.hero.headline },
+    });
+  });
+});
