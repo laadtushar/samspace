@@ -1,5 +1,6 @@
 import { sql, dbConfigured } from "@/lib/db";
 import { PRACTICE_CURRENCY } from "@/lib/money";
+import { rateAmount } from "@/lib/rates";
 import type { IntakeSubmission } from "@/lib/content";
 
 /**
@@ -102,17 +103,36 @@ export async function recordSubmission(
     clientId = created[0].id;
   }
 
+  /*
+    The amount, as a number, beside the wording it was read from.
+
+    sliding_scale keeps what the person actually saw — "₹800", or
+    "₹500 (Student)" — because that is what they agreed to. But it is a string
+    with a symbol and an optional label in it, so a total, a report, or a check
+    against what a session was billed at all have to parse it. The number
+    removes that, and it is the amount that counts: nothing re-derives a fee
+    from whatever currency the figure happened to be displayed in.
+
+    Null when the wording has no number in it, which the constraint allows.
+    Inventing a zero there would read as a free session.
+  */
+  const rupees = rateAmount(submission.slidingScale);
+  const currency = (submission.displayCurrency || PRACTICE_CURRENCY)
+    .trim()
+    .toUpperCase();
+
   await db`
     insert into submissions (
       id, client_id, name, email, whatsapp, gender, age, education,
-      preferred_language, concerns, sliding_scale, student_confirmed,
-      scheduling, created_at
+      preferred_language, concerns, sliding_scale, rate_amount, currency,
+      student_confirmed, scheduling, created_at
     ) values (
       ${submission.id}, ${clientId}, ${submission.name}, ${email},
       ${submission.whatsapp || null}, ${submission.gender || null},
       ${submission.age || null}, ${submission.education || null},
       ${submission.preferredLanguage || null}, ${submission.concerns || null},
-      ${submission.slidingScale || null}, ${submission.studentConfirmed ?? false},
+      ${submission.slidingScale || null}, ${rupees}, ${currency},
+      ${submission.studentConfirmed ?? false},
       ${submission.scheduling || null}, ${submission.timestamp}
     )
     on conflict (id) do nothing
@@ -376,6 +396,10 @@ export interface DashboardSubmission {
   preferredLanguage: string;
   concerns: string;
   slidingScale: string;
+  /** The rupee amount parsed from slidingScale, or null when it had none. */
+  rateAmount: number | null;
+  /** ISO 4217 of what the figure was displayed in. "INR" for every row today. */
+  currency: string;
   studentConfirmed: boolean;
   scheduling: string;
   clientId: string | null;
@@ -387,8 +411,8 @@ export async function listSubmissionsForDashboard(): Promise<
   if (!dbConfigured()) return [];
   const rows = (await sql()`
     select id, client_id, name, email, gender, age, whatsapp, education,
-           preferred_language, concerns, sliding_scale, student_confirmed,
-           scheduling, created_at
+           preferred_language, concerns, sliding_scale, rate_amount, currency,
+           student_confirmed, scheduling, created_at
     from submissions
     order by created_at desc
     limit 1000
@@ -406,6 +430,15 @@ export async function listSubmissionsForDashboard(): Promise<
     preferredLanguage: (r.preferred_language as string) ?? "",
     concerns: (r.concerns as string) ?? "",
     slidingScale: (r.sliding_scale as string) ?? "",
+    /*
+      Rows written before migration 009 have no amount. Null says "never
+      recorded"; a zero would say "agreed to pay nothing", and the dashboard
+      would show a free session that never happened.
+    */
+    rateAmount: r.rate_amount === null || r.rate_amount === undefined
+      ? null
+      : Number(r.rate_amount),
+    currency: (r.currency as string) || PRACTICE_CURRENCY,
     studentConfirmed: Boolean(r.student_confirmed),
     scheduling: (r.scheduling as string) ?? "",
     clientId: r.client_id ? String(r.client_id) : null,
