@@ -1,4 +1,4 @@
-import { getCachedContent, toPublicContent } from "@/lib/content";
+import { publicContent, toPublicContent } from "@/lib/content";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
 import { getCachedPublishedPosts } from "@/lib/blog";
 import { publicPosts } from "@/lib/posts-public";
@@ -7,7 +7,7 @@ import HomePage from "@/components/HomePage";
 export const revalidate = 60;
 
 export default async function Home() {
-  const content = await getCachedContent();
+  const content = await publicContent();
 
   /*
     The homepage links a few posts from the sections where someone is deciding.

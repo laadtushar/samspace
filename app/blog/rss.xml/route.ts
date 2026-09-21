@@ -1,5 +1,5 @@
 import { getCachedPublishedPosts } from "@/lib/blog";
-import { getCachedContent } from "@/lib/content";
+import { publicContent } from "@/lib/content";
 import { publicPosts } from "@/lib/posts-public";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
@@ -20,7 +20,7 @@ export async function GET() {
   // must be sent the figure rather than the token.
   const [stored, content] = await Promise.all([
     getCachedPublishedPosts(),
-    getCachedContent(),
+    publicContent(),
   ]);
   const posts = publicPosts(stored, content.slidingScale);
   const updated = posts[0]?.publishedAt || new Date().toISOString();

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { getCachedContent } from "@/lib/content";
+import { publicContent } from "@/lib/content";
 import { publicPosts } from "@/lib/posts-public";
 import { getCachedPublishedPosts, readingMinutes } from "@/lib/blog";
 import { SITE_URL, SITE_NAME, serializeJsonLd } from "@/lib/site";
@@ -36,7 +36,7 @@ function formatDate(iso: string): string {
 export default async function BlogIndexPage() {
   const [stored, content] = await Promise.all([
     getCachedPublishedPosts(),
-    getCachedContent(),
+    publicContent(),
   ]);
   // Excerpts quote rates too, so they resolve the same tokens the post body does.
   const posts = publicPosts(stored, content.slidingScale);

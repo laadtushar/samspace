@@ -8,7 +8,7 @@ import {
   readingMinutes,
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
-import { getCachedContent } from "@/lib/content";
+import { publicContent } from "@/lib/content";
 import { publicPost } from "@/lib/posts-public";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -32,7 +32,7 @@ export async function generateMetadata({
 
   // The same resolution the page does — an SEO title quoting {{rate.range}}
   // would otherwise reach the search result with the braces still in it.
-  const content = await getCachedContent();
+  const content = await publicContent();
   const post = publicPost(stored, content.slidingScale);
 
   const title = post.seoTitle || post.title;
@@ -79,7 +79,7 @@ export default async function BlogPostPage({
 }) {
   const [stored, content] = await Promise.all([
     getPublishedPostBySlug(params.slug),
-    getCachedContent(),
+    publicContent(),
   ]);
   if (!stored) notFound();
 
