@@ -95,19 +95,19 @@ suite("site content in Postgres", () => {
     await saveContent({
       ...defaultContent,
       calendlyUrl: "https://cal.id/samvriti.space/therapy-session",
-      hero: { ...defaultContent.hero, title: "Written to Postgres" },
+      hero: { ...defaultContent.hero, headline: "Written to Postgres" },
     });
 
     expect(blob.writes).toEqual([]);
     const read = await getContent();
-    expect(read.hero.title).toBe("Written to Postgres");
+    expect(read.hero.headline).toBe("Written to Postgres");
     expect(read.calendlyUrl).toBe("https://cal.id/samvriti.space/therapy-session");
   });
 
   it("does not touch blob at all once the row exists", async () => {
     const first = mockBlob({});
     const { saveContent, defaultContent } = await import("@/lib/content");
-    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, title: "Stored" } });
+    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, headline: "Stored" } });
     expect(first.reads).toBe(0);
 
     // A fresh module registry, so nothing is being served from a cache.
@@ -119,7 +119,7 @@ suite("site content in Postgres", () => {
       },
     });
     const { getContent } = await import("@/lib/content");
-    expect((await getContent()).hero.title).toBe("Stored");
+    expect((await getContent()).hero.headline).toBe("Stored");
     expect(second.reads).toBe(0);
   });
 
@@ -128,14 +128,15 @@ suite("site content in Postgres", () => {
     // field without the stored row having to know about it.
     await sql()`
       insert into site_content (id, content)
-      values ('site', ${JSON.stringify({ hero: { title: "Only a title" } })}::jsonb)
+      values ('site', ${JSON.stringify({ hero: { headline: "Only a headline" } })}::jsonb)
     `;
     mockBlob({});
     const { getContent, defaultContent } = await import("@/lib/content");
     const content = await getContent();
 
-    expect(content.hero.title).toBe("Only a title");
-    expect(content.hero.subtitle).toBe(defaultContent.hero.subtitle);
+    expect(content.hero.headline).toBe("Only a headline");
+    expect(content.hero.subtext).toBe(defaultContent.hero.subtext);
+    expect(content.hero.quoteText).toBe(defaultContent.hero.quoteText);
     expect(content.crisis.helplines.length).toBeGreaterThan(0);
   });
 
@@ -155,7 +156,7 @@ suite("site content in Postgres", () => {
   });
 
   it("serves what it read even if the copy across fails", async () => {
-    mockBlob({ read: () => ({ hero: { title: "From blob" } }) });
+    mockBlob({ read: () => ({ hero: { headline: "From blob" } }) });
     vi.doMock("@/lib/db", async (importOriginal) => {
       const actual = await importOriginal<typeof import("@/lib/db")>();
       return {
@@ -176,19 +177,19 @@ suite("site content in Postgres", () => {
     });
 
     const { getContent } = await import("@/lib/content");
-    expect((await getContent()).hero.title).toBe("From blob");
+    expect((await getContent()).hero.headline).toBe("From blob");
     expect(await row()).toEqual([]);
   });
 
   it("overwrites the row rather than adding a second one", async () => {
     mockBlob({});
     const { saveContent, defaultContent } = await import("@/lib/content");
-    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, title: "First" } });
-    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, title: "Second" } });
+    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, headline: "First" } });
+    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, headline: "Second" } });
 
     const rows = await row();
     expect(rows.length).toBe(1);
-    expect((rows[0].content.hero as { title: string }).title).toBe("Second");
+    expect((rows[0].content.hero as { headline: string }).headline).toBe("Second");
   });
 
   it("moves updated_at forward on a save", async () => {
@@ -196,7 +197,7 @@ suite("site content in Postgres", () => {
     const { saveContent, defaultContent } = await import("@/lib/content");
     await saveContent(defaultContent);
     const [before] = await row();
-    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, title: "Later" } });
+    await saveContent({ ...defaultContent, hero: { ...defaultContent.hero, headline: "Later" } });
     const [after] = await row();
     expect(new Date(after.updated_at).getTime()).toBeGreaterThanOrEqual(
       new Date(before.updated_at).getTime()
@@ -224,7 +225,7 @@ describe("a database that cannot be read", () => {
       read that succeeded and found nothing triggers the copy.
     */
     const db = mockDeadDb();
-    mockBlob({ read: () => ({ hero: { title: "Stale" } }) });
+    mockBlob({ read: () => ({ hero: { headline: "Stale" } }) });
 
     const { getContent } = await import("@/lib/content");
     await getContent();
@@ -247,7 +248,7 @@ describe("a database that cannot be read", () => {
     // The dashboard sees the error rather than an empty form it could save over
     // the top of; a visitor sees the shipped copy, which is a genuine floor.
     const shown = await publicContent();
-    expect(shown.hero.title).toBe(defaultContent.hero.title);
+    expect(shown.hero.headline).toBe(defaultContent.hero.headline);
     expect(shown.crisis.helplines.length).toBeGreaterThan(0);
     expect(JSON.stringify(shown)).not.toContain("{{");
   });
@@ -256,10 +257,10 @@ describe("a database that cannot be read", () => {
 describe("no database configured", () => {
   it("reads and writes blob, exactly as before", async () => {
     mockDeadDb(false);
-    const blob = mockBlob({ read: () => ({ hero: { title: "Blob only" } }) });
+    const blob = mockBlob({ read: () => ({ hero: { headline: "Blob only" } }) });
 
     const { getContent, saveContent, defaultContent } = await import("@/lib/content");
-    expect((await getContent()).hero.title).toBe("Blob only");
+    expect((await getContent()).hero.headline).toBe("Blob only");
 
     await saveContent(defaultContent);
     expect(blob.writes.length).toBe(1);
