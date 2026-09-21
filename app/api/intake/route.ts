@@ -24,6 +24,30 @@ export const dynamic = "force-dynamic";
 /** Matches "₹500 (Student)" — the same rule the form applies client-side. */
 const isStudentRate = (option: string) => /\(([^)]*student[^)]*)\)/i.test(option);
 
+/**
+ * What one store did with a submission.
+ *
+ * `skipped` is not a failure. It means the store is not configured here — the
+ * ordinary state of a fresh clone or a local run — and only a store that was
+ * asked and refused counts against the record being safe. Collapsing the two
+ * would turn "no database configured" into "the submission was lost".
+ */
+type Attempt<T> =
+  | { ok: true; value: T; skipped?: false; error?: undefined }
+  | { ok: false; value?: undefined; skipped?: boolean; error?: unknown };
+
+async function attempt<T>(run: () => Promise<T>): Promise<Attempt<T>> {
+  try {
+    return { ok: true, value: await run() };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+function skipped<T>(): Promise<Attempt<T>> {
+  return Promise.resolve({ ok: false, skipped: true });
+}
+
 export async function POST(req: Request) {
   const ref = newRef();
   const started = Date.now();
@@ -152,38 +176,54 @@ export async function POST(req: Request) {
     studentConfirmed: studentRate,
   };
 
-  try {
-    await addSubmission(submission);
-    log.info("intake.stored", { ref, id: submission.id });
+  /*
+    The submission is written to both stores, and survives if either accepts it.
 
-    /*
-      The database is written to in addition to blob storage, not instead of it,
-      for as long as the move is in progress. Blob storage is the path known to
-      work, and a database that is unreachable, unmigrated or not yet configured
-      must not be able to cost someone their submission — so this is
-      deliberately non-fatal. The record already exists and is already in the
-      dashboard by the time this runs.
-    */
-    if (dbConfigured()) {
-      try {
-        const clientId = await recordSubmission(submission);
-        log.info("intake.db_recorded", { ref, id: submission.id, clientId });
-      } catch (error) {
-        log.error("intake.db_record_failed", {
-          ref,
-          id: submission.id,
-          ...errorFields(error),
-        });
-      }
-    }
-  } catch (error) {
-    // Storage is the part that must not fail silently — everything else is a
-    // notification about a record that now exists.
+    It used to be blob first and fatally, with the database as a non-fatal
+    extra, on the reasoning that blob was "the path known to work". That
+    reasoning expired: blob began answering 403, and every enquiry arriving
+    while it does would have been refused with a 500 — someone told to try again
+    with nothing kept — although Postgres was up and already stores every field
+    of a submission, not a reduced copy of one.
+
+    Neither store is the one that matters, so neither gets to be the one that
+    loses the record. Both are attempted at once, because a person is waiting on
+    the response, and it is only a failure when both refuse.
+  */
+  const [archived, recorded] = await Promise.all([
+    attempt(() => addSubmission(submission)),
+    dbConfigured()
+      ? attempt(() => recordSubmission(submission))
+      : skipped<string>(),
+  ]);
+
+  if (archived.ok) log.info("intake.stored", { ref, id: submission.id });
+  else {
     log.error("intake.store_failed", {
       ref,
       id: submission.id,
-      ...errorFields(error),
+      ...errorFields(archived.error),
     });
+  }
+
+  if (recorded.ok) {
+    log.info("intake.db_recorded", {
+      ref,
+      id: submission.id,
+      clientId: recorded.value,
+    });
+  } else if (!recorded.skipped) {
+    log.error("intake.db_record_failed", {
+      ref,
+      id: submission.id,
+      ...errorFields(recorded.error),
+    });
+  }
+
+  if (!archived.ok && !recorded.ok) {
+    // Nowhere. This is the only outcome the person must be told about, and the
+    // one line to search for when someone says their form would not send.
+    log.error("intake.unsaved", { ref, id: submission.id });
     return NextResponse.json(
       {
         error: "Something went wrong saving your form. Please try again.",

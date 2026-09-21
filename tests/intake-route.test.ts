@@ -11,8 +11,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  */
 
 const addSubmission = vi.fn();
+const recordSubmission = vi.fn();
 const sendEmail = vi.fn();
 const isLikelyBot = vi.fn();
+
+/*
+  Whether a database is configured is a decision of the route's, so the test
+  states it rather than inheriting it. Every test file shares one process and
+  the database suites set DATABASE_URL without clearing it, so reading the real
+  environment here would make these results depend on file order — and, worse,
+  would run recordSubmission against a real database from a route test.
+*/
+let databaseConfigured = true;
 
 /*
   Content is read through the same cached accessor the public pages use, which
@@ -30,6 +40,14 @@ vi.mock("@/lib/content", async (importOriginal) => {
     getCachedContent: () => siteContent(),
   };
 });
+vi.mock("@/lib/db", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db")>()),
+  dbConfigured: () => databaseConfigured,
+}));
+vi.mock("@/lib/practice", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/practice")>()),
+  recordSubmission: (...a: unknown[]) => recordSubmission(...a),
+}));
 vi.mock("@/lib/email", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/email")>();
   return { ...actual, sendEmail: (...a: unknown[]) => sendEmail(...a) };
@@ -72,7 +90,9 @@ beforeEach(() => {
     const { defaultContent, resolveContentTokens } = await import("@/lib/content");
     return resolveContentTokens(defaultContent);
   });
+  databaseConfigured = true;
   addSubmission.mockReset().mockResolvedValue(undefined);
+  recordSubmission.mockReset().mockResolvedValue("client-1");
   sendEmail.mockReset().mockResolvedValue({ sent: true });
   isLikelyBot.mockReset().mockResolvedValue(false);
 });
@@ -107,13 +127,71 @@ describe("POST /api/intake", () => {
     expect(addSubmission).toHaveBeenCalledTimes(1);
   });
 
-  it("fails loudly and does not claim success when storage fails", async () => {
+  it("fails loudly and does not claim success when nowhere will take it", async () => {
     addSubmission.mockRejectedValue(new Error("blob exploded"));
+    recordSubmission.mockRejectedValue(new Error("database down"));
     const res = await POST(post(valid));
     const body = await res.json();
     expect(res.status).toBe(500);
     expect(body.success).toBeUndefined();
     expect(body.ref).toBeTruthy();
+  });
+
+  it("keeps the submission when blob refuses but the database accepts", async () => {
+    /*
+      The case this exists for. Blob began answering 403, and every enquiry
+      arriving while it does was refused with a 500 — someone told to try again,
+      nothing kept — although Postgres was up and stores every field of a
+      submission rather than a reduced copy.
+    */
+    addSubmission.mockRejectedValue(new Error("Blob fetch failed: 403"));
+    const res = await POST(post(valid));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).success).toBe(true);
+    expect(recordSubmission).toHaveBeenCalledTimes(1);
+    expect(recordSubmission.mock.calls[0][0].email).toBe("test@example.com");
+  });
+
+  it("keeps the submission when the database refuses but blob accepts", async () => {
+    // The direction that already worked, held in place: an unreachable or
+    // unmigrated database must not cost anyone their enquiry either.
+    recordSubmission.mockRejectedValue(new Error("relation does not exist"));
+    const res = await POST(post(valid));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).success).toBe(true);
+    expect(addSubmission).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not treat an absent database as a store that refused", async () => {
+    /*
+      A fresh clone configures no database, and blob alone is then the whole
+      answer. "Not configured" must not count as a store that accepted the
+      record, or a blob failure would be reported as success and the submission
+      would be gone with the person told it arrived.
+    */
+    databaseConfigured = false;
+    addSubmission.mockRejectedValue(new Error("blob exploded"));
+    const res = await POST(post(valid));
+
+    expect(res.status).toBe(500);
+    expect(recordSubmission).not.toHaveBeenCalled();
+  });
+
+  it("still writes both stores when both are working", async () => {
+    const res = await POST(post(valid));
+    expect(res.status).toBe(200);
+    expect(addSubmission).toHaveBeenCalledTimes(1);
+    expect(recordSubmission).toHaveBeenCalledTimes(1);
+  });
+
+  it("emails the therapist even when blob refused the archive", async () => {
+    // The email is the notification the practice actually acts on, and the
+    // record exists in Postgres by this point.
+    addSubmission.mockRejectedValue(new Error("Blob fetch failed: 403"));
+    await POST(post(valid));
+    expect(sendEmail).toHaveBeenCalledTimes(2);
   });
 
   it("refuses the student rate without confirmation, and stores nothing", async () => {
