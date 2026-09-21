@@ -29,6 +29,8 @@ const stored = (over: Partial<ViewSubmission> = {}): ViewSubmission => ({
   preferredLanguage: "English",
   concerns: "Exam stress that will not switch off.",
   slidingScale: "₹800",
+  rateAmount: 800,
+  currency: "INR",
   studentConfirmed: false,
   scheduling: "",
   clientId: "c0000000-0000-0000-0000-000000000000",

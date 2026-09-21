@@ -49,6 +49,18 @@ export interface IntakeSubmission {
   studentConfirmed?: boolean;
   /** "booked" | "skipped" | "" (scheduling step not shown) */
   scheduling?: string;
+  /**
+   * ISO 4217 of the money the figure was shown in, when that was not rupees.
+   *
+   * Absent means rupees, which is what the form shows today — it does not
+   * convert, so nothing sets this yet. It exists so that when the form does,
+   * the record says which currency was read rather than leaving it to be
+   * inferred from a date.
+   *
+   * It never decides what is charged. `slidingScale` holds the wording that
+   * was agreed to and the rupee amount parsed from it is the one that counts.
+   */
+  displayCurrency?: string;
 }
 
 // ─── Site content ──────────────────────────────────
