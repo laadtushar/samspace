@@ -10,17 +10,29 @@ import { PRACTICE_CURRENCY, isCurrencyCode } from "@/lib/money";
  * worse than a price in a foreign currency.
  */
 
+/**
+ * Where a rate came from.
+ *
+ * Not bookkeeping — it decides how long the rate may be quoted for, and the two
+ * cases are genuinely different. A fetched rate a fortnight old means the
+ * fetcher is broken. A rate someone typed a fortnight ago means nothing is
+ * broken at all: it is a decision, and it does not stop being one.
+ */
+export type RateSource = "manual" | "feed";
+
 export interface FxRate {
   /** ISO 4217 of the currency being converted into. */
   currency: string;
   /** How many units of it one rupee buys. */
   perRupee: number;
-  /** When the rate was fetched, ISO 8601. */
+  /** When the rate was true — fetched, or set by hand. ISO 8601. */
   asOf: string;
+  /** Defaults to a feed, which is the stricter of the two. */
+  source?: RateSource;
 }
 
 /**
- * How stale a rate may be before it stops being quoted.
+ * How stale a fetched rate may be before it stops being quoted.
  *
  * Rates move slowly enough that a day or two is immaterial to a figure already
  * labelled as approximate. A fortnight is not: by then the number on the page
@@ -29,12 +41,37 @@ export interface FxRate {
  */
 export const MAX_RATE_AGE_DAYS = 14;
 
-export function rateIsFresh(rate: FxRate, now = new Date()): boolean {
+/**
+ * The same, for a rate set by hand.
+ *
+ * Far longer, because the fortnight above is a check on a mechanism, not on the
+ * number. Nothing has failed when a typed rate gets old, so expiring it on the
+ * same timer would take a working price off the site and give nobody a reason.
+ *
+ * It does still expire. A year-old hand-set rate is quoting a figure about a
+ * world that has moved just as surely, and the fallback — the rupee price the
+ * practice actually bills — is always safe to show. The dashboard displays the
+ * age so this is a prompt to revisit rather than a surprise.
+ */
+export const MAX_MANUAL_RATE_AGE_DAYS = 365;
+
+/** How old this particular rate is allowed to be. */
+export function maxAgeFor(rate: FxRate): number {
+  return rate.source === "manual" ? MAX_MANUAL_RATE_AGE_DAYS : MAX_RATE_AGE_DAYS;
+}
+
+/** How many days old a rate is, or null when its timestamp is unreadable. */
+export function rateAgeDays(rate: FxRate, now = new Date()): number | null {
   const asOf = new Date(rate.asOf);
-  if (Number.isNaN(asOf.getTime())) return false;
-  const days = (now.getTime() - asOf.getTime()) / 86_400_000;
+  if (Number.isNaN(asOf.getTime())) return null;
+  return (now.getTime() - asOf.getTime()) / 86_400_000;
+}
+
+export function rateIsFresh(rate: FxRate, now = new Date()): boolean {
+  const days = rateAgeDays(rate, now);
+  if (days === null) return false;
   // A rate from the future is a clock problem somewhere, not a fresh rate.
-  return days >= 0 && days <= MAX_RATE_AGE_DAYS;
+  return days >= 0 && days <= maxAgeFor(rate);
 }
 
 /**

@@ -9,11 +9,22 @@ import { CONVERTED_NOTE } from "@/lib/pricing";
  * Next request context, and the point here is the route's own decisions.
  */
 const siteContent = vi.fn();
+const storedRate = vi.fn();
 
 vi.mock("@/lib/content", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/content")>();
   return { ...actual, getCachedContent: () => siteContent() };
 });
+
+/*
+  The rate store stands in for itself. There is no feed — rates are set by the
+  practice — so what matters here is that the route asks for one, uses it when
+  there is one, and stays in rupees when there is not.
+*/
+vi.mock("@/lib/fx-store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/fx-store")>()),
+  rateFor: (currency: string) => storedRate(currency),
+}));
 
 const { GET } = await import("@/app/api/pricing/route");
 
@@ -29,6 +40,8 @@ beforeEach(() => {
     const { defaultContent, resolveContentTokens } = await import("@/lib/content");
     return resolveContentTokens(defaultContent);
   });
+  // No rate stored is the default, and the honest answer then is rupees.
+  storedRate.mockReset().mockResolvedValue(null);
 });
 
 describe("pricing a request", () => {
@@ -127,5 +140,96 @@ describe("when content cannot be read", () => {
     const view = await res.json();
     expect(view.tiers.length).toBeGreaterThan(0);
     expect(view.range).toBe("₹500–₹1000");
+  });
+});
+
+
+describe("a rate the practice has set", () => {
+  const manual = (currency: string, perRupee: number) => ({
+    currency,
+    perRupee,
+    asOf: new Date().toISOString(),
+    source: "manual" as const,
+    updatedAt: new Date().toISOString(),
+  });
+
+  it("converts the scale for a visitor whose currency has one", async () => {
+    /*
+      The whole point of storing rates. Before there was anywhere to keep one
+      this route passed null and every country was quoted in rupees.
+    */
+    storedRate.mockResolvedValue(manual("USD", 0.0115));
+
+    const res = await ask("US");
+    const view = await res.json();
+
+    expect(storedRate).toHaveBeenCalledWith("USD");
+    expect(view.currency).toBe("USD");
+    expect(view.native).toBe(false);
+    expect(view.note).toBe(CONVERTED_NOTE);
+    // Every figure reads as dollars, and none of them reads as rupees.
+    for (const tier of view.tiers) expect(tier.display).not.toContain("₹");
+  });
+
+  it("keeps the rupee amount as the thing actually charged", async () => {
+    // The converted figure is guidance. The invoice is in rupees, and nothing
+    // downstream may re-derive the amount from what was displayed.
+    storedRate.mockResolvedValue(manual("USD", 0.0115));
+
+    const view = await (await ask("US")).json();
+    expect(view.tiers.map((t: { rupees: number }) => t.rupees)).toEqual([
+      800, 900, 1000,
+    ]);
+  });
+
+  it("does not offer the concessional tier abroad, rate or no rate", async () => {
+    // Policy, not presentation. It is funded by Indian clients choosing to pay
+    // more, and a rate feed coming up must never change who it is offered to.
+    storedRate.mockResolvedValue(manual("USD", 0.0115));
+
+    const view = await (await ask("US")).json();
+    expect(view.tiers.some((t: { student: boolean }) => t.student)).toBe(false);
+  });
+
+  it("stays in rupees when that currency has no rate", async () => {
+    storedRate.mockResolvedValue(null);
+
+    const view = await (await ask("US")).json();
+    expect(view.currency).toBe("INR");
+    expect(view.native).toBe(true);
+    expect(view.note).toBeUndefined();
+  });
+
+  it("stays in rupees when the rate is too old to quote", async () => {
+    const old = new Date(Date.now() - 400 * 86_400_000).toISOString();
+    storedRate.mockResolvedValue({ ...manual("USD", 0.0115), asOf: old });
+
+    const view = await (await ask("US")).json();
+    expect(view.currency).toBe("INR");
+  });
+
+  it("never asks for a rate at home", async () => {
+    // Converting rupees into rupees is not a conversion, and asking would be a
+    // database read on the most common request this route serves.
+    await ask("IN");
+    expect(storedRate).toHaveBeenCalledWith("INR");
+    const view = await (await ask("IN")).json();
+    expect(view.native).toBe(true);
+  });
+
+  it("prices in rupees when the rate cannot be read at all", async () => {
+    /*
+      A database hiccup should cost the conversion and nothing else. The tier
+      rules never depended on a rate, and a visitor seeing the billed currency
+      is a worse experience, not a broken one.
+    */
+    storedRate.mockRejectedValue(new Error("database unreachable"));
+
+    const res = await ask("US");
+    const view = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(view.currency).toBe("INR");
+    expect(view.tiers.length).toBeGreaterThan(0);
   });
 });
