@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCachedContent } from "@/lib/content";
 import { countryFromHeaders, COUNTRY_HEADER } from "@/lib/geo";
 import { pricingFor } from "@/lib/pricing";
-import { defaultContent, resolveContentTokens } from "@/lib/content";
+import { publicContent } from "@/lib/content";
 
 /**
  * The scale, priced for whoever is asking.
@@ -40,9 +39,7 @@ export async function GET(request: Request) {
   const country = countryFromHeaders(request.headers);
 
   // A storage hiccup should cost a conversion, not the prices themselves.
-  const content = await getCachedContent().catch(() =>
-    resolveContentTokens(defaultContent)
-  );
+  const content = await publicContent();
 
   /*
     No rate source is configured yet, so this always prices in rupees. The

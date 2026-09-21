@@ -119,7 +119,14 @@ describe("the WhatsApp doorway", () => {
   });
 
   it("reads the handle through the cache, so the meter does not move", () => {
-    // Dynamic rendering without this would mean a blob read on every visit.
-    expect(route).toContain("getCachedContent");
+    /*
+      Dynamic rendering without a cache would mean a storage read on every
+      visit. It reads through publicContent, which wraps the same hourly cached
+      accessor and adds the shipped copy as a floor — so the meter is unchanged
+      and an unreadable store sends people to the handle rather than to a page
+      anchor.
+    */
+    expect(route).toContain("publicContent");
+    expect(route).not.toMatch(/getCachedContent\(\)\s*\.catch/);
   });
 });
