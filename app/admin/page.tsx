@@ -3,6 +3,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  anyRejectedWith,
+  everyFailed,
+  toSection,
+  valueOr,
+} from "@/lib/dashboard-load";
+import {
   Lock,
   LogOut,
   Users,
@@ -183,6 +189,28 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   return res;
 }
 
+/**
+ * One section's loading failure, shown where that section would have been.
+ *
+ * Deliberately not a page-level banner. A failure that covers the whole screen
+ * says "the dashboard is broken" when the truth is usually "one of three reads
+ * did not answer" — and the other two are sitting there, loaded and useful.
+ */
+function SectionError({ message }: { message: string }) {
+  return (
+    <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+      <div>
+        <p className="font-sans text-sm text-red-700">{message}</p>
+        <p className="font-sans text-xs text-red-500/80 mt-0.5">
+          This section could not be loaded — the rest of the dashboard is
+          unaffected. Reload to try again.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await apiFetch(url, init);
   if (!res.ok) {
@@ -241,6 +269,13 @@ export default function AdminPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+  /*
+    One error per section, because one section failing is not the dashboard
+    failing. loadError above is kept for the case where nothing loaded at all.
+  */
+  const [submissionsError, setSubmissionsError] = useState("");
+  const [contentError, setContentError] = useState("");
+  const [postsError, setPostsError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -468,35 +503,73 @@ export default function AdminPage() {
     let cancelled = false;
     setLoading(true);
     setLoadError("");
-    Promise.all([
+    setSubmissionsError("");
+    setContentError("");
+    setPostsError("");
+    /*
+      Settled, not all. These three reads are independent, and `Promise.all`
+      made them share a fate: one rejection emptied every tab and put a single
+      banner over the lot. That is what a paused storage layer looked like from
+      here — the clients, the sessions and the blog were all readable the whole
+      time and none of them were shown.
+    */
+    Promise.allSettled([
       apiJson<SubmissionsResponse>("/api/admin/submissions"),
       fetchContent(),
       apiJson<BlogPost[]>("/api/admin/blog"),
     ])
-      .then(([subs, cont, blog]) => {
+      .then((results) => {
         if (cancelled) return;
-        setSubmissions(Array.isArray(subs?.submissions) ? subs.submissions : []);
-        // A list that is short because a store could not be read must not look
-        // like a list that is short because nobody wrote in.
-        setSubmissionsIncomplete(
-          Array.isArray(subs?.unavailable) && subs.unavailable.length > 0
-            ? subs.unavailable
-            : []
-        );
-        setContent(cont.content);
-        setContentStored(cont.stored);
-        setPosts(Array.isArray(blog) ? blog : []);
-        void refreshStarterCount();
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (err instanceof SessionExpired) {
+
+        // An expired session fails all three. Sign out once rather than paint
+        // three failures over a dashboard nobody is authenticated for.
+        if (anyRejectedWith(results, (r) => r instanceof SessionExpired)) {
           endSession();
           return;
         }
-        // Without this the dashboard would render an empty list, which reads as
-        // "nobody has booked" rather than "the request failed".
-        setLoadError(err instanceof Error ? err.message : "Could not load dashboard data");
+
+        const [subsResult, contentResult, postsResult] = results;
+        const subs = toSection(
+          subsResult as PromiseSettledResult<SubmissionsResponse>,
+          "Could not load submissions"
+        );
+        const cont = toSection(
+          contentResult as PromiseSettledResult<Awaited<ReturnType<typeof fetchContent>>>,
+          "Could not load site content"
+        );
+        const posts = toSection(
+          postsResult as PromiseSettledResult<BlogPost[]>,
+          "Could not load posts"
+        );
+
+        const loaded = valueOr(subs, { submissions: [], unavailable: [] });
+        setSubmissions(Array.isArray(loaded?.submissions) ? loaded.submissions : []);
+        // A list that is short because a store could not be read must not look
+        // like a list that is short because nobody wrote in.
+        setSubmissionsIncomplete(
+          Array.isArray(loaded?.unavailable) && loaded.unavailable.length > 0
+            ? loaded.unavailable
+            : []
+        );
+        setSubmissionsError(subs.ok ? "" : subs.error);
+
+        if (cont.ok) {
+          setContent(cont.value.content);
+          setContentStored(cont.value.stored);
+        }
+        setContentError(cont.ok ? "" : cont.error);
+
+        setPosts(valueOr(posts, [] as BlogPost[]));
+        setPostsError(posts.ok ? "" : posts.error);
+
+        // Only when nothing loaded at all is this the whole page's problem.
+        setLoadError(
+          everyFailed([subs, cont, posts])
+            ? "Could not load the dashboard"
+            : ""
+        );
+
+        void refreshStarterCount();
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -1189,7 +1262,9 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {submissions.length === 0 && !loadError ? (
+                {submissionsError && <SectionError message={submissionsError} />}
+
+                {submissions.length === 0 && !loadError && !submissionsError ? (
                   <div className="text-center py-20 bg-white rounded-2xl border border-sage/15">
                     <Users className="w-10 h-10 text-sage/30 mx-auto mb-3" />
                     <p className="font-sans text-sm text-forest/40">No submissions yet</p>
@@ -1355,6 +1430,10 @@ export default function AdminPage() {
             )}
 
             {/* ─── Content Tab ──────────────────── */}
+            {tab === "content" && !content && contentError && (
+              <SectionError message={contentError} />
+            )}
+
             {tab === "content" && content && (
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -2477,6 +2556,10 @@ export default function AdminPage() {
 
             {/* ─── Team Tab ─────────────────────── */}
             {tab === "team" && <TeamTab me={me} onSessionLost={endSession} />}
+
+            {tab === "blog" && blogView === "list" && postsError && (
+              <SectionError message={postsError} />
+            )}
 
             {tab === "blog" && blogView === "list" && (
               <div>
