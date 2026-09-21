@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — Two Chairs</title>
+  <!-- Two people turned toward each other and offset, never mirrored.
+       The subject is the channel of space between them, which is the work. -->
+  <g fill="none" stroke-width="52" stroke-linecap="round">
+    <path d="M225.74 323.51 A170 170 0 0 1 225.74 128.49" stroke="#2c3a2e"/>
+    <path d="M286.26 188.49 A170 170 0 0 1 286.26 383.51" stroke="#c17f5e"/>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — S monogram</title>
+  <!-- One continuous S built from two equal turns that hand off mid-stroke:
+       sam, "together". Two movements, one letter. -->
+  <g fill="none" stroke-width="56" stroke-linecap="round">
+    <path d="M329.30 151.32 A78 78 0 1 0 256 256" stroke="#2c3a2e"/>
+    <path d="M256 256 A78 78 0 1 1 182.70 307.32" stroke="#c17f5e"/>
+  </g>
+</svg>

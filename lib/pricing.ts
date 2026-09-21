@@ -2,6 +2,7 @@ import { PRACTICE_CURRENCY, formatMoney, formatMoneyRange } from "@/lib/money";
 import { rateAmount, isStudentRate, priceRangeOf } from "@/lib/rates";
 import { currencyForCountry } from "@/lib/country-currency";
 import { convertScale, rateIsFresh, type FxRate } from "@/lib/convert";
+import { basisFor, type CountryRule } from "@/lib/country-pricing";
 
 /**
  * What a particular visitor should be shown, and why.
@@ -99,15 +100,40 @@ function nativeView(entries: readonly string[]): PricingView {
  * fallback costs nothing, which is what makes it the right answer every time
  * the alternative is uncertain.
  */
+export interface PricingOptions {
+  /**
+   * What the practice has decided about this country. Absent means nothing has
+   * been decided, which is the same as not enabled: rupees.
+   */
+  rule?: CountryRule | null;
+  note?: string;
+  now?: Date;
+}
+
 export function pricingFor(
   scale: readonly string[],
   country: unknown,
   rate: FxRate | null,
-  note = CONVERTED_NOTE,
-  now = new Date()
+  options: PricingOptions = {}
 ): PricingView {
-  const entries = tiersFor(scale, country);
+  const { rule = null, note = CONVERTED_NOTE, now = new Date() } = options;
+
+  /*
+    The basis is rupees either way, so it is chosen before anything else and
+    the rest of this function neither knows nor cares whether the figures came
+    from the base scale, a markup, or amounts typed for this country. A
+    country that is not enabled gets the base scale untouched.
+  */
+  const entries = tiersFor(basisFor(scale, rule), country);
   const native = nativeView(entries);
+
+  /*
+    Not enabled is the end of it. A rate existing for a currency is not a
+    decision to quote in it — that decision is this flag, and keeping them
+    apart is what stops adding a euro rate from silently changing what every
+    visitor in Germany is shown.
+  */
+  if (!rule?.enabled) return native;
 
   const currency = currencyForCountry(country);
   if (currency === PRACTICE_CURRENCY) return native;

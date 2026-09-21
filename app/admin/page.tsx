@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoredRate } from "@/lib/fx-store";
+import type { CountryPreview } from "@/lib/country-preview";
+import { mappedCountries } from "@/lib/country-currency";
 import {
   rateAgeDays,
   rateIsFresh,
@@ -202,6 +204,19 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
  * says "the dashboard is broken" when the truth is usually "one of three reads
  * did not answer" — and the other two are sitting there, loaded and useful.
  */
+/** A country's settings as they are being typed, before they are saved. */
+interface DraftRule {
+  enabled: boolean;
+  markupPercent: string;
+  overrideScale: string;
+}
+
+const EMPTY_DRAFT: DraftRule = {
+  enabled: false,
+  markupPercent: "",
+  overrideScale: "",
+};
+
 function SectionError({ message }: { message: string }) {
   return (
     <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -2346,6 +2361,10 @@ export default function AdminPage() {
                     {me?.role === "owner" && <RepriceEverywhere />}
                   </ContentSection>
 
+                  <ContentSection title="Countries quoted in their own money">
+                    <CountryPricing />
+                  </ContentSection>
+
                   <ContentSection title="Currency shown to visitors abroad">
                     <CurrencyRates />
                   </ContentSection>
@@ -3916,6 +3935,386 @@ interface RepriceResult {
   failed: string[];
   ref?: string;
   targets: { label: string; changes: unknown[]; saved: boolean }[];
+}
+
+
+/**
+ * Which countries are quoted in their own money.
+ *
+ * Every preview on this page comes from the server, which produces it with the
+ * same call the public endpoint makes. Nothing here recomputes a price in the
+ * browser: a preview that agreed with the page but not with the site would be
+ * worse than no preview, because it would be trusted.
+ */
+function CountryPricing() {
+  const [countries, setCountries] = useState<CountryPreview[]>([]);
+  const [masterSwitch, setMasterSwitch] = useState(true);
+  const [adding, setAdding] = useState("");
+  const [open, setOpen] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, DraftRule>>({});
+  const [busy, setBusy] = useState(false);
+  const [refreshed, setRefreshed] = useState("");
+  const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  /*
+    Country names come from the browser rather than a table shipped with the
+    site. Intl knows them in the reader's own language and cannot fall out of
+    step with the country map, which is the only list that decides anything.
+  */
+  const nameOf = useMemo(() => {
+    let display: Intl.DisplayNames | null = null;
+    try {
+      display = new Intl.DisplayNames(undefined, { type: "region" });
+    } catch {
+      // Ancient browser: the code alone is still unambiguous.
+    }
+    return (code: string) => {
+      try {
+        return display?.of(code) ?? code;
+      } catch {
+        return code;
+      }
+    };
+  }, []);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await apiFetch("/api/admin/countries");
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not load countries"));
+        return;
+      }
+      const body = (await res.json()) as {
+        countries?: CountryPreview[];
+        localCurrencyEnabled?: boolean;
+      };
+      setCountries(Array.isArray(body.countries) ? body.countries : []);
+      setMasterSwitch(body.localCurrencyEnabled !== false);
+      setError("");
+    } catch {
+      setError("Connection error — countries could not be loaded.");
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const draftFor = (preview: CountryPreview): DraftRule =>
+    drafts[preview.country] ?? {
+      enabled: preview.enabled,
+      markupPercent: String(preview.markupPercent || ""),
+      overrideScale: (preview.overrideScale ?? []).join("\n"),
+    };
+
+  const editDraft = (country: string, patch: Partial<DraftRule>) => {
+    setDrafts((current) => ({
+      ...current,
+      [country]: { ...(current[country] ?? EMPTY_DRAFT), ...patch },
+    }));
+  };
+
+  const save = async (country: string, draft: DraftRule) => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await apiFetch("/api/admin/countries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          country,
+          enabled: draft.enabled,
+          markupPercent: Number(draft.markupPercent || 0),
+          // One rate per line is how the sliding scale is edited above, so it
+          // is how this is edited too.
+          overrideScale: draft.overrideScale
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+        }),
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not save that country"));
+        return;
+      }
+      // Reloaded rather than patched in: the preview must come from the
+      // server, because the server is what a visitor will be served by.
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[country];
+        return next;
+      });
+      await load();
+    } catch {
+      setError("Connection error — nothing was saved.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (country: string) => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await apiFetch(
+        `/api/admin/countries?country=${encodeURIComponent(country)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not remove that country"));
+        return;
+      }
+      await load();
+    } catch {
+      setError("Connection error — nothing was removed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const refresh = async () => {
+    setBusy(true);
+    setError("");
+    setRefreshed("");
+    try {
+      const res = await apiFetch("/api/admin/rates/refresh", { method: "POST" });
+      const body = (await res.json()) as {
+        stored?: number;
+        skipped?: number;
+        provider?: string | null;
+        message?: string;
+      };
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not refresh rates"));
+        return;
+      }
+      setRefreshed(
+        body.message ??
+          `Updated ${body.stored ?? 0} rate${body.stored === 1 ? "" : "s"} from ${
+            body.provider ?? "the rate feed"
+          }${body.skipped ? `, leaving ${body.skipped} set by hand alone` : ""}.`
+      );
+      await load();
+    } catch {
+      setError("Connection error — rates were not refreshed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const configured = new Set(countries.map((entry) => entry.country));
+  const available = mappedCountries().filter((code) => !configured.has(code));
+
+  return (
+    <div className="space-y-4">
+      <p className="font-sans text-xs text-forest/45 max-w-2xl leading-relaxed">
+        Countries you turn on here are quoted in their own money, converted
+        nightly from your rupee prices. Every other country sees rupees.
+        Sessions are always billed in rupees — this only changes what the
+        figure reads as.
+      </p>
+
+      {!masterSwitch && loaded && (
+        <p className="font-sans text-xs text-amber-600 max-w-2xl leading-relaxed">
+          Converted prices are switched off site-wide, so visitors currently see
+          rupees everywhere regardless of what is set below. Set{" "}
+          <code className="font-mono">LOCAL_CURRENCY=on</code> to turn them on.
+        </p>
+      )}
+
+      {error && <p className="font-sans text-xs text-red-500">{error}</p>}
+      {refreshed && <p className="font-sans text-xs text-forest/60">{refreshed}</p>}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={adding}
+          onChange={(e) => setAdding(e.target.value)}
+          disabled={busy}
+          aria-label="Country to add"
+          className="font-sans text-xs bg-cream border border-forest/15 rounded-lg px-3 py-2 text-forest/80"
+        >
+          <option value="">Add a country…</option>
+          {available.map((code) => (
+            <option key={code} value={code}>
+              {nameOf(code)} ({code})
+            </option>
+          ))}
+        </select>
+
+        <button
+          type="button"
+          disabled={busy || !adding}
+          onClick={() => {
+            const code = adding;
+            setAdding("");
+            setOpen(code);
+            // Added switched off: appearing in the list is not the same as
+            // deciding what it should say, and one of those is reversible
+            // without anyone abroad noticing.
+            void save(code, { ...EMPTY_DRAFT, enabled: false });
+          }}
+          className="font-sans text-xs px-3 py-2 rounded-lg bg-forest text-cream disabled:opacity-40"
+        >
+          Add
+        </button>
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void refresh()}
+          className="font-sans text-xs px-3 py-2 rounded-lg border border-forest/15 text-forest/70 disabled:opacity-40"
+        >
+          Refresh rates now
+        </button>
+      </div>
+
+      {loaded && countries.length === 0 && !error && (
+        <p className="font-sans text-xs text-forest/40">
+          No country is set up yet, so everyone sees rupees.
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {countries.map((preview) => {
+          const draft = draftFor(preview);
+          const dirty = drafts[preview.country] !== undefined;
+          const expanded = open === preview.country;
+
+          return (
+            <div
+              key={preview.country}
+              className="border border-forest/10 rounded-xl overflow-hidden"
+            >
+              <button
+                type="button"
+                onClick={() => setOpen(expanded ? "" : preview.country)}
+                className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-forest/[0.03]"
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <span
+                    aria-hidden
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      preview.view.native ? "bg-forest/20" : "bg-emerald-500"
+                    }`}
+                  />
+                  <span className="font-sans text-xs text-forest/80 truncate">
+                    {nameOf(preview.country)}
+                  </span>
+                  <span className="font-mono text-[10px] text-forest/35 shrink-0">
+                    {preview.currency}
+                  </span>
+                </span>
+                <span className="font-sans text-[11px] text-forest/50 shrink-0">
+                  {preview.view.range || "—"}
+                </span>
+              </button>
+
+              {expanded && (
+                <div className="px-3 pb-3 space-y-3 border-t border-forest/10 pt-3">
+                  <label className="flex items-center gap-2 font-sans text-xs text-forest/70">
+                    <input
+                      type="checkbox"
+                      checked={draft.enabled}
+                      onChange={(e) =>
+                        editDraft(preview.country, { enabled: e.target.checked })
+                      }
+                    />
+                    Quote visitors here in {preview.currency}
+                  </label>
+
+                  <label className="block font-sans text-xs text-forest/60">
+                    Markup
+                    <span className="text-forest/35">
+                      {" "}
+                      — added to your rupee prices before converting
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={500}
+                        value={draft.markupPercent}
+                        placeholder="0"
+                        onChange={(e) =>
+                          editDraft(preview.country, { markupPercent: e.target.value })
+                        }
+                        className="w-24 font-sans text-xs bg-cream border border-forest/15 rounded-lg px-2.5 py-1.5"
+                      />
+                      <span className="text-forest/40">%</span>
+                    </div>
+                  </label>
+
+                  <label className="block font-sans text-xs text-forest/60">
+                    Exact prices for this country
+                    <span className="text-forest/35">
+                      {" "}
+                      — optional, one per line, in rupees. Used instead of the
+                      markup.
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={draft.overrideScale}
+                      placeholder={"₹1200\n₹1400\n₹1600"}
+                      onChange={(e) =>
+                        editDraft(preview.country, { overrideScale: e.target.value })
+                      }
+                      className="mt-1 w-full font-sans text-xs bg-cream border border-forest/15 rounded-lg px-2.5 py-1.5"
+                    />
+                  </label>
+
+                  <div className="rounded-lg bg-forest/[0.04] px-3 py-2.5 space-y-1">
+                    <p className="font-sans text-[10px] uppercase tracking-wider text-forest/40">
+                      What a visitor here sees
+                    </p>
+                    <p className="font-sans text-xs text-forest/80">
+                      {preview.view.tiers.map((tier) => tier.display).join("  ·  ") ||
+                        "—"}
+                    </p>
+                    {preview.reason ? (
+                      <p className="font-sans text-[11px] text-forest/45">
+                        {preview.reason}
+                      </p>
+                    ) : (
+                      <p className="font-sans text-[11px] text-forest/45">
+                        Converted from {preview.basis.join(", ")}. {preview.view.note}
+                      </p>
+                    )}
+                    {dirty && (
+                      <p className="font-sans text-[11px] text-amber-600">
+                        Showing what is saved — save to see your changes here.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={busy || !dirty}
+                      onClick={() => void save(preview.country, draft)}
+                      className="font-sans text-xs px-3 py-1.5 rounded-lg bg-forest text-cream disabled:opacity-40"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void remove(preview.country)}
+                      className="font-sans text-xs px-3 py-1.5 rounded-lg text-red-500/80 hover:bg-red-500/5"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function ContentSection({ title, children }: { title: string; children: React.ReactNode }) {

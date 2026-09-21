@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — Open Enclosure, filled tile</title>
+  <rect width="512" height="512" rx="128" fill="#2c3a2e"/>
+  <title>Samvriti.Space — Open Enclosure</title>
+  <!-- samvriti / sam-vr: "a covering, an enclosing". A boundary that holds,
+       with a deliberate opening at the top right: a space you can walk into
+       and out of. The warm centre is the person the space is held for. -->
+  <g fill="none" stroke-linecap="round">
+    <!-- enclosure, main sweep: 200 degrees -->
+    <path d="M405.43 242.93 A150 150 0 1 1 111.11 217.18" stroke="#f7f3ed" stroke-width="56"/>
+    <!-- the arm that opens: last 90 degrees lighten toward the gap -->
+    <path d="M111.11 217.18 A150 150 0 0 1 294.82 111.11" stroke="#8a9e8c" stroke-width="56"/>
+  </g>
+  <circle cx="256" cy="256" r="44" fill="#d4956f"/>
+</svg>

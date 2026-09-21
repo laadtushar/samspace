@@ -96,5 +96,17 @@ export function currenciesInUse(): string[] {
     .sort();
 }
 
+/**
+ * Every country the map knows, sorted.
+ *
+ * The dashboard offers these to choose from. A country that is not here cannot
+ * be enabled usefully — it would resolve to rupees whatever was set — so the
+ * picker is built from the map itself rather than from a separate list that
+ * could drift out of step with it.
+ */
+export function mappedCountries(): string[] {
+  return Object.keys(CURRENCY_BY_COUNTRY).sort();
+}
+
 /** How many countries are mapped. Exposed so a test can notice the map shrinking. */
 export const MAPPED_COUNTRY_COUNT = Object.keys(CURRENCY_BY_COUNTRY).length;

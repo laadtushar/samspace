@@ -9,6 +9,8 @@ import {
 import { DEFAULT_SLIDING_SCALE } from "@/lib/rates";
 import { PRACTICE_CURRENCY } from "@/lib/money";
 import type { FxRate } from "@/lib/convert";
+import type { PricingOptions } from "@/lib/pricing";
+import type { CountryRule } from "@/lib/country-pricing";
 
 /**
  * What a particular visitor is shown.
@@ -26,6 +28,18 @@ const fresh = (currency: string, perRupee: number): FxRate => ({
 });
 const USD = fresh("USD", 0.0113);
 const AED = fresh("AED", 0.0415);
+
+/**
+ * A country the practice has turned on.
+ *
+ * Conversion is a decision now, not a consequence of a rate existing, so every
+ * test that expects a converted figure has to say which country was enabled —
+ * and every test that expects rupees despite a good rate has to enable one too,
+ * or it passes for the wrong reason.
+ */
+const on = (country: string, extra: Partial<CountryRule> = {}): PricingOptions => ({
+  rule: { country, enabled: true, markupPercent: 0, overrideScale: null, ...extra },
+});
 
 describe("who may take the student rate", () => {
   it("offers it at home", () => {
@@ -85,7 +99,7 @@ describe("at home", () => {
 
 describe("abroad, with a rate worth quoting", () => {
   it("converts and drops the concessional tier", () => {
-    const view = pricingFor(SCALE, "US", USD);
+    const view = pricingFor(SCALE, "US", USD, on("US"));
     expect(view.currency).toBe("USD");
     expect(view.native).toBe(false);
     // ₹800, ₹900, ₹1000 — the full band, no student rate.
@@ -101,14 +115,14 @@ describe("abroad, with a rate worth quoting", () => {
       that arrives in rupees; one that does not say so is a number someone will
       reasonably expect to be charged.
     */
-    const view = pricingFor(SCALE, "AE", AED);
+    const view = pricingFor(SCALE, "AE", AED, on("AE"));
     expect(view.note).toBe(CONVERTED_NOTE);
     expect(view.note).toContain("INR");
   });
 
   it("keeps the rupee amount alongside whatever is displayed", () => {
     // Nothing downstream re-derives the price from the converted figure.
-    const view = pricingFor(SCALE, "US", USD);
+    const view = pricingFor(SCALE, "US", USD, on("US"));
     expect(view.tiers.map((t) => t.rupees)).toEqual([800, 900, 1000]);
   });
 });
@@ -126,7 +140,7 @@ describe("abroad, with no rate worth quoting", () => {
   ];
 
   it.each(cases)("falls back to rupees given %s", (_label, rate) => {
-    const view = pricingFor(SCALE, "US", rate);
+    const view = pricingFor(SCALE, "US", rate, on("US"));
     expect(view.native).toBe(true);
     expect(view.currency).toBe(PRACTICE_CURRENCY);
     expect(view.note).toBeUndefined();
@@ -138,7 +152,7 @@ describe("abroad, with no rate worth quoting", () => {
   it("falls back rather than showing a scale with tiers that read alike", () => {
     // A rate so small every tier rounds together: rupees say more than three
     // identical figures would.
-    const view = pricingFor(SCALE, "KW", fresh("KWD", 1e-9));
+    const view = pricingFor(SCALE, "KW", fresh("KWD", 1e-9), on("KW"));
     expect(view.native).toBe(true);
   });
 });
@@ -146,7 +160,7 @@ describe("abroad, with no rate worth quoting", () => {
 describe("a country that means nothing", () => {
   it("shows rupees and the band, for anything unrecognised", () => {
     for (const country of ["", "ZZ", null, undefined, 42]) {
-      const view = pricingFor(SCALE, country as unknown, USD);
+      const view = pricingFor(SCALE, country as unknown, USD, on("US"));
       expect(view.native, String(country)).toBe(true);
       // Unknown is not home, so no concessional rate.
       expect(view.tiers.some((t) => t.student), String(country)).toBe(false);
