@@ -4122,6 +4122,19 @@ function CountryPricing() {
           Converted prices are switched off site-wide, so visitors currently see
           rupees everywhere regardless of what is set below. Set{" "}
           <code className="font-mono">LOCAL_CURRENCY=on</code> to turn them on.
+          <br />
+          {/*
+            Worth saying, because the obvious reading of this message once the
+            variable is set is that the setting did not work. It did: the
+            variable belongs to a deployment, and the one currently serving was
+            built before it existed. Without this line the message sends
+            someone to set a variable they have already set.
+          */}
+          <span className="text-forest/45">
+            Already set it? Redeploy. An environment variable is captured when a
+            deployment is built, so the one running now cannot see one added
+            since.
+          </span>
         </p>
       )}
 
