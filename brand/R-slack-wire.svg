@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Slack Wire</title>
+  <desc>Two poles of unequal height and the wire slung between them, hanging in the curve gravity
+  gives it. FOUR strokes; the poles are drawn last so their tops stay visible and the mark does not
+  close up into a letter M. Drawn taut a wire snaps — the slack is what lets it carry the distance.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M96 396L416 396" stroke="#8a9e8c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M136 164C168 288 204 344 252 346C304 348 350 330 376 282" stroke="#c17f5e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M136 164L136 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M376 282L376 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

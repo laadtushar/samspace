@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Ghat (favicon cut)</title>
+  <desc>Five steps cut to three and the old water line dropped. The river is a fading tint running
+  off two edges rather than a rectangle — at this size a boxed tint reads as a grey square. TWO
+  strokes over the tint.</desc>
+  <defs>
+    <linearGradient id="riv2" x1="248" y1="0" x2="352" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8a9e8c" stop-opacity="0"/>
+      <stop offset="1" stop-color="#8a9e8c" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <rect x="248" y="310" width="264" height="202" fill="url(#riv2)"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 156L210 156L210 266L320 266L320 376L428 376" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M288 310L446 310" stroke="#c17f5e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

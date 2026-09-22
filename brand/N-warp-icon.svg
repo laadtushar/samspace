@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Warp (favicon cut)</title>
+  <desc>Five warps cut to three and the weft's undulation deepened from 36 units to 84, because at
+  this weight a shallow wave flattens into a bar. FOUR strokes, same order: outer warps, weft,
+  centre warp on top.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M136 108L136 404" stroke="#2c3a2e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M376 108L376 404" stroke="#2c3a2e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M84 250C104 214 118 214 136 214C176 214 216 298 256 298C296 298 336 214 376 214C394 214 408 214 428 250" stroke="#c17f5e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 108L256 404" stroke="#2c3a2e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

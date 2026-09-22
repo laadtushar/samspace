@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Caret (favicon cut)</title>
+  <desc>The page rules are gone, the break is opened to 120 units so it survives at two and a half
+  pixels, and the two halves of the rule are made very unequal — 224 against 72 — because two bars
+  of matching length over a V read as eyebrows and a nose. THREE strokes.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M48 148L272 148" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M392 148L464 148" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M250 366L332 252L414 366" stroke="#c17f5e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

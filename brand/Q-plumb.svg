@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Plumb</title>
+  <desc>A plumb line: a fixing, a thread, a weight, and gravity. THREE strokes; the thread and the
+  bob are one continuous path with one M. The sage line leans across it. Nothing pushes the leaning
+  line upright — the thread just hangs true beside it and the difference becomes visible.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M312 104L180 420" stroke="#8a9e8c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M220 116L292 116" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 116L256 296C288 308 302 330 302 356C302 390 278 420 256 442C234 420 210 390 210 356C210 330 224 308 256 296" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

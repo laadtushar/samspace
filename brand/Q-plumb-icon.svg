@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Plumb (favicon cut)</title>
+  <desc>The leaning line is dropped and the bob is redrawn as a solid onion, narrowed and drawn out
+  long: a stroked teardrop fills in at this weight, a plain triangle turns the mark into a download
+  arrow, and a wide bob turns it into a spade. THREE elements.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M186 96L326 96" fill="none" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 96L256 266" fill="none" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 262C292 274 304 298 304 326C304 362 280 400 256 430C232 400 208 362 208 326C208 298 220 274 256 262Z" fill="#2c3a2e" stroke="#2c3a2e" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

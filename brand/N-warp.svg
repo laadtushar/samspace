@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Warp</title>
+  <desc>A handloom mid-work: five warp threads held taut, one weft thread passing through them,
+  over, under, over, under, over. SIX strokes, and the order of them is the drawing — warps 1, 3
+  and 5 go down first, then the weft crosses them, then warps 2 and 4 are laid on top. That is a
+  real plain weave, not a picture of one. The weft runs off both edges, unfinished.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M152 116L152 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 116L256 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M360 116L360 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M100 256C120 240 136 238 152 238C176 238 180 274 204 274C228 274 232 238 256 238C280 238 284 274 308 274C332 274 336 238 360 238C376 238 392 240 412 256" stroke="#c17f5e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M204 116L204 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M308 116L308 396" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

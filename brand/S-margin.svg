@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Margin</title>
+  <desc>A ruled page. SIX strokes: the clay margin rule, four faint sage lines that stop where the
+  text stops, and one forest line that keeps going — out through the margin into the part of the
+  page that is not the work. The subject of the mark is the empty left third.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M152 112L152 400" stroke="#c17f5e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M182 160L412 160" stroke="#8a9e8c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M182 204L412 204" stroke="#8a9e8c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M182 292L412 292" stroke="#8a9e8c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M182 336L412 336" stroke="#8a9e8c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M76 248L412 248" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

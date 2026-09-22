@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Ghat</title>
+  <desc>Steps cut down into a river. The flight is ONE path with ONE M — tread, riser, five times.
+  Two more strokes over a tint: the clay line is the water surface, crossing the flight partway down
+  so two treads are under it; the sage line four steps higher is where the water stood before. The
+  tint fades out to the left and runs off the bottom and right edges, so the river has no drawn box.</desc>
+  <defs>
+    <linearGradient id="riv" x1="272" y1="0" x2="372" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8a9e8c" stop-opacity="0"/>
+      <stop offset="1" stop-color="#8a9e8c" stop-opacity="0.22"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <rect x="272" y="274" width="240" height="238" fill="url(#riv)"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 186L464 186" stroke="#8a9e8c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M92 164L156 164L156 208L220 208L220 252L284 252L284 296L348 296L348 340L412 340" stroke="#2c3a2e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M272 274L470 274" stroke="#c17f5e" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
