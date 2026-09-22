@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Five</title>
+  <desc>Five bitten discs. Between them a circle that is not drawn and will not stop appearing: the whole assembled by the eye out of five parts.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <defs><mask id="m664423"><rect width="512" height="512" fill="#fff"/><circle cx="256" cy="256" r="88" fill="#000"/></mask></defs>
+  <g fill="#2c3a2e" mask="url(#m664423)">
+    <circle cx="256" cy="142" r="47"/>
+    <circle cx="364.42" cy="220.77" r="47"/>
+    <circle cx="323.01" cy="348.23" r="47"/>
+    <circle cx="188.99" cy="348.23" r="47"/>
+    <circle cx="147.58" cy="220.77" r="47"/>
+  </g>
+</svg>

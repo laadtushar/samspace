@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — Cloth on a Line (favicon cut)</title>
+  <desc>Line, border, fall, sweep. Four strokes, both readings.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <path d="M84 134L428 134" fill="none" stroke="#2c3a2e" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M372 134L372 384" fill="none" stroke="#2c3a2e" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M178 134C176 176 172 216 170 252C164 312 140 350 100 380" fill="none" stroke="#2c3a2e" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M170 252L372 252" fill="none" stroke="#8a9e8c" stroke-width="16.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
