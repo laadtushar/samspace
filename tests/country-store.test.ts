@@ -31,6 +31,7 @@ suite("storing what a country is charged", () => {
 
   beforeEach(async () => {
     await sql()`delete from country_pricing`;
+    await store.saveDefaultMarkup(0);
   });
 
   it("reads nothing for a country nobody has decided about", async () => {
@@ -52,6 +53,18 @@ suite("storing what a country is charged", () => {
       markupPercent: 50,
       overrideScale: null,
     });
+  });
+
+  it("stores no markup as null, not as nought", async () => {
+    // The two are different instructions and the column has to keep them
+    // apart: null takes the common markup, 0 refuses it.
+    await store.saveCountryRule({ country: "AE", enabled: true });
+    expect((await store.ruleFor("AE"))!.markupPercent).toBeNull();
+  });
+
+  it("stores a deliberate nought as a nought", async () => {
+    await store.saveCountryRule({ country: "AE", enabled: true, markupPercent: 0 });
+    expect((await store.ruleFor("AE"))!.markupPercent).toBe(0);
   });
 
   it("round-trips an override, which is a list of rates", async () => {
@@ -111,6 +124,27 @@ suite("storing what a country is charged", () => {
     expect(await store.deleteCountryRule("ae")).toBe(true);
     expect(await store.ruleFor("AE")).toBeNull();
     expect(await store.deleteCountryRule("AE")).toBe(false);
+  });
+
+  it("keeps a common markup and reads it back as a number", async () => {
+    expect(await store.defaultMarkup()).toBe(0);
+    expect(await store.saveDefaultMarkup(37.5)).toBe(37.5);
+    expect(await store.defaultMarkup()).toBe(37.5);
+  });
+
+  it("never grows a second settings row, however often it is saved", async () => {
+    await store.saveDefaultMarkup(10);
+    await store.saveDefaultMarkup(20);
+    const rows = (await sql()`select count(*)::int as n from pricing_settings`) as unknown as { n: number }[];
+    expect(rows[0].n).toBe(1);
+    expect(await store.defaultMarkup()).toBe(20);
+  });
+
+  it("refuses a common markup that is not one", async () => {
+    await expect(store.saveDefaultMarkup(-5)).rejects.toThrow();
+    await expect(store.saveDefaultMarkup(9999)).rejects.toThrow();
+    // And leaves the stored value alone.
+    expect(await store.defaultMarkup()).toBe(0);
   });
 
   it("reads a markup stored as numeric back as a number", async () => {

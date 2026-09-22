@@ -106,6 +106,8 @@ export interface PricingOptions {
    * been decided, which is the same as not enabled: rupees.
    */
   rule?: CountryRule | null;
+  /** Applied to any enabled country that has not set a markup of its own. */
+  defaultMarkupPercent?: number;
   note?: string;
   now?: Date;
 }
@@ -116,7 +118,12 @@ export function pricingFor(
   rate: FxRate | null,
   options: PricingOptions = {}
 ): PricingView {
-  const { rule = null, note = CONVERTED_NOTE, now = new Date() } = options;
+  const {
+    rule = null,
+    defaultMarkupPercent = 0,
+    note = CONVERTED_NOTE,
+    now = new Date(),
+  } = options;
 
   /*
     The basis is rupees either way, so it is chosen before anything else and
@@ -124,7 +131,7 @@ export function pricingFor(
     from the base scale, a markup, or amounts typed for this country. A
     country that is not enabled gets the base scale untouched.
   */
-  const entries = tiersFor(basisFor(scale, rule), country);
+  const entries = tiersFor(basisFor(scale, rule, defaultMarkupPercent), country);
   const native = nativeView(entries);
 
   /*
