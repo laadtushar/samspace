@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — Cradle (favicon cut)</title>
+  <desc>TWO elements. The cup and two fingers as one heavy line; the held spiral collapses to a clay dot, which is what a fine spiral becomes at 32px in any case.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <path d="M96 258C99 270 101 309 112 330C123 351 143 372 164 384C185 396 214 404 240 404C266 404 298 397 320 384C342 371 362 349 374 328C386 307 388 278 390 256C392 234 393 208 388 194C383 180 367 174 358 174C349 174 336 182 332 194C328 206 335 251 332 248C329 245 324 191 316 176C308 161 295 156 286 156C277 156 264 165 260 178C256 191 260 226 260 236" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="228" cy="300" r="36" fill="#c17f5e"/>
+</svg>
