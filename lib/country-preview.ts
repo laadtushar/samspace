@@ -2,7 +2,7 @@ import { pricingFor, type PricingView } from "@/lib/pricing";
 import { currencyForCountry } from "@/lib/country-currency";
 import { PRACTICE_CURRENCY } from "@/lib/money";
 import { rateIsFresh, rateAgeDays, maxAgeFor, type FxRate } from "@/lib/convert";
-import { basisFor, type CountryRule } from "@/lib/country-pricing";
+import { basisFor, markupSourceFor, type CountryRule } from "@/lib/country-pricing";
 
 /**
  * What one country is being shown, and why.
@@ -20,7 +20,10 @@ export interface CountryPreview {
   /** What this country would be quoted in, if it were quoted in anything. */
   currency: string;
   enabled: boolean;
-  markupPercent: number;
+  /** What this country set for itself, or null when it takes the common one. */
+  markupPercent: number | null;
+  /** The markup actually applied, and whether it is this country's or common. */
+  markup: { percent: number; source: "country" | "common" | "none" };
   overrideScale: string[] | null;
   /** The rupee figures the conversion starts from, after markup or override. */
   basis: string[];
@@ -34,17 +37,23 @@ export function previewFor(
   scale: readonly string[],
   rule: CountryRule,
   rate: FxRate | null,
-  now = new Date()
+  now = new Date(),
+  defaultMarkupPercent = 0
 ): CountryPreview {
   const currency = currencyForCountry(rule.country);
-  const basis = basisFor(scale, rule);
-  const view = pricingFor(scale, rule.country, rate, { rule, now });
+  const basis = basisFor(scale, rule, defaultMarkupPercent);
+  const view = pricingFor(scale, rule.country, rate, {
+    rule,
+    now,
+    defaultMarkupPercent,
+  });
 
   return {
     country: rule.country,
     currency,
     enabled: rule.enabled,
     markupPercent: rule.markupPercent,
+    markup: markupSourceFor(rule, defaultMarkupPercent),
     overrideScale: rule.overrideScale,
     basis,
     view,

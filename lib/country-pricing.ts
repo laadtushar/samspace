@@ -37,8 +37,14 @@ export interface CountryRule {
   country: string;
   /** Quoted in its own money. False means rupees, exactly as before. */
   enabled: boolean;
-  /** Added to every tier of the base scale. 0 leaves the scale alone. */
-  markupPercent: number;
+  /**
+   * This country's own markup, or null to take the common one.
+   *
+   * Null and 0 are different answers and both are needed: null is "no opinion,
+   * whatever everywhere else is", and 0 is "the base scale here, whatever
+   * everywhere else is". Collapsing them would leave no way to say the second.
+   */
+  markupPercent: number | null;
   /** Replaces the base scale outright. Null or empty means there is none. */
   overrideScale: string[] | null;
 }
@@ -86,20 +92,58 @@ export function applyMarkup(
  * markup exists to be converted alongside; applying it while still quoting
  * rupees would quietly charge that country more in the practice's own currency,
  * which is not what enabling a country is for.
+ *
+ * Where no override is set, the country's own markup applies, and where it has
+ * none, the common one does. Setting the same percentage on forty countries by
+ * hand is forty chances to mistype one and no way to change them together
+ * afterwards.
  */
 export function basisFor(
   base: readonly string[],
-  rule: CountryRule | null | undefined
+  rule: CountryRule | null | undefined,
+  defaultMarkupPercent = 0
 ): string[] {
   if (!rule || !rule.enabled) return [...base];
   if (rule.overrideScale && rule.overrideScale.length > 0) {
     return [...rule.overrideScale];
   }
-  return applyMarkup(base, rule.markupPercent);
+  return applyMarkup(base, effectiveMarkup(rule, defaultMarkupPercent));
+}
+
+/**
+ * The markup actually applied to a country, and where it came from.
+ *
+ * Separate from `basisFor` because the dashboard has to say which of the two
+ * is in force — a country reading 60% when the common markup is 50% is either
+ * a deliberate exception or a typo, and only the person who set it can tell
+ * the difference from a screen that says which.
+ */
+export function markupSourceFor(
+  rule: CountryRule | null | undefined,
+  defaultMarkupPercent = 0
+): { percent: number; source: "country" | "common" | "none" } {
+  if (rule && typeof rule.markupPercent === "number") {
+    return { percent: rule.markupPercent, source: "country" };
+  }
+  if (defaultMarkupPercent > 0) {
+    return { percent: defaultMarkupPercent, source: "common" };
+  }
+  return { percent: 0, source: "none" };
+}
+
+/** The markup applied to a country, common one included. */
+export function effectiveMarkup(
+  rule: CountryRule | null | undefined,
+  defaultMarkupPercent = 0
+): number {
+  return markupSourceFor(rule, defaultMarkupPercent).percent;
 }
 
 /** Why a markup was refused, for the dashboard to show. Empty when fine. */
 export function markupProblem(percent: unknown): string {
+  // Null is a valid answer — it means take the common markup — and an empty
+  // box is how someone says it.
+  if (percent === null || percent === undefined || percent === "") return "";
   const value = typeof percent === "string" ? Number(percent) : percent;
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return "Enter a markup as a number, like 50 for half as much again.";
@@ -132,7 +176,9 @@ export function defaultRule(country: string): CountryRule {
   return {
     country: normaliseCountry(country) ?? "",
     enabled: false,
-    markupPercent: 0,
+    // Null, not 0: a country nobody has decided about takes the common markup
+    // rather than opting itself out of it.
+    markupPercent: null,
     overrideScale: null,
   };
 }

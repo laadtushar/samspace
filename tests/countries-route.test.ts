@@ -34,6 +34,7 @@ suite("country settings over HTTP", () => {
   beforeEach(async () => {
     await sql()`delete from country_pricing`;
     await sql()`delete from fx_rates`;
+    await patch({ defaultMarkupPercent: 0 });
   });
 
   const post = (body: unknown) =>
@@ -44,11 +45,20 @@ suite("country settings over HTTP", () => {
       })
     );
 
+  const patch = (body: unknown) =>
+    routes.PATCH(
+      new Request("https://www.samvritispace.com/api/admin/countries", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      })
+    );
+
   const list = async () => {
     const res = await routes.GET();
     return (await res.json()) as {
       countries: import("@/lib/country-preview").CountryPreview[];
       localCurrencyEnabled: boolean;
+      defaultMarkupPercent: number;
     };
   };
 
@@ -155,6 +165,67 @@ suite("country settings over HTTP", () => {
       );
     expect((await gone()).status).toBe(200);
     expect((await gone()).status).toBe(200);
+  });
+
+  it("applies a markup set for every country", async () => {
+    await patch({ defaultMarkupPercent: 50 });
+    await post({ country: "AE", enabled: true });
+
+    const { countries, defaultMarkupPercent } = await list();
+    expect(defaultMarkupPercent).toBe(50);
+    expect(countries[0].basis).toContain("₹1200");
+    expect(countries[0].markup).toEqual({ percent: 50, source: "common" });
+  });
+
+  it("lets a country set its own instead", async () => {
+    await patch({ defaultMarkupPercent: 50 });
+    await post({ country: "AE", enabled: true, markupPercent: 100 });
+
+    const { countries } = await list();
+    expect(countries[0].basis).toContain("₹1600");
+    expect(countries[0].markup).toEqual({ percent: 100, source: "country" });
+  });
+
+  it("lets a country refuse the common markup with a nought", async () => {
+    /*
+      The case the whole nullable column exists for: somewhere the practice
+      deliberately charges at par, and 0 is how that is said. Read as "nothing
+      set" it would be marked up with everywhere else.
+    */
+    await patch({ defaultMarkupPercent: 50 });
+    await post({ country: "AE", enabled: true, markupPercent: 0 });
+
+    const { countries } = await list();
+    expect(countries[0].basis).toEqual(["₹500 (Student)", "₹800", "₹900", "₹1000"]);
+    expect(countries[0].markup).toEqual({ percent: 0, source: "country" });
+  });
+
+  it("repriced every inheriting country when the common markup moves", async () => {
+    await post({ country: "AE", enabled: true });
+    await post({ country: "US", enabled: true, markupPercent: 10 });
+
+    await patch({ defaultMarkupPercent: 50 });
+    const { countries } = await list();
+    const byCode = Object.fromEntries(countries.map((c) => [c.country, c]));
+
+    expect(byCode.AE.markup.percent).toBe(50);
+    // The one that opted out stays exactly where it was.
+    expect(byCode.US.markup).toEqual({ percent: 10, source: "country" });
+  });
+
+  it("refuses a common markup that is not one, changing nothing", async () => {
+    await patch({ defaultMarkupPercent: 50 });
+    expect((await patch({ defaultMarkupPercent: -5 })).status).toBe(400);
+    expect((await patch({ defaultMarkupPercent: 9999 })).status).toBe(400);
+    expect((await list()).defaultMarkupPercent).toBe(50);
+  });
+
+  it("does not let saving one country reprice the rest", async () => {
+    // Folding the common markup into the country save would make "save the
+    // UAE" a call that can silently reprice everywhere else.
+    await patch({ defaultMarkupPercent: 50 });
+    await post({ country: "AE", enabled: true, markupPercent: 25 });
+    expect((await list()).defaultMarkupPercent).toBe(50);
   });
 
   it("reports the master switch, which can make every row moot", async () => {

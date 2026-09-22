@@ -3,6 +3,8 @@ import {
   markUp,
   applyMarkup,
   basisFor,
+  markupSourceFor,
+  effectiveMarkup,
   normaliseCountry,
   markupProblem,
   overrideProblem,
@@ -219,8 +221,16 @@ describe("refusing a setting before it reaches anyone", () => {
   });
 
   it("refuses a markup that is not a number", () => {
-    for (const bad of ["fifty", Number.NaN, null, {}]) {
+    for (const bad of ["fifty", Number.NaN, {}]) {
       expect(markupProblem(bad)).not.toBe("");
+    }
+  });
+
+  it("accepts no markup at all, which means take the common one", () => {
+    // An empty box is how someone says "whatever everywhere else is". It is
+    // not a mistake and must not be reported as one.
+    for (const nothing of [null, undefined, ""]) {
+      expect(markupProblem(nothing)).toBe("");
     }
   });
 
@@ -231,5 +241,89 @@ describe("refusing a setting before it reaches anyone", () => {
     expect(overrideProblem(["no amount here"])).not.toBe("");
     expect(overrideProblem("₹1200")).not.toBe("");
     expect(overrideProblem([1200])).not.toBe("");
+  });
+});
+
+describe("a markup for every country at once", () => {
+  const AED = fresh("AED", 0.0415);
+
+  it("applies where a country has not set one of its own", () => {
+    // Setting the same percentage on forty countries by hand is forty chances
+    // to mistype one, and no way to change them together afterwards.
+    const basis = basisFor(SCALE, rule({ enabled: true, markupPercent: null }), 50);
+    expect(basis).toEqual(["₹750 (Student)", "₹1200", "₹1350", "₹1500"]);
+  });
+
+  it("yields to a country that has set its own", () => {
+    const basis = basisFor(SCALE, rule({ enabled: true, markupPercent: 100 }), 50);
+    expect(basis).toEqual(["₹1000 (Student)", "₹1600", "₹1800", "₹2000"]);
+  });
+
+  it("treats a country's nought as a real answer, not as nothing set", () => {
+    /*
+      The distinction the whole nullable column exists for. Somewhere the
+      practice deliberately wants to charge at par — a neighbour, a country
+      where the common markup would be indefensible — and 0 is how that is
+      said. Reading it as "nothing set" would mark that country up with
+      everywhere else and there would be no way to stop it.
+    */
+    const basis = basisFor(SCALE, rule({ enabled: true, markupPercent: 0 }), 50);
+    expect(basis).toEqual(SCALE);
+  });
+
+  it("does nothing to a country that is not enabled", () => {
+    const basis = basisFor(SCALE, rule({ enabled: false, markupPercent: null }), 50);
+    expect(basis).toEqual(SCALE);
+  });
+
+  it("loses to an override, which is the most specific thing anyone typed", () => {
+    const basis = basisFor(
+      SCALE,
+      rule({ enabled: true, markupPercent: null, overrideScale: ["₹1111"] }),
+      50
+    );
+    expect(basis).toEqual(["₹1111"]);
+  });
+
+  it("says which markup is in force, so a screen can explain itself", () => {
+    // 60% against a common 50% is either a deliberate exception or a typo, and
+    // only the person who set it can tell from a screen that says which.
+    expect(markupSourceFor(rule({ markupPercent: 60 }), 50)).toEqual({
+      percent: 60,
+      source: "country",
+    });
+    expect(markupSourceFor(rule({ markupPercent: null }), 50)).toEqual({
+      percent: 50,
+      source: "common",
+    });
+    expect(markupSourceFor(rule({ markupPercent: null }), 0)).toEqual({
+      percent: 0,
+      source: "none",
+    });
+    expect(markupSourceFor(rule({ markupPercent: 0 }), 50)).toEqual({
+      percent: 0,
+      source: "country",
+    });
+  });
+
+  it("reaches the converted figures a visitor is served", () => {
+    const view = pricingFor(SCALE, "AE", AED, {
+      rule: rule({ enabled: true, markupPercent: null }),
+      defaultMarkupPercent: 50,
+    });
+    expect(view.native).toBe(false);
+    // The rupees travelling alongside are the marked-up ones, so an invoice is
+    // never raised for less than was quoted.
+    expect(view.tiers.map((t) => t.rupees)).toEqual([1200, 1350, 1500]);
+  });
+
+  it("changes every inheriting country at once when it moves", () => {
+    const inheriting = rule({ enabled: true, markupPercent: null });
+    expect(effectiveMarkup(inheriting, 25)).toBe(25);
+    expect(effectiveMarkup(inheriting, 75)).toBe(75);
+    // And leaves the one that opted out exactly where it was.
+    const own = rule({ enabled: true, markupPercent: 10 });
+    expect(effectiveMarkup(own, 25)).toBe(10);
+    expect(effectiveMarkup(own, 75)).toBe(10);
   });
 });

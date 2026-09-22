@@ -3949,6 +3949,8 @@ interface RepriceResult {
 function CountryPricing() {
   const [countries, setCountries] = useState<CountryPreview[]>([]);
   const [masterSwitch, setMasterSwitch] = useState(true);
+  const [commonMarkup, setCommonMarkup] = useState("");
+  const [savedMarkup, setSavedMarkup] = useState("");
   const [adding, setAdding] = useState("");
   const [open, setOpen] = useState("");
   const [drafts, setDrafts] = useState<Record<string, DraftRule>>({});
@@ -3988,9 +3990,13 @@ function CountryPricing() {
       const body = (await res.json()) as {
         countries?: CountryPreview[];
         localCurrencyEnabled?: boolean;
+        defaultMarkupPercent?: number;
       };
       setCountries(Array.isArray(body.countries) ? body.countries : []);
       setMasterSwitch(body.localCurrencyEnabled !== false);
+      const markup = String(body.defaultMarkupPercent || "");
+      setCommonMarkup(markup);
+      setSavedMarkup(markup);
       setError("");
     } catch {
       setError("Connection error — countries could not be loaded.");
@@ -4006,7 +4012,10 @@ function CountryPricing() {
   const draftFor = (preview: CountryPreview): DraftRule =>
     drafts[preview.country] ?? {
       enabled: preview.enabled,
-      markupPercent: String(preview.markupPercent || ""),
+      // Null is an empty box, and 0 is a nought someone typed. String()
+      // alone would blur the two into "".
+      markupPercent:
+        preview.markupPercent === null ? "" : String(preview.markupPercent),
       overrideScale: (preview.overrideScale ?? []).join("\n"),
     };
 
@@ -4027,7 +4036,12 @@ function CountryPricing() {
         body: JSON.stringify({
           country,
           enabled: draft.enabled,
-          markupPercent: Number(draft.markupPercent || 0),
+          // Empty stays empty: it is how someone says "take the common
+          // markup", which is not the same as typing a nought.
+          markupPercent:
+            draft.markupPercent.trim() === ""
+              ? null
+              : Number(draft.markupPercent),
           // One rate per line is how the sliding scale is edited above, so it
           // is how this is edited too.
           overrideScale: draft.overrideScale
@@ -4070,6 +4084,29 @@ function CountryPricing() {
       await load();
     } catch {
       setError("Connection error — nothing was removed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveCommonMarkup = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await apiFetch("/api/admin/countries", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ defaultMarkupPercent: Number(commonMarkup || 0) }),
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not save that markup"));
+        return;
+      }
+      // Reloaded rather than patched in: changing this repriced every country
+      // that had not set its own, and the previews have to show that.
+      await load();
+    } catch {
+      setError("Connection error — nothing was saved.");
     } finally {
       setBusy(false);
     }
@@ -4140,6 +4177,37 @@ function CountryPricing() {
 
       {error && <p className="font-sans text-xs text-red-500">{error}</p>}
       {refreshed && <p className="font-sans text-xs text-forest/60">{refreshed}</p>}
+
+      <div className="rounded-lg border border-forest/10 px-3 py-2.5 space-y-1.5">
+        <label className="block font-sans text-xs text-forest/60">
+          Markup for every country
+          <span className="text-forest/35">
+            {" "}
+            — added to your rupee prices before converting, anywhere that has
+            not set its own
+          </span>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <input
+              type="number"
+              min={0}
+              max={500}
+              value={commonMarkup}
+              placeholder="0"
+              onChange={(e) => setCommonMarkup(e.target.value)}
+              className="w-24 font-sans text-xs bg-cream border border-forest/15 rounded-lg px-2.5 py-1.5"
+            />
+            <span className="text-forest/40">%</span>
+            <button
+              type="button"
+              disabled={busy || commonMarkup === savedMarkup}
+              onClick={() => void saveCommonMarkup()}
+              className="font-sans text-xs px-3 py-1.5 rounded-lg bg-forest text-cream disabled:opacity-40"
+            >
+              Save
+            </button>
+          </div>
+        </label>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <select
@@ -4239,10 +4307,11 @@ function CountryPricing() {
                   </label>
 
                   <label className="block font-sans text-xs text-forest/60">
-                    Markup
+                    Markup for this country
                     <span className="text-forest/35">
                       {" "}
-                      — added to your rupee prices before converting
+                      — leave empty to use the {commonMarkup || "0"}% above.
+                      Type 0 to charge the base prices here.
                     </span>
                     <div className="flex items-center gap-1.5 mt-1">
                       <input
@@ -4250,7 +4319,7 @@ function CountryPricing() {
                         min={0}
                         max={500}
                         value={draft.markupPercent}
-                        placeholder="0"
+                        placeholder={commonMarkup || "0"}
                         onChange={(e) =>
                           editDraft(preview.country, { markupPercent: e.target.value })
                         }
@@ -4292,7 +4361,13 @@ function CountryPricing() {
                       </p>
                     ) : (
                       <p className="font-sans text-[11px] text-forest/45">
-                        Converted from {preview.basis.join(", ")}. {preview.view.note}
+                        Converted from {preview.basis.join(", ")}
+                        {preview.markup.source === "common" &&
+                          ` (the ${preview.markup.percent}% set for every country)`}
+                        {preview.markup.source === "country" &&
+                          preview.markup.percent > 0 &&
+                          ` (this country's own ${preview.markup.percent}%)`}
+                        . {preview.view.note}
                       </p>
                     )}
                     {dirty && (

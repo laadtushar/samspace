@@ -4,7 +4,7 @@ import { pricingFor } from "@/lib/pricing";
 import { publicContent } from "@/lib/content";
 import { currencyForCountry } from "@/lib/country-currency";
 import { rateFor } from "@/lib/fx-store";
-import { ruleFor } from "@/lib/country-store";
+import { ruleFor, defaultMarkup } from "@/lib/country-store";
 import { log, errorFields } from "@/lib/log";
 
 /**
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     hiccup should cost the conversion and nothing else. Prices still render,
     in the currency they are actually billed in.
   */
-  const [rate, rule] = await Promise.all([
+  const [rate, rule, commonMarkup] = await Promise.all([
     rateFor(currency).catch((error) => {
       log.error("pricing.rate_unreadable", { currency, ...errorFields(error) });
       return null;
@@ -71,9 +71,18 @@ export async function GET(request: Request) {
       log.error("pricing.country_unreadable", { country, ...errorFields(error) });
       return null;
     }),
+    defaultMarkup().catch((error) => {
+      // Zero, not the last known value: an unreadable markup should quote the
+      // practice's own prices rather than a figure nobody chose.
+      log.error("pricing.markup_unreadable", { ...errorFields(error) });
+      return 0;
+    }),
   ]);
 
-  const view = pricingFor(content.slidingScale, country, rate, { rule });
+  const view = pricingFor(content.slidingScale, country, rate, {
+    rule,
+    defaultMarkupPercent: commonMarkup,
+  });
 
   return NextResponse.json(view, {
     headers: {
