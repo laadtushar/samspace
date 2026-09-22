@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Margin (favicon cut)</title>
+  <desc>Redrawn off-centre: the margin rule sits at a quarter width and the crossing line high, so
+  the two do not meet in the middle and read as a plus sign. Two further rules stop clear of the
+  margin — the gap is 52 units so it is still open at sixteen pixels. FOUR strokes.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M134 96L134 416" stroke="#c17f5e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M72 168L436 168" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M230 292L436 292" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M230 400L436 400" stroke="#2c3a2e" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

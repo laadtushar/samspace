@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Slack Wire (favicon cut)</title>
+  <desc>The sag is raised so it does not weld itself to the ground at small sizes, and the ground
+  line is kept — without it the poles and the wire close into a letter M. FOUR strokes, poles and
+  ground drawn over the wire.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M148 128C182 250 218 300 258 302C300 304 336 278 364 228" stroke="#c17f5e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M148 128L148 392" stroke="#2c3a2e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M364 228L364 392" stroke="#2c3a2e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M104 404L408 404" stroke="#2c3a2e" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
