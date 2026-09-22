@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — सं (favicon cut)</title>
+  <desc>Redrawn, not thickened: the shoulder of the letter is dropped, leaving the three members that make sa readable at all — the shirorekha it hangs from, the stem, and the left limb — plus the anusvara above. Checked at 16px; a native reader should confirm the form still reads as sa.</desc>
+  <rect width="100%" height="100%" fill="#f7f3ed"/>
+  <circle cx="296.0" cy="110.0" r="30" fill="#2c3a2e"/>
+  <g fill="none" stroke="#2c3a2e" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M137.00 196.00L387.00 196.00"/>
+    <path d="M296.00 196.00L296.00 406.00"/>
+    <path d="M202.00 200.20C184.50 217.00 162.00 240.10 154.50 271.60C148.25 305.20 174.50 347.20 204.50 376.60C217.00 389.20 227.00 399.70 233.25 406.00"/>
+  </g>
+</svg>

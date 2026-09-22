@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — सं</title>
+  <desc>The first syllable of samvriti, constructed rather than set. Devanagari does not stand on a baseline; it hangs from the shirorekha, the headline drawn across the top of the word. That line is the structural member, so it is drawn here in clay and the letter is built underneath it in one even weight. Above it sits the anusvara, the dot that carries the nasal of sam — "together". No Devanagari typeface was used and none is installed but FreeSerif: the skeleton was traced against FreeSerif's sa, rebuilt by hand as a monoline, and the anusvara positioned by hand because nothing here does complex shaping. A native reader should check the form.</desc>
+  <rect width="100%" height="100%" fill="#f7f3ed"/>
+  <g fill="none" stroke="#2c3a2e" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M294.90 152.00L294.90 381.00"/>
+    <path d="M187.36 156.58C167.34 174.90 141.60 200.09 133.02 234.44C125.87 271.08 155.90 316.88 190.22 348.94C204.52 362.68 215.96 374.13 223.11 381.00"/>
+    <path d="M148.75 213.83C167.34 241.31 190.22 251.62 218.82 249.32C256.00 245.89 284.60 232.15 294.90 216.12"/>
+  </g>
+  <path d="M113.00 152.00L399.00 152.00" fill="none" stroke="#c17f5e" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="294.9" cy="116.0" r="10.5" fill="#c17f5e"/>
+</svg>

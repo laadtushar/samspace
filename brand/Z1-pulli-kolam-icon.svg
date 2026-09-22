@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — Pulli Kolam (favicon cut)</title>
+  <desc>The smallest true unit of the kolam, redrawn rather than thickened: one pulli, and one closed line taken around it without touching it. The lattice cannot survive reduction; its single cell can.</desc>
+  <rect width="100%" height="100%" fill="#f7f3ed"/>
+  <path d="M223.5 128.5Q256 96 288.5 128.5L383.5 223.5Q416 256 383.5 288.5L288.5 383.5Q256 416 223.5 383.5L128.5 288.5Q96 256 128.5 223.5Z" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="34" fill="#2c3a2e"/>
+</svg>
