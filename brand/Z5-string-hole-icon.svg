@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The String-Hole (favicon cut)</title>
+  <desc>Redrawn, not reduced: three ruled lines instead of nine, each breaking for the same round space, with the cord seen end-on at the centre. The page will not survive 16px; the break in the writing does.</desc>
+  <rect width="100%" height="100%" fill="#f7f3ed"/>
+  <g><path d="M56 166L186 166" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round"/><path d="M326 166L456 166" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round"/><path d="M56 256L150 256" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round"/><path d="M362 256L456 256" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round"/><path d="M56 346L186 346" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round"/><path d="M326 346L456 346" fill="none" stroke="#2c3a2e" stroke-width="42" stroke-linecap="round"/></g>
+  <circle cx="256" cy="256" r="44" fill="#c17f5e"/>
+</svg>
