@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Stair (favicon cut)</title>
+  <desc>Two steps and the depth band. The zigzag silhouette is what survives; the flip survives with it.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <path d="M112 368L112 306L186 306L186 244L260 244L260 182L334 182" fill="none" stroke="#2c3a2e" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M196 418L196 356L270 356L270 294L344 294L344 232L418 232" fill="none" stroke="#2c3a2e" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M112 368L196 418" fill="none" stroke="#2c3a2e" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M334 182L418 232" fill="none" stroke="#2c3a2e" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

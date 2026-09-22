@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Samvriti.Space">
+  <title>Samvriti.Space — The Stair</title>
+  <desc>Four steps in flat projection, with nothing in the drawing to say which way is up. Held one way you are climbing them; held the other, the same four steps are an overhang you are under. Nothing on the page changes.</desc>
+  <rect width="512" height="512" fill="#f7f3ed"/>
+  <path d="M132 380L132 334L188 334L188 288L244 288L244 242L300 242L300 196L356 196" fill="none" stroke="#2c3a2e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M196 416L196 370L252 370L252 324L308 324L308 278L364 278L364 232L420 232" fill="none" stroke="#2c3a2e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M132 380L196 416" fill="none" stroke="#2c3a2e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M356 196L420 232" fill="none" stroke="#2c3a2e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
