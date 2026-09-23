@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import AnimatedSection from "./AnimatedSection";
+import ConvertedText from "./ConvertedText";
 import TextReveal from "./TextReveal";
 
 interface FaqProps {
@@ -12,9 +13,17 @@ interface FaqProps {
     intro: string;
     items: { question: string; answer: string }[];
   };
+  /**
+   * The rollout switch, decided on the server.
+   *
+   * The sliding-scale answer quotes the same figures the services card does.
+   * Before this, that card converted and this answer did not, so a visitor
+   * abroad read two currencies on one page.
+   */
+  localCurrency?: boolean;
 }
 
-export default function Faq({ faq }: FaqProps) {
+export default function Faq({ faq, localCurrency = false }: FaqProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
@@ -36,7 +45,7 @@ export default function Faq({ faq }: FaqProps) {
               <TextReveal text={faq.heading} staggerDelay={0.05} />
             </h2>
             <p className="font-sans text-base text-forest/55 max-w-2xl mx-auto leading-relaxed">
-              {faq.intro}
+              <ConvertedText text={faq.intro} enabled={localCurrency} />
             </p>
           </div>
         </AnimatedSection>
@@ -79,7 +88,7 @@ export default function Faq({ faq }: FaqProps) {
                     className="overflow-hidden"
                   >
                     <p className="font-sans text-sm text-forest/65 leading-relaxed px-6 pb-5">
-                      {item.answer}
+                      <ConvertedText text={item.answer} enabled={localCurrency} />
                     </p>
                   </motion.div>
                 </div>

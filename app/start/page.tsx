@@ -3,6 +3,7 @@ import { publicContent, toPublicContent } from "@/lib/content";
 import { getCachedPublishedPosts } from "@/lib/blog";
 import { publicPosts } from "@/lib/posts-public";
 import StartPage from "@/components/StartPage";
+import { localCurrencyEnabled } from "@/lib/local-currency";
 
 export const revalidate = 60;
 
@@ -34,6 +35,7 @@ export default async function Start() {
     <StartPage
       content={toPublicContent(content)}
       latestPost={posts[0] ?? null}
+      localCurrency={localCurrencyEnabled()}
     />
   );
 }
