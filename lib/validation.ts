@@ -30,6 +30,21 @@ export const intakeSchema = z.object({
   slidingScale: trimmed(60).min(1, "Please select a rate"),
   studentConfirmed: z.boolean().optional().default(false),
   scheduling: z.enum(["booked", "skipped", ""]).optional().default(""),
+  /*
+    Which money the form was showing when the rate was chosen — a record, not
+    an instruction. The rupee amount in slidingScale is what is charged, and
+    nothing re-derives a fee from this. Optional because a visitor at home, or
+    one whose JavaScript never ran, sends no value at all.
+
+    Bounded and shaped like a currency code so a hostile client cannot write
+    arbitrary text into a column the dashboard displays.
+  */
+  displayCurrency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/, "Not a currency code")
+    .optional(),
 });
 
 export const contactSchema = z.object({

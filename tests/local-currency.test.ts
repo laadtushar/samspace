@@ -82,21 +82,41 @@ describe("the price a page renders", () => {
     */
     const source = read("components/Price.tsx");
     expect(source).toContain('"use client"');
-    expect(source).toContain("useEffect");
-    // The fetch is inside the effect, never at module or render scope.
-    const beforeEffect = source.slice(0, source.indexOf("useEffect"));
-    expect(beforeEffect).not.toContain('fetch("/api/pricing")');
+    // The fetch moved into the shared hook, so that is where the rule is
+    // enforced: it happens in an effect, never during render.
+    const hook = read("lib/use-pricing.ts");
+    expect(hook).toContain('"use client"');
+    expect(hook).toContain("useEffect");
+    const beforeEffect = hook.slice(0, hook.indexOf("useEffect"));
+    expect(beforeEffect).not.toContain("await fetch");
+    expect(source).not.toContain('fetch("/api/pricing")');
   });
 
   it("does not ask at all when the switch is off", () => {
-    expect(read("components/Price.tsx")).toContain("if (!enabled) return;");
+    expect(read("lib/use-pricing.ts")).toContain("if (!enabled) return;");
   });
 
-  it("abandons a request the visitor has navigated away from", () => {
-    // A late response must not rewrite a price on a page already left.
-    const source = read("components/Price.tsx");
-    expect(source).toContain("AbortController");
-    expect(source).toContain("abort.abort()");
+  it("asks once for the whole page, however many prices are on it", () => {
+    /*
+      Five places quote a price now — the services card, the FAQ answer, the
+      intake form's assurances and its slider. A hook that fetched per
+      component would make five identical requests on every load.
+    */
+    const hook = read("lib/use-pricing.ts");
+    expect(hook).toContain("let inFlight");
+    expect(hook).toContain("if (inFlight) return inFlight");
+  });
+
+  it("ignores a response for a page the visitor has already left", () => {
+    /*
+      This used to abort the request, which was right when Price owned it and
+      is wrong now that it is shared: aborting because one component unmounted
+      would cancel the read the other four are still waiting on. So the request
+      runs to completion and the result is dropped instead.
+    */
+    const hook = read("lib/use-pricing.ts");
+    expect(hook).toContain("if (live) setView(result)");
+    expect(hook).toContain("live = false");
   });
 
   it("says a converted figure is not what will be billed", () => {

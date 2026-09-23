@@ -50,6 +50,19 @@ export interface PricingView {
   tiers: PricedTier[];
   /** The span across what is shown, as the site writes one. */
   range: string;
+  /**
+   * Every rate on the scale converted, including ones this visitor may not
+   * choose.
+   *
+   * `tiers` is what they may pick; this is what the page already says. Copy
+   * elsewhere — the FAQ, the intake form — mentions the concessional rate to
+   * everyone, so a foreign visitor reads a figure that is not on offer to them
+   * and still has to be shown in money they understand. Leaving it in rupees
+   * beside a converted scale is the inconsistency this exists to prevent.
+   *
+   * Empty when nothing is converted.
+   */
+  all: PricedTier[];
   /** Present only when the figures are converted. */
   note?: string;
 }
@@ -88,6 +101,8 @@ function nativeView(entries: readonly string[]): PricingView {
     native: true,
     tiers,
     range: priceRangeOf(entries),
+    // Nothing is converted, so there is nothing for text substitution to do.
+    all: [],
   };
 }
 
@@ -158,6 +173,16 @@ export function pricingFor(
     display: formatMoney(converted[i], currency),
   }));
 
+  /*
+    The whole scale, converted the same way, so copy that mentions a rate this
+    visitor cannot choose still reads in their own money. Converted as one
+    scale rather than tier by tier: rounding is decided across a set, and
+    converting the concessional rate separately could round it to the same
+    figure as the lowest full rate.
+  */
+  const everyRate = basisFor(scale, rule, defaultMarkupPercent);
+  const all = pricedAll(everyRate, rate, currency);
+
   return {
     currency,
     native: false,
@@ -167,6 +192,33 @@ export function pricingFor(
       Math.max(...converted),
       currency
     ),
+    all,
     note,
   };
+}
+
+/**
+ * Every entry on a scale, converted, or nothing.
+ *
+ * Nothing rather than a partial list: a half-converted scale is worse than an
+ * unconverted one, because the reader cannot tell which figures moved.
+ */
+function pricedAll(
+  entries: readonly string[],
+  rate: FxRate,
+  currency: string
+): PricedTier[] {
+  const native = nativeView(entries).tiers;
+  if (native.length === 0) return [];
+
+  const converted = convertScale(
+    native.map((tier) => tier.rupees),
+    rate
+  );
+  if (!converted) return [];
+
+  return native.map((tier, i) => ({
+    ...tier,
+    display: formatMoney(converted[i], currency),
+  }));
 }

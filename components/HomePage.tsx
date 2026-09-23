@@ -76,7 +76,7 @@ export default function HomePage({
         />
         <Issues issues={content.issues} posts={posts} />
         <Mentoring mentoring={content.mentoring} />
-        <Faq faq={content.faq} />
+        <Faq faq={content.faq} localCurrency={localCurrency} />
         <SessionInfo
           structure={content.sessionStructure}
           crisis={content.crisis}
@@ -93,6 +93,7 @@ export default function HomePage({
         isOpen={intakeOpen}
         onClose={closeIntake}
         slidingScale={content.slidingScale}
+        localCurrency={localCurrency}
         calendlyUrl={content.calendlyUrl}
         studentNote={content.studentNote}
         intakeForm={content.intakeForm}

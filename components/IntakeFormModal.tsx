@@ -16,6 +16,8 @@ import {
   embedUrlFor,
   isBookingConfirmation,
 } from "@/lib/scheduling";
+import ConvertedText from "./ConvertedText";
+import { usePricing } from "@/lib/use-pricing";
 import { isStudentRate, DEFAULT_SLIDING_SCALE } from "@/lib/rates";
 
 interface IntakeData {
@@ -98,12 +100,21 @@ export default function IntakeFormModal({
   calendlyUrl = "",
   studentNote = defaultStudentNote,
   intakeForm,
+  localCurrency = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
   slidingScale?: string[];
   calendlyUrl?: string;
   studentNote?: string;
+  /**
+   * The rollout switch, decided on the server.
+   *
+   * Display only. The rate submitted is always the rupee string that was
+   * chosen: a converted figure is an estimate of an invoice that arrives in
+   * rupees, and nothing may re-derive what is owed from what was shown.
+   */
+  localCurrency?: boolean;
   intakeForm?: {
     heading: string;
     intro: string;
@@ -127,6 +138,8 @@ export default function IntakeFormModal({
   // all options) would otherwise leave no price buttons and block submission.
   const slidingScale =
     rawSlidingScale.length > 0 ? rawSlidingScale : [...DEFAULT_SLIDING_SCALE];
+  // Shared with every ConvertedText on the page; one request, not five.
+  const pricing = usePricing(localCurrency);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<IntakeData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
@@ -300,7 +313,18 @@ export default function IntakeFormModal({
       const res = await fetch("/api/intake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        /*
+          The rate submitted is the rupee string that was chosen, untouched.
+          displayCurrency only records which money was on screen while it was
+          chosen, so a submission can be read back later without inferring the
+          currency from a date.
+        */
+        body: JSON.stringify({
+          ...data,
+          ...(pricing && !pricing.native
+            ? { displayCurrency: pricing.currency }
+            : {}),
+        }),
       });
       if (!res.ok) {
         // The server explains precisely what it rejected — a rate limit, a
@@ -462,7 +486,8 @@ export default function IntakeFormModal({
                               {copy.assurances.map((line, i) => (
                                 <span key={line}>
                                   {i > 0 && <>&nbsp;·&nbsp;</>}
-                                  {line}
+                                  {/* One of these lines quotes the scale. */}
+                                  <ConvertedText text={line} enabled={localCurrency} />
                                 </span>
                               ))}
                             </p>
@@ -704,7 +729,10 @@ export default function IntakeFormModal({
                                 transition={{ duration: 0.18 }}
                                 className="font-serif text-4xl font-semibold text-clay"
                               >
-                                {selectedRate.amount}
+                                <ConvertedText
+                                  text={selectedRate.amount}
+                                  enabled={localCurrency}
+                                />
                               </motion.p>
                               <p className="font-sans text-xs text-forest/50 mt-1">
                                 {selectedRate.label ?? "per session"}
@@ -758,7 +786,10 @@ export default function IntakeFormModal({
                                         i === rateIndex ? "font-medium" : ""
                                       }`}
                                     >
-                                      {amount}
+                                      <ConvertedText
+                                        text={amount}
+                                        enabled={localCurrency}
+                                      />
                                     </span>
                                     {label && (
                                       <span

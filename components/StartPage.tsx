@@ -24,9 +24,12 @@ import SocialLinks from "./SocialLinks";
 export default function StartPage({
   content,
   latestPost,
+  localCurrency = false,
 }: {
   content: PublicSiteContent;
   latestPost: BlogPost | null;
+  /** The rollout switch, decided on the server. Display only. */
+  localCurrency?: boolean;
 }) {
   const [intakeOpen, setIntakeOpen] = useState(false);
   const { startPage } = content;
@@ -178,6 +181,7 @@ export default function StartPage({
         calendlyUrl={content.calendlyUrl}
         studentNote={content.studentNote}
         intakeForm={content.intakeForm}
+        localCurrency={localCurrency}
       />
     </main>
   );

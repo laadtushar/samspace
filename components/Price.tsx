@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { usePricing } from "@/lib/use-pricing";
 import type { PricingView } from "@/lib/pricing";
 
 /**
@@ -29,36 +29,12 @@ export default function Price({
   enabled: boolean;
   className?: string;
 }) {
-  const [shown, setShown] = useState<string | null>(null);
-  const [note, setNote] = useState("");
+  const view: PricingView | null = usePricing(enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Abandoned if the visitor navigates away mid-flight, so a late response
-    // cannot rewrite a price on a page they have already left.
-    const abort = new AbortController();
-
-    (async () => {
-      try {
-        const res = await fetch("/api/pricing", { signal: abort.signal });
-        if (!res.ok) return;
-
-        const view = (await res.json()) as PricingView;
-        // `native` means these already are the rupees the practice charges, so
-        // there is nothing to swap and the server's figure stands.
-        if (view.native || !view.range) return;
-
-        setShown(view.range);
-        setNote(view.note ?? "");
-      } catch {
-        // Offline, aborted, blocked, malformed — all the same answer. The
-        // rupee price is already on screen and is not wrong.
-      }
-    })();
-
-    return () => abort.abort();
-  }, [enabled]);
+  // `native` means these already are the rupees the practice charges, so there
+  // is nothing to swap and the server's figure stands.
+  const shown = view && !view.native && view.range ? view.range : null;
+  const note = shown ? view?.note ?? "" : "";
 
   if (shown === null) return <span className={className}>{rupees}</span>;
 
