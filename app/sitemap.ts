@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { getCachedPublishedPosts } from "@/lib/blog";
+import { AUTHOR } from "@/lib/author";
 
 /** The last time the homepage copy actually changed. */
 const HOME_LAST_EDITED = "2026-09-14";
@@ -22,6 +23,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(HOME_LAST_EDITED),
       changeFrequency: "monthly",
       priority: 1,
+    },
+    {
+      // The author page: who is behind every post, and her credentials.
+      url: `${SITE_URL}${AUTHOR.path}`,
+      lastModified: new Date(HOME_LAST_EDITED),
+      changeFrequency: "yearly",
+      priority: 0.6,
     },
     {
       url: `${SITE_URL}/blog`,
