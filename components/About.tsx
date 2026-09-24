@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import TextReveal from "./TextReveal";
+import ScrollText from "./ScrollText";
 
 const credentialCards = [
   { label: "M.Sc. Clinical Psychology", icon: "🎓" },
@@ -63,11 +64,10 @@ export default function About({ about }: AboutProps) {
               </h2>
             </div>
 
-            <AnimatedSection delay={0.3}>
-              <p className="font-sans text-base text-cream/70 leading-relaxed mb-12">
-                {about.paragraph}
-              </p>
-            </AnimatedSection>
+            <ScrollText
+              text={about.paragraph}
+              className="font-sans text-base text-cream/80 leading-relaxed mb-12"
+            />
 
             <div className="space-y-6">
               {about.features.map((f, i) => (

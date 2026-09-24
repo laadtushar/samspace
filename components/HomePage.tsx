@@ -12,6 +12,7 @@ import Mentoring from "@/components/Mentoring";
 import Faq from "@/components/Faq";
 import SessionInfo from "@/components/SessionInfo";
 import Contact from "@/components/Contact";
+import BreathingPause from "@/components/BreathingPause";
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
 import MarqueeDivider from "@/components/MarqueeDivider";
@@ -83,6 +84,7 @@ export default function HomePage({
           sessionLength={content.sessionLength}
           posts={posts}
         />
+        <BreathingPause />
         <Contact contact={content.contact} onBookSession={openIntake} />
       </main>
       <Footer
