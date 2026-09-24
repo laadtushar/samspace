@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { usePricing } from "@/lib/use-pricing";
-import type { PricingView } from "@/lib/pricing";
+import { swapsFor, applySwaps } from "@/lib/price-swap";
 
 /**
  * A price, in the money the visitor thinks in.
@@ -17,6 +18,16 @@ import type { PricingView } from "@/lib/pricing";
  * the request fails, is slow, or never runs because JavaScript did not, what
  * stays on screen is the rupee price — correct, just less helpful to someone
  * working out whether they can afford a session.
+ *
+ * It converts the figure it was handed, and nothing else.
+ *
+ * This used to render `view.range` — the therapy sliding scale — whenever a
+ * conversion was available, whatever price it had been given. The therapy card
+ * quotes that range, so it looked right; the academic mentoring card, a flat
+ * ₹1000, was shown the therapy scale instead. Not a currency being wrong but a
+ * price being wrong: AED 35–AED 45 in place of AED 45, opening 22% under what
+ * the session costs. Converting the given text is also what ConvertedText does,
+ * so the two agree by construction rather than by coincidence.
  */
 export default function Price({
   rupees,
@@ -29,14 +40,17 @@ export default function Price({
   enabled: boolean;
   className?: string;
 }) {
-  const view: PricingView | null = usePricing(enabled);
+  const view = usePricing(enabled);
+  const shown = useMemo(() => applySwaps(rupees, swapsFor(view)), [rupees, view]);
 
-  // `native` means these already are the rupees the practice charges, so there
-  // is nothing to swap and the server's figure stands.
-  const shown = view && !view.native && view.range ? view.range : null;
-  const note = shown ? view?.note ?? "" : "";
-
-  if (shown === null) return <span className={className}>{rupees}</span>;
+  /*
+    The note belongs to a figure that actually changed. `swapsFor` is already
+    empty when the view is native or has nothing converted, so this is only
+    false for the other case: a rupee figure that is not on the scale, left
+    alone on purpose, which must not be labelled an approximation.
+  */
+  const converted = shown !== rupees;
+  const note = converted ? view?.note ?? "" : "";
 
   return (
     <span className={className}>

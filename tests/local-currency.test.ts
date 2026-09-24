@@ -1,6 +1,9 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { localCurrencyEnabled } from "@/lib/local-currency";
+import { pricingFor } from "@/lib/pricing";
+import { swapsFor, applySwaps } from "@/lib/price-swap";
+import { formatMoneyRange } from "@/lib/money";
 
 /**
  * The switch that decides whether a visitor abroad is shown their own currency.
@@ -123,5 +126,85 @@ describe("the price a page renders", () => {
     // Every session settles in rupees. A converted price that does not say so
     // is a number someone will reasonably expect to be charged.
     expect(read("components/Price.tsx")).toContain("{note}");
+  });
+});
+
+/**
+ * Every figure on a screen agreeing with every other figure on it.
+ *
+ * Two defects, found together and fixed together, both of the same shape: a
+ * price rendered outside the one path that converts.
+ */
+describe("a price is converted from the price it was given", () => {
+  const SCALE = ["₹500 (Student)", "₹800", "₹900", "₹1000"];
+  const abroad = () =>
+    pricingFor(SCALE, "AE", { currency: "AED", perRupee: 0.043, asOf: new Date().toISOString() }, {
+      rule: { country: "AE", enabled: true, markupPercent: 0, overrideScale: null },
+    });
+
+  it("does not show the therapy scale in place of another service's price", () => {
+    /*
+      The defect: Price discarded the figure it was handed and rendered
+      view.range — the therapy sliding scale — for every card it appeared on.
+      The therapy card quotes that range, so it looked correct. The academic
+      mentoring card is a flat ₹1000 and was shown the therapy scale instead:
+      AED 35–AED 45 where the session costs AED 45, opening 22% under the real
+      price. A wrong price, not merely a wrong currency.
+    */
+    const view = abroad();
+    const swaps = swapsFor(view);
+    /*
+      Built with the same formatter the site uses rather than typed out: the
+      separator Intl puts between "AED" and the figure is a non-breaking space,
+      and a literal here would be asserting on the wrong character.
+    */
+    const shown = (rupees: number) =>
+      view.all.find((tier) => tier.rupees === rupees)!.display;
+
+    expect(applySwaps("₹1000", swaps)).toBe(shown(1000));
+    expect(applySwaps("₹800–₹1000", swaps)).toBe(
+      formatMoneyRange(35, 45, view.currency)
+    );
+    // The two must not collapse onto each other.
+    expect(applySwaps("₹1000", swaps)).not.toBe(applySwaps("₹800–₹1000", swaps));
+  });
+
+  it("converts what it was handed rather than substituting the range", () => {
+    const source = read("components/Price.tsx");
+    expect(source).toContain("applySwaps(rupees");
+    // The substitution that caused it.
+    expect(source).not.toContain("view.range ? view.range");
+  });
+
+  it("only calls a figure approximate when that figure actually changed", () => {
+    /*
+      A rupee amount that is not on the scale is deliberately left alone. It
+      must not then carry a note saying it is an estimate of an invoice in
+      another currency — it is the invoice.
+    */
+    const swaps = swapsFor(abroad());
+    expect(applySwaps("₹1234", swaps)).toBe("₹1234");
+    expect(read("components/Price.tsx")).toContain("shown !== rupees");
+  });
+
+  it("leaves no figure on the intake screen in a different currency to the rest", () => {
+    /*
+      Three figures on the rate step were not their own element and so never
+      went through ConvertedText: the note under the slider, the button that
+      steps off the student rate, and the slider's aria-valuetext. The last
+      meant a screen reader announced rupees while the screen showed dirhams.
+    */
+    const source = read("components/IntakeFormModal.tsx");
+    expect(source).toContain("inLocalMoney(parseOption(studentRate).amount)");
+    expect(source).toContain("inLocalMoney(parseOption(nextRateUp).amount)");
+    expect(source).toContain("aria-valuetext={`${inLocalMoney(");
+    // And nothing left rendering a bare parsed amount.
+    expect(source).not.toMatch(/[^(]\{parseOption\([A-Za-z]+\)\.amount\}/);
+  });
+
+  it("converts the admin-editable prose that can name a rate", () => {
+    // Both are stored copy: an edit can put a figure in either at any time.
+    expect(read("components/IntakeFormModal.tsx")).toContain("text={studentNote}");
+    expect(read("components/Faq.tsx")).toContain("text={item.question}");
   });
 });

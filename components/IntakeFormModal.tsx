@@ -18,6 +18,7 @@ import {
 } from "@/lib/scheduling";
 import ConvertedText from "./ConvertedText";
 import { usePricing } from "@/lib/use-pricing";
+import { swapsFor, applySwaps } from "@/lib/price-swap";
 import { isStudentRate, DEFAULT_SLIDING_SCALE } from "@/lib/rates";
 
 interface IntakeData {
@@ -140,6 +141,18 @@ export default function IntakeFormModal({
     rawSlidingScale.length > 0 ? rawSlidingScale : [...DEFAULT_SLIDING_SCALE];
   // Shared with every ConvertedText on the page; one request, not five.
   const pricing = usePricing(localCurrency);
+  /*
+    The same substitution ConvertedText performs, as a plain string.
+
+    Three figures on this screen are not rendered as their own element and so
+    could not go through that component: the note under the slider, the button
+    that steps off the student rate, and the slider's aria-valuetext. All three
+    stayed in rupees while the figure directly above them converted — the last
+    of them meaning a screen reader announced a rupee amount while the screen
+    showed dirhams.
+  */
+  const priceSwaps = useMemo(() => swapsFor(pricing), [pricing]);
+  const inLocalMoney = (text: string) => applySwaps(text, priceSwaps);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<IntakeData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
@@ -758,7 +771,9 @@ export default function IntakeFormModal({
                                   }%`,
                                 } as React.CSSProperties
                               }
-                              aria-valuetext={`${selectedRate.amount}${
+                              aria-valuetext={`${inLocalMoney(
+                                selectedRate.amount
+                              )}${
                                 selectedRate.label ? `, ${selectedRate.label}` : ""
                               }`}
                               className="rate-slider w-full"
@@ -809,9 +824,9 @@ export default function IntakeFormModal({
 
                             {studentRate && !needsStudentConfirm && (
                               <p className="font-sans text-[11px] text-forest/45 leading-relaxed text-center mt-4">
-                                {parseOption(studentRate).amount} is held for
-                                students without their own income — you&apos;ll be
-                                asked to confirm if you slide there.
+                                {inLocalMoney(parseOption(studentRate).amount)} is
+                                held for students without their own income —
+                                you&apos;ll be asked to confirm if you slide there.
                               </p>
                             )}
                           </div>
@@ -832,8 +847,12 @@ export default function IntakeFormModal({
                                 <p className="font-serif text-sm font-semibold text-forest mb-2">
                                   Why the student rate exists
                                 </p>
+                                {/* Admin-editable prose that may name a rate. */}
                                 <p className="font-sans text-xs text-forest/60 leading-relaxed mb-4">
-                                  {studentNote}
+                                  <ConvertedText
+                                    text={studentNote}
+                                    enabled={localCurrency}
+                                  />
                                 </p>
 
                                 <label className="flex items-start gap-3 cursor-pointer group">
@@ -868,7 +887,8 @@ export default function IntakeFormModal({
                                     onClick={() => selectRate(nextRateUp)}
                                     className="font-sans text-xs text-forest/45 hover:text-forest underline underline-offset-2 mt-3 transition-colors"
                                   >
-                                    Actually, I can pay {parseOption(nextRateUp).amount}
+                                    Actually, I can pay{" "}
+                                    {inLocalMoney(parseOption(nextRateUp).amount)}
                                   </button>
                                 )}
                               </div>
