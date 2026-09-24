@@ -15,6 +15,8 @@
  * *names* and lengths are fine; field values are not.
  */
 
+import { raiseAlert } from "@/lib/alert";
+
 type Level = "info" | "warn" | "error";
 
 export interface LogFields {
@@ -22,14 +24,13 @@ export interface LogFields {
 }
 
 function emit(level: Level, event: string, fields: LogFields = {}): void {
-  const line = JSON.stringify({
-    level,
-    event,
-    at: new Date().toISOString(),
-    ...fields,
-  });
-  if (level === "error") console.error(line);
-  else if (level === "warn") console.warn(line);
+  const at = new Date().toISOString();
+  const line = JSON.stringify({ level, event, at, ...fields });
+  if (level === "error") {
+    console.error(line);
+    // Every error-level event is a system failure, so every one may alert.
+    raiseAlert(event, at, fields);
+  } else if (level === "warn") console.warn(line);
   else console.log(line);
 }
 
