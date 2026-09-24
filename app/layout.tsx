@@ -16,6 +16,7 @@ import {
   type SiteContent,
 } from "@/lib/content";
 import { pricingFrom } from "@/lib/seo-pricing";
+import { AUTHOR, AUTHOR_URL, authorPerson } from "@/lib/author";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -76,7 +77,7 @@ export async function generateMetadata(): Promise<Metadata> {
     "sliding scale therapy India",
     "affordable therapy India",
   ],
-  authors: [{ name: "Priyanka Varma", url: SITE_URL }],
+  authors: [{ name: AUTHOR.name, url: AUTHOR_URL }],
   creator: "Priyanka Varma",
   publisher: "Samvriti.Space",
   alternates: {
@@ -236,44 +237,7 @@ const jsonLd = {
           ],
         },
       },
-      {
-        "@type": "Person",
-        "@id": `${SITE_URL}#priyanka`,
-        name: "Priyanka Varma",
-        sameAs: [
-          defaultContent.social.linkedin,
-          defaultContent.social.instagram,
-        ].filter(Boolean),
-        jobTitle: "Counselling Psychologist & Academic Mentor",
-        description:
-          "M.Sc. Clinical Psychology, UGC NET-JRF & GATE Qualified. Lecturer and counselling psychologist specialising in the mental health of young adults aged 18–35.",
-        url: SITE_URL,
-        image: `${SITE_URL}/priyanka.jpeg`,
-        email: defaultContent.contact.email,
-        knowsLanguage: ["en", "hi"],
-        worksFor: { "@id": `${SITE_URL}#business` },
-        hasCredential: [
-          {
-            "@type": "EducationalOccupationalCredential",
-            credentialCategory: "M.Sc. Clinical Psychology",
-          },
-          {
-            "@type": "EducationalOccupationalCredential",
-            credentialCategory: "UGC NET-JRF",
-          },
-          {
-            "@type": "EducationalOccupationalCredential",
-            credentialCategory: "GATE (Psychology)",
-          },
-        ],
-        knowsAbout: [
-          "Cognitive Behavioral Therapy",
-          "Humanistic Therapy",
-          "Trauma-Informed Care",
-          "Academic Mentoring",
-          "Young Adult Mental Health",
-        ],
-      },
+      authorPerson(defaultContent),
       {
         "@type": "WebSite",
         "@id": `${SITE_URL}#website`,

@@ -8,6 +8,7 @@ import {
   readingMinutes,
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd } from "@/lib/site";
+import { AUTHOR } from "@/lib/author";
 import { publicContent } from "@/lib/content";
 import { publicPost } from "@/lib/posts-public";
 import Navbar from "@/components/Navbar";
@@ -50,7 +51,7 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.publishedAt || undefined,
       modifiedTime: post.updatedAt || undefined,
-      authors: ["Priyanka Varma"],
+      authors: [AUTHOR.name],
       tags: post.tags,
       ...(post.coverImage ? { images: [{ url: post.coverImage }] } : {}),
     },
@@ -110,7 +111,7 @@ export default async function BlogPostPage({
         keywords: post.tags.join(", ") || undefined,
         wordCount: post.content.trim().split(/\s+/).length,
         inLanguage: "en-IN",
-        author: { "@id": `${SITE_URL}#priyanka` },
+        author: { "@id": AUTHOR.id },
         publisher: { "@id": `${SITE_URL}#business` },
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
         ...(post.coverImage ? { image: post.coverImage } : {}),
@@ -150,7 +151,20 @@ export default async function BlogPostPage({
           </nav>
 
           <header className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
+              {/* A visible byline: for health writing Google looks for who wrote
+                  it, not only for the name in the structured data. */}
+              <span className="font-sans text-xs text-forest/60">
+                By{" "}
+                <Link
+                  href={AUTHOR.path}
+                  rel="author"
+                  className="text-forest underline underline-offset-2 decoration-forest/30 hover:text-clay transition-colors"
+                >
+                  {AUTHOR.name}
+                </Link>
+                , {AUTHOR.jobTitle}
+              </span>
               {post.publishedAt && (
                 <time
                   dateTime={post.publishedAt}
