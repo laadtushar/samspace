@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import FloatingShapes from "./FloatingShapes";
+import AmbientWash from "./AmbientWash";
 import TextReveal from "./TextReveal";
 import MagneticButton from "./MagneticButton";
 
@@ -55,6 +56,7 @@ export default function Hero({
       */
       className="relative min-h-screen min-h-[100svh] flex items-center bg-cream overflow-hidden pt-16"
     >
+      <AmbientWash />
       {/* Animated floating shapes */}
       <FloatingShapes />
 
