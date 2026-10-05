@@ -59,6 +59,7 @@ import { parsePath, valueAtPath, withValueAtPath } from "@/lib/content-path";
 import { defaultContent } from "@/lib/default-content";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog-format";
 import { SLUG_PATTERN } from "@/lib/validation";
+import { describeReferral } from "@/lib/referral";
 
 type AdminTab =
   | "submissions"
@@ -112,6 +113,8 @@ interface Submission {
   slidingScale: string;
   studentConfirmed?: boolean;
   scheduling?: string;
+  heardFrom?: string;
+  heardFromDetail?: string;
 }
 
 /** The editor keeps tags as raw text so a half-typed comma list isn't destroyed. */
@@ -1029,6 +1032,8 @@ export default function AdminPage() {
       "slidingScale",
       "studentConfirmed",
       "scheduling",
+      "heardFrom",
+      "heardFromDetail",
     ];
     // Anything a stranger typed can land in a spreadsheet cell. A value opening
     // with =, +, - or @ is read as a formula by Excel and Sheets, so =HYPERLINK(..)
@@ -1364,6 +1369,10 @@ export default function AdminPage() {
                                     ["WhatsApp", s.whatsapp],
                                     ["Education", s.education],
                                     ["Language", s.preferredLanguage],
+                                    [
+                                      "Heard about us",
+                                      describeReferral(s.heardFrom, s.heardFromDetail),
+                                    ],
                                     ["Scale", s.slidingScale],
                                     [
                                       "Student Confirmed",

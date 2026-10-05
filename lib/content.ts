@@ -49,6 +49,10 @@ export interface IntakeSubmission {
   studentConfirmed?: boolean;
   /** "booked" | "skipped" | "" (scheduling step not shown) */
   scheduling?: string;
+  /** A key from lib/referral.ts, or "" when not answered. */
+  heardFrom?: string;
+  /** Free text given with "Somewhere else". */
+  heardFromDetail?: string;
   /**
    * ISO 4217 of the money the figure was shown in, when that was not rupees.
    *

@@ -20,6 +20,7 @@ import ConvertedText from "./ConvertedText";
 import { usePricing } from "@/lib/use-pricing";
 import { swapsFor, applySwaps } from "@/lib/price-swap";
 import { isStudentRate, DEFAULT_SLIDING_SCALE } from "@/lib/rates";
+import { REFERRAL_SOURCES, REFERRAL_DETAIL_MAX } from "@/lib/referral";
 
 interface IntakeData {
   name: string;
@@ -29,6 +30,8 @@ interface IntakeData {
   whatsapp: string;
   education: string;
   preferredLanguage: string;
+  heardFrom: string;
+  heardFromDetail: string;
   concerns: string;
   slidingScale: string;
   studentConfirmed: boolean;
@@ -46,6 +49,8 @@ const initialData: IntakeData = {
   whatsapp: "",
   education: "",
   preferredLanguage: "",
+  heardFrom: "",
+  heardFromDetail: "",
   concerns: "",
   slidingScale: "",
   studentConfirmed: false,
@@ -680,6 +685,53 @@ export default function IntakeFormModal({
                                 </button>
                               ))}
                             </div>
+                          </div>
+                          {/* Optional: analytics can name a referring site, but
+                              not the friend who recommended the practice. */}
+                          <div role="group" aria-labelledby="intake-heard-label">
+                            <span
+                              id="intake-heard-label"
+                              className="font-sans text-xs font-medium text-forest/60 uppercase tracking-wider mb-2 block"
+                            >
+                              How did you hear about us?{" "}
+                              <span className="normal-case tracking-normal text-forest/40">
+                                (optional)
+                              </span>
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {REFERRAL_SOURCES.map((source) => (
+                                <button
+                                  key={source.key}
+                                  type="button"
+                                  aria-pressed={data.heardFrom === source.key}
+                                  onClick={() =>
+                                    update(
+                                      "heardFrom",
+                                      data.heardFrom === source.key ? "" : source.key
+                                    )
+                                  }
+                                  className={`font-sans text-sm py-2 px-4 rounded-xl border-2 transition-all duration-200 ${
+                                    data.heardFrom === source.key
+                                      ? "border-clay bg-clay/10 text-clay font-medium"
+                                      : "border-sage/20 text-forest/60 hover:border-sage/40"
+                                  }`}
+                                >
+                                  {source.label}
+                                </button>
+                              ))}
+                            </div>
+                            {data.heardFrom === "other" && (
+                              <input
+                                id="intake-heard-detail"
+                                type="text"
+                                maxLength={REFERRAL_DETAIL_MAX}
+                                value={data.heardFromDetail}
+                                onChange={(e) => update("heardFromDetail", e.target.value)}
+                                placeholder="Where was it? (optional)"
+                                aria-label="Where did you hear about us?"
+                                className="mt-3 w-full font-sans text-sm bg-white/70 border-2 border-sage/20 rounded-xl px-4 py-2.5 text-forest placeholder:text-forest/30 focus:border-clay focus:outline-none transition-colors"
+                              />
+                            )}
                           </div>
                         </div>
                       </div>

@@ -75,6 +75,20 @@ suite("recordSubmission against a real database", () => {
     await sql()`delete from clients`;
   });
 
+  it("records where they heard about the practice, keeping detail only for 'other'", async () => {
+    const a = await recordSubmission(submission({ heardFrom: "instagram", heardFromDetail: "stray text" }));
+    const b = await recordSubmission(
+      submission({ email: "b@example.com", heardFrom: "other", heardFromDetail: "Campus poster" })
+    );
+    const c = await recordSubmission(submission({ email: "c@example.com" }));
+    const row = async (id: string) =>
+      (await sql()`select heard_from, heard_from_detail from submissions where client_id = ${id}`)[0];
+    expect(await row(a)).toEqual({ heard_from: "instagram", heard_from_detail: null });
+    expect(await row(b)).toEqual({ heard_from: "other", heard_from_detail: "Campus poster" });
+    // Not answered is stored as not answered, not as a guess.
+    expect(await row(c)).toEqual({ heard_from: null, heard_from_detail: null });
+  });
+
   it("creates a client and stores the submission", async () => {
     const s = submission();
     const clientId = await recordSubmission(s);
