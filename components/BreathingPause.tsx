@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { track } from "@/lib/analytics";
 
 /**
  * One minute of paced breathing, offered rather than imposed.
@@ -37,6 +38,7 @@ export default function BreathingPause() {
 
   const running = phase === "in" || phase === "out";
   const start = () => {
+    track("breathing_started");
     setCycle(0);
     setPhase("in");
   };

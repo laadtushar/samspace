@@ -21,6 +21,7 @@ import { usePricing } from "@/lib/use-pricing";
 import { swapsFor, applySwaps } from "@/lib/price-swap";
 import { isStudentRate, DEFAULT_SLIDING_SCALE } from "@/lib/rates";
 import { REFERRAL_SOURCES, REFERRAL_DETAIL_MAX } from "@/lib/referral";
+import { setPrivateSurface, track } from "@/lib/analytics";
 
 interface IntakeData {
   name: string;
@@ -246,6 +247,19 @@ export default function IntakeFormModal({
     }
   }, [currentStep, data.slidingScale, defaultRate]);
 
+  /*
+    Analytics: while the form is open no clicks are captured (its answer
+    buttons are personal); progress is recorded as step names only.
+  */
+  useEffect(() => {
+    setPrivateSurface(isOpen);
+    if (isOpen) track("intake_opened");
+    return () => setPrivateSurface(false);
+  }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) track("intake_step", { step: currentStep });
+  }, [isOpen, currentStep]);
+
   // Lock body scroll when open
   useEffect(() => {
     if (isOpen) {
@@ -360,6 +374,7 @@ export default function IntakeFormModal({
         );
       }
       setIsSuccess(true);
+      track("intake_submitted");
       setTimeout(() => {
         setIsSuccess(false);
         setData(initialData);

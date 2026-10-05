@@ -4,6 +4,7 @@ import { BotIdClient } from "botid/client";
 import { botIdClientMounted } from "@/lib/bot-check";
 import { Analytics } from "@vercel/analytics/next";
 import MotionPreferences from "@/components/MotionPreferences";
+import ProductAnalytics from "@/components/ProductAnalytics";
 import {
   SITE_URL,
   SITE_NAME,
@@ -263,6 +264,7 @@ const jsonLd = {
       >
         <MotionPreferences>{children}</MotionPreferences>
         <Analytics />
+        <ProductAnalytics />
       </body>
     </html>
   );
