@@ -33,6 +33,8 @@ const stored = (over: Partial<ViewSubmission> = {}): ViewSubmission => ({
   currency: "INR",
   studentConfirmed: false,
   scheduling: "",
+  heardFrom: "",
+  heardFromDetail: "",
   clientId: "c0000000-0000-0000-0000-000000000000",
   ...over,
 });

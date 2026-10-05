@@ -1,3 +1,4 @@
+import { REFERRAL_KEYS, REFERRAL_DETAIL_MAX } from "@/lib/referral";
 import { z } from "zod";
 import { safeWhatsappLink } from "@/lib/whatsapp";
 import { SCHEDULING_HOSTS } from "@/lib/scheduling";
@@ -30,6 +31,12 @@ export const intakeSchema = z.object({
   slidingScale: trimmed(60).min(1, "Please select a rate"),
   studentConfirmed: z.boolean().optional().default(false),
   scheduling: z.enum(["booked", "skipped", ""]).optional().default(""),
+  /*
+    Optional. A fixed list rather than free text so the answers can be counted;
+    the detail is only kept when it explains "Somewhere else".
+  */
+  heardFrom: z.enum([...REFERRAL_KEYS, ""]).optional().default(""),
+  heardFromDetail: trimmed(REFERRAL_DETAIL_MAX).optional().default(""),
   /*
     Which money the form was showing when the rate was chosen — a record, not
     an instruction. The rupee amount in slidingScale is what is charged, and

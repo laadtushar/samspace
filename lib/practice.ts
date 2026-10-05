@@ -125,7 +125,7 @@ export async function recordSubmission(
     insert into submissions (
       id, client_id, name, email, whatsapp, gender, age, education,
       preferred_language, concerns, sliding_scale, rate_amount, currency,
-      student_confirmed, scheduling, created_at
+      student_confirmed, scheduling, heard_from, heard_from_detail, created_at
     ) values (
       ${submission.id}, ${clientId}, ${submission.name}, ${email},
       ${submission.whatsapp || null}, ${submission.gender || null},
@@ -133,7 +133,10 @@ export async function recordSubmission(
       ${submission.preferredLanguage || null}, ${submission.concerns || null},
       ${submission.slidingScale || null}, ${rupees}, ${currency},
       ${submission.studentConfirmed ?? false},
-      ${submission.scheduling || null}, ${submission.timestamp}
+      ${submission.scheduling || null},
+      ${submission.heardFrom || null},
+      ${submission.heardFrom === "other" ? submission.heardFromDetail || null : null},
+      ${submission.timestamp}
     )
     on conflict (id) do nothing
   `;
@@ -402,6 +405,9 @@ export interface DashboardSubmission {
   currency: string;
   studentConfirmed: boolean;
   scheduling: string;
+  /** Key from lib/referral.ts, or "" — not asked before migration 012. */
+  heardFrom: string;
+  heardFromDetail: string;
   clientId: string | null;
 }
 
@@ -412,7 +418,8 @@ export async function listSubmissionsForDashboard(): Promise<
   const rows = (await sql()`
     select id, client_id, name, email, gender, age, whatsapp, education,
            preferred_language, concerns, sliding_scale, rate_amount, currency,
-           student_confirmed, scheduling, created_at
+           student_confirmed, scheduling, heard_from, heard_from_detail,
+           created_at
     from submissions
     order by created_at desc
     limit 1000
@@ -441,6 +448,8 @@ export async function listSubmissionsForDashboard(): Promise<
     currency: (r.currency as string) || PRACTICE_CURRENCY,
     studentConfirmed: Boolean(r.student_confirmed),
     scheduling: (r.scheduling as string) ?? "",
+    heardFrom: (r.heard_from as string) ?? "",
+    heardFromDetail: (r.heard_from_detail as string) ?? "",
     clientId: r.client_id ? String(r.client_id) : null,
   }));
 }

@@ -4,6 +4,7 @@ import { log, newRef, errorFields } from "@/lib/log";
 import { dbConfigured } from "@/lib/db";
 import { recordSubmission } from "@/lib/practice";
 import { getCachedContent, type IntakeSubmission } from "@/lib/content";
+import { describeReferral } from "@/lib/referral";
 import { intakeSchema, firstIssue } from "@/lib/validation";
 import { rateLimit, clientKey, isSameOrigin } from "@/lib/rate-limit";
 import {
@@ -268,6 +269,7 @@ export async function POST(req: Request) {
             <tr><td style="padding: 6px 0; font-weight: bold;">WhatsApp</td><td>${esc(data.whatsapp)}</td></tr>
             <tr><td style="padding: 6px 0; font-weight: bold;">Education</td><td>${esc(data.education)}</td></tr>
             <tr><td style="padding: 6px 0; font-weight: bold;">Language</td><td>${esc(data.preferredLanguage)}</td></tr>
+            <tr><td style="padding: 6px 0; font-weight: bold;">Heard about us</td><td>${esc(describeReferral(data.heardFrom, data.heardFromDetail))}</td></tr>
             <tr><td style="padding: 6px 0; font-weight: bold;">Sliding Scale</td><td>${esc(data.slidingScale)}${
               studentRate ? " — student status self-confirmed ✅" : ""
             }</td></tr>
