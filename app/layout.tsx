@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BotIdClient } from "botid/client";
 import { botIdClientMounted } from "@/lib/bot-check";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import MotionPreferences from "@/components/MotionPreferences";
 import ProductAnalytics from "@/components/ProductAnalytics";
 import {
@@ -264,6 +265,7 @@ const jsonLd = {
       >
         <MotionPreferences>{children}</MotionPreferences>
         <Analytics />
+        <SpeedInsights />
         <ProductAnalytics />
       </body>
     </html>
