@@ -1,0 +1,12 @@
+:root {
+  --samvriti-forest: #2c3a2e;  /* Primary: Text, the tangle, outlines, buttons */
+  --samvriti-sage: #8a9e8c;  /* Secondary: The calm half and “space” on light grounds; graphics only, never text */
+  --samvriti-clay: #c17f5e;  /* Accent: Dots only: the stem's end, the i tittles, the period */
+  --samvriti-cream: #f7f3ed;  /* Light neutral: Page ground; the badge's lines */
+  --samvriti-night: #16201a;  /* Dark neutral: Dark ground for posts, app icons and dark pages */
+  --samvriti-clay-ink: #915f47;  /* Tint for text: Clay-coloured labels and links on cream */
+  --samvriti-sage-light: #a9bba9;  /* Tint for dark: The calm half and “space” on dark grounds */
+  --samvriti-clay-light: #d4956f;  /* Tint for dark: Dots, links and buttons on dark grounds */
+  --samvriti-font-headline: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --samvriti-font-text: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
