@@ -168,6 +168,15 @@ describe("the writing itself", () => {
     }
   });
 
+  it("sends a reader abroad to the emergency services where they are", () => {
+    // An Indian helpline is not the first call for someone in another country.
+    const post = STARTER_POSTS.find(
+      (p) => p.slug === "study-abroad-reality-indian-students"
+    );
+    expect(post).toBeDefined();
+    expect(post!.content).toContain("emergency services in your current country");
+  });
+
   it("points at the intake form", () => {
     for (const post of STARTER_POSTS) {
       expect(post.content, post.slug).toContain("/?intake=true");

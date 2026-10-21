@@ -478,4 +478,97 @@ Sessions run on a sliding scale ({{rate.range}}). [You can read more or book a s
 
 ${CRISIS_NOTE}`,
   },
+
+  {
+    slug: "study-abroad-reality-indian-students",
+    title: "Homesick, Broke, and Alone: The Version of Studying Abroad No One Posts About",
+    seoTitle: "Study Abroad Reality: Mental Health for Indian Students",
+    seoDescription:
+      "Homesick, broke and lonely behind the Instagram posts? A counselling psychologist on the study abroad reality for Indian students, and what actually helps.",
+    excerpt:
+      "The first-week photos look good. What never gets posted is the money maths, the empty Sundays and the pressure to look fine. Why a lot of Indian students abroad struggle quietly, and what actually helps.",
+    coverImage: "/blog/study-abroad-reality-indian-students.svg",
+    coverAlt:
+      "Two matching frames: a bright posted photo, and a dim room with one small light linked by a long thread to a warm light far away",
+    tags: ["Studying abroad", "Loneliness", "Indian families", "Young adults"],
+    /*
+      No {{rate.range}} in this one, unlike every other post here. It is written
+      for readers outside India, and the token resolves to the rupee scale for
+      everyone — while a visitor abroad may be quoted a different scale for their
+      country (country_pricing). The intake form shows the rate that applies to
+      them; a figure here could not.
+
+      Its crisis note is its own for the same reason: someone abroad needs the
+      emergency services where they are before an Indian helpline.
+    */
+    content: `The photos look good. A campus that could be a movie set, a new city in the background, a caption about "new beginnings." You posted them in the first week, when everything was still interesting and the loneliness hadn't fully arrived yet.
+
+What didn't make it to Instagram: the week after, when the novelty wore off and you sat in your room doing mental math about whether you could afford both groceries and your transport card this month. The Sunday you spent mostly in bed because there was nowhere to go and nobody to go with. The moment you realised that the chatty, confident version of yourself back home doesn't seem to travel as easily as you thought it would.
+
+Nobody posts that version. And because nobody posts it, a lot of Indian students abroad quietly conclude that everyone else is managing fine and something must be specifically wrong with them. That conclusion is wrong, and it's worth saying so directly.
+
+## What the study abroad brochure leaves out
+
+Studying abroad gets sold as a transformation. Agents, universities, and well-meaning relatives all tend to describe it in the language of opportunity, independence, and experience. Very few of them mention the parts that hit first and hit hard.
+
+### The financial stress
+
+The financial reality is one of them. An education loan that looked manageable on paper feels very different when you're converting everything to rupees in your head every time you buy something. Part-time work, where visa rules allow it, often means jobs that have nothing to do with your field, hours that compete with coursework, and an income that barely covers rent in a city built around a cost of living that was never designed with international students in mind. Financial stress this consistent and this close to the surface has a real effect on mental health, and it rarely gets named for what it is.
+
+### The loneliness
+
+The social reality is another. Making friends as an adult, in a new country, in an environment where everyone else also seems to already have their people, is genuinely hard. It doesn't happen in the first week the way it might have in school. A lot of students spend months in a holding pattern where they're technically surrounded by people and functionally quite alone, attending classes, going home, repeat, without anything that feels like real connection yet.
+
+### The pressure to be visibly fine
+
+And then there's the performance pressure: the pressure to be visibly fine, because so much has been invested in this, financially and emotionally, by your family and by you. Admitting that you're struggling can feel like betraying the decision, worrying your parents needlessly, or confirming the fears of everyone who asked "but are you sure?" before you left.
+
+## The gap between how it looks and how it feels
+
+Most students who are struggling abroad don't look like they're struggling. They're attending class. They're submitting assignments. They're sending home the edited version of events, the one where things are going well and the city is interesting and the course is challenging in a good way.
+
+Underneath that, something else is often happening: a low-grade exhaustion from the constant effort of navigating an unfamiliar environment, a loneliness that doesn't have an obvious fix, a homesickness that sharpens on weekends and festivals and any day that would have meant something back home, and an anxiety about the future that's harder to ignore when you're this far from your usual support system.
+
+This isn't failure. It's what happens when you uproot your entire life and replant it somewhere new, often with limited preparation for the emotional weight of it. The fact that it's common doesn't make it easier. But it does mean you're not uniquely bad at this.
+
+## Why Indian students abroad are less likely to ask for help
+
+A few reasons tend to compound each other. There's the stigma around mental health that most of us grew up with, where struggling quietly is more familiar than reaching out. There's the awareness of how much this cost, financially and in terms of family expectation, which makes admitting difficulty feel like an ingratitude. There's the perception that everyone else is fine, reinforced by the fact that nobody around you is posting their worst days.
+
+And there's often a very specific hesitation about using the university counselling services that are technically available: the therapist won't understand the Indian context, the family dynamics, the specific weight of a parent's expectations, or what it actually means to be navigating life between two cultures. That hesitation is often correct, not a fear but an accurate read of what a lot of university counselling services can and can't offer a first-generation Indian student abroad.
+
+## What tends to help, honestly
+
+### One real connection
+
+Building even one real connection, not ten surface-level ones, tends to matter more than any coping technique. One person who knows the non-edited version of how you're doing changes the weight of the whole experience. This is worth putting actual effort into, even when the introversion or the busyness makes it easy to keep putting off.
+
+### Small anchors of familiarity
+
+Creating small anchors of familiarity: cooking food from home even when it's easier not to, keeping some version of a routine that existed before you left, marking Indian festivals in whatever imperfect way is possible from where you are. These things sound small and they aren't. They're the difference between feeling like you've left yourself behind and feeling like you've taken yourself with you.
+
+### An honest conversation with home
+
+Letting your family know you're struggling, even partially. Most parents would rather know than not know, even if the instinct is to protect them from worrying. A conversation that's honest without being alarming is usually available if you look for it, and it matters more than the edited-highlight version of events.
+
+### A therapist who understands where you're from
+
+And if the weight of it is more than small anchors and one honest conversation can carry, talking to a therapist who actually understands the cultural context you're operating in, who already knows what it means to grow up Indian, what's expected, what's unsayable, what family means in that specific way, is worth doing rather than waiting until things get worse first.
+
+## A note on the loan, the expectation, and the pressure to be okay
+
+A lot of Indian students abroad are carrying something nobody talks about directly: the knowledge that their education cost someone, possibly a great deal, possibly everything the family had put aside. That financial and emotional weight doesn't make the loneliness less real. It often makes it heavier, because it adds a layer of guilt on top of every bad day.
+
+You're allowed to have a hard time. You're allowed to miss home. You're allowed to be struggling with something that was also the right decision. Those things coexist more often than the Instagram version of studying abroad suggests, and the fact that you're here, managing it, even imperfectly, is not nothing.
+
+## If this sounds like you
+
+If you're still wondering whether any of this is "bad enough" to bring to someone, [do I need therapy, or am I overreacting](/blog/do-i-need-therapy-or-overreacting) takes that question on directly. If the version of you everyone sees is coping and the version underneath isn't, [high-functioning anxiety](/blog/high-functioning-anxiety) looks at that gap more closely. And if the hardest part is the conversation with home, [setting a boundary with Indian parents without a fight](/blog/boundaries-with-indian-parents) covers a way of framing hard conversations with parents that tends to land better.
+
+I work with Indian students abroad on exactly this kind of thing, the gap between how it looks and how it feels, the family pressure, the loneliness, the financial stress, the identity questions that come with living between two cultures. Sessions are held online, work across time zones, and run on a sliding scale. [You can read more or book a session here.](/?intake=true)
+
+---
+
+*If you're in immediate distress or having thoughts of self-harm, please reach out to emergency services in your current country. You can also contact iCall at 9152987821, or Vandrevala Foundation at 1860-2662-345 (24/7). This post is educational and isn't a substitute for individual care.*`,
+  },
 ];
