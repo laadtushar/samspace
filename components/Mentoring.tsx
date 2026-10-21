@@ -1,5 +1,6 @@
 "use client";
 
+import { BookOpen, GraduationCap, TriangleAlert } from "lucide-react";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import TiltCard from "./TiltCard";
@@ -53,7 +54,8 @@ export default function Mentoring({ mentoring }: MentoringProps) {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="font-sans text-sm text-forest/45 italic max-w-xl mx-auto"
             >
-              ⚠️ These sessions are not psychotherapy and do not involve clinical
+              <TriangleAlert className="inline w-4 h-4 -mt-0.5 mr-1 not-italic" aria-hidden="true" strokeWidth={1.5} />
+              These sessions are not psychotherapy and do not involve clinical
               diagnosis or treatment.
             </motion.p>
           </div>
@@ -72,9 +74,9 @@ export default function Mentoring({ mentoring }: MentoringProps) {
                   <motion.div
                     whileHover={{ rotate: [0, -10, 10, 0] }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl mb-5 inline-block"
+                    className="mb-5 inline-block"
                   >
-                    📚
+                    <BookOpen className="w-9 h-9 text-forest/70" aria-hidden="true" strokeWidth={1.5} />
                   </motion.div>
                   <h3 className="font-serif text-2xl font-semibold text-forest mb-6">
                     {mentoring.card1Title}
@@ -110,9 +112,9 @@ export default function Mentoring({ mentoring }: MentoringProps) {
                   <motion.div
                     whileHover={{ rotate: [0, -10, 10, 0] }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl mb-5 inline-block"
+                    className="mb-5 inline-block"
                   >
-                    🎓
+                    <GraduationCap className="w-9 h-9 text-forest/70" aria-hidden="true" strokeWidth={1.5} />
                   </motion.div>
                   <h3 className="font-serif text-2xl font-semibold text-forest mb-6">
                     {mentoring.card2Title}

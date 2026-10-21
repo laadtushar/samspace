@@ -30,7 +30,8 @@ vi.mock("@/lib/db", async (importOriginal) => ({
   dbConfigured: () => true,
 }));
 
-const { GET, refreshRates, wantedCurrencies } = await import("@/app/api/cron/fx/route");
+const { GET } = await import("@/app/api/cron/fx/route");
+const { refreshRates, wantedCurrencies } = await import("@/lib/fx-refresh");
 
 const previousSecret = process.env.CRON_SECRET;
 const enabled = (country: string) => ({

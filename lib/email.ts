@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { BRAND } from "./brand";
+import { absoluteUrl } from "./site";
 
 /**
  * Outbound email.
@@ -101,6 +103,18 @@ export async function sendEmail({
     });
     return { sent: false, error: "Email transport failed" };
   }
+}
+
+/**
+ * The logo at the top of client-facing mail. A PNG on the site's own domain:
+ * many mail apps block SVG, and inline images are stripped by some. If images
+ * are off, the alt text still reads as the name.
+ */
+export function emailLogo(): string {
+  const width = 240;
+  const height = Math.round((width * BRAND.emailLogo.height) / BRAND.emailLogo.width);
+  const src = absoluteUrl(BRAND.emailLogo.src);
+  return `<img src="${src}" width="${width}" height="${height}" alt="${BRAND.alt}" style="display: block; margin: 0 auto; border: 0; height: auto; max-width: 100%; font-size: 24px; color: #2c3a2e;" />`;
 }
 
 /** Shared shell so both routes' mails look the same. */

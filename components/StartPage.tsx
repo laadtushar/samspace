@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
@@ -53,8 +54,15 @@ export default function StartPage({
             priority
             className="w-24 h-24 rounded-full object-cover mx-auto mb-5 shadow-lg shadow-forest/10"
           />
-          <h1 className="font-serif text-3xl font-semibold text-forest mb-1">
-            Samvriti.Space
+          <h1 className="mb-3">
+            <Image
+            src={BRAND.lockup.src}
+            alt={BRAND.alt}
+            width={BRAND.lockup.width}
+            height={BRAND.lockup.height}
+            unoptimized
+            className="h-10 w-auto mx-auto"
+          />
           </h1>
           <p className="font-sans text-xs text-sage uppercase tracking-[0.18em] mb-6">
             Priyanka Varma · Counselling Psychologist

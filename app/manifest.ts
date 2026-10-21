@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 /**
  * Web app manifest.
@@ -19,6 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "en-IN",
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      ...BRAND.manifestIcons,
     ],
   };
 }
