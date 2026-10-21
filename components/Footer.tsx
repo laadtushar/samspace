@@ -14,7 +14,7 @@ export default function Footer({
   linkedin?: string;
 } = {}) {
   return (
-    <footer className="bg-forest-deep text-cream/40 py-10 relative overflow-hidden">
+    <footer className="bg-forest-deep text-cream/60 py-10 relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -39,19 +39,19 @@ export default function Footer({
         <nav className="flex items-center justify-center gap-3 mb-4 -my-2">
           <Link
             href="/"
-            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors px-3 py-3"
+            className="font-sans text-xs text-cream/70 hover:text-cream transition-colors px-3 py-3"
           >
             Home
           </Link>
           <Link
             href="/blog"
-            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors px-3 py-3"
+            className="font-sans text-xs text-cream/70 hover:text-cream transition-colors px-3 py-3"
           >
             Writing
           </Link>
           <a
             href="/blog/rss.xml"
-            className="font-sans text-xs text-cream/50 hover:text-cream/80 transition-colors px-3 py-3"
+            className="font-sans text-xs text-cream/70 hover:text-cream transition-colors px-3 py-3"
           >
             RSS
           </a>

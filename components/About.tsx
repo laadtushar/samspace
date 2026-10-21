@@ -1,5 +1,6 @@
 "use client";
 
+import { Award, BookOpen, GraduationCap, ScrollText as ScrollIcon } from "lucide-react";
 import { useRef } from "react";
 import Image from "next/image";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
@@ -8,10 +9,10 @@ import TextReveal from "./TextReveal";
 import ScrollText from "./ScrollText";
 
 const credentialCards = [
-  { label: "M.Sc. Clinical Psychology", icon: "🎓" },
-  { label: "UGC NET-JRF", icon: "📜" },
-  { label: "GATE (Psychology)", icon: "🏆" },
-  { label: "Lecturer", icon: "📖" },
+  { label: "M.Sc. Clinical Psychology", icon: GraduationCap },
+  { label: "UGC NET-JRF", icon: ScrollIcon },
+  { label: "GATE (Psychology)", icon: Award },
+  { label: "Lecturer", icon: BookOpen },
 ];
 
 interface AboutProps {
@@ -135,7 +136,7 @@ export default function About({ about }: AboutProps) {
                     whileHover={{ scale: 1.2, rotate: 10 }}
                     transition={{ type: "spring", stiffness: 400 }}
                   >
-                    {c.icon}
+                    <c.icon className="w-7 h-7 text-clay-light" aria-hidden="true" strokeWidth={1.5} />
                   </motion.span>
                   <span className="font-serif text-base font-medium text-cream/85 group-hover:text-cream transition-colors duration-300">
                     {c.label}

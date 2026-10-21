@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, Lock } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import FloatingShapes from "./FloatingShapes";
@@ -218,8 +219,8 @@ export default function Hero({
             {/* Floating badges — pop in */}
             <div className="flex flex-wrap gap-3 justify-center lg:justify-end">
               {[
-                { emoji: "🔒", text: "Confidential & Ethical" },
-                { emoji: "🕐", text: `${sessionLength} · Online Sessions` },
+                { icon: Lock, text: "Confidential & Ethical" },
+                { icon: Clock, text: `${sessionLength} · Online Sessions` },
               ].map((badge, i) => (
                 <motion.div
                   key={badge.text}
@@ -234,7 +235,7 @@ export default function Hero({
                   }}
                   className="bg-white border border-sage/25 rounded-2xl px-5 py-3 shadow-lg shadow-forest/5 flex items-center gap-2"
                 >
-                  <span className="text-base">{badge.emoji}</span>
+                  <badge.icon className="w-4 h-4 text-forest/70" aria-hidden="true" strokeWidth={1.5} />
                   <span className="font-sans text-xs font-medium text-forest/80">
                     {badge.text}
                   </span>

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ChevronLeft,
   CalendarDays,
+  Lock,
 } from "lucide-react";
 import {
   providerFor,
@@ -965,7 +966,8 @@ export default function IntakeFormModal({
 
                         <div className="bg-forest/5 rounded-xl p-4 mt-6">
                           <p className="font-sans text-xs text-forest/50 text-center leading-relaxed">
-                            🔒 All information you share will remain confidential and used only for therapeutic purposes.
+                            <Lock className="inline w-3.5 h-3.5 -mt-0.5 mr-1" aria-hidden="true" strokeWidth={1.5} />
+                            All information you share will remain confidential and used only for therapeutic purposes.
                           </p>
                         </div>
                       </div>

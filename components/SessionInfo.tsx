@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, Laptop, Lock, Phone, TriangleAlert } from "lucide-react";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import RelatedReading, { type PostLink } from "./RelatedReading";
@@ -8,9 +9,9 @@ const SHIPPED_SESSION_LENGTH = "45–50 minutes";
 
 /** Duration comes from content; the other two are what this practice is. */
 const statsFor = (sessionLength: string) => [
-  { icon: "🕐", label: "Duration", value: sessionLength },
-  { icon: "💻", label: "Mode", value: "Online Only" },
-  { icon: "🔒", label: "Privacy", value: "Fully Confidential" },
+  { icon: Clock, label: "Duration", value: sessionLength },
+  { icon: Laptop, label: "Mode", value: "Online Only" },
+  { icon: Lock, label: "Privacy", value: "Fully Confidential" },
 ];
 
 interface SessionInfoProps {
@@ -103,9 +104,9 @@ export default function SessionInfo({
                   whileHover={{ scale: 1.3, rotate: 15 }}
                   transition={{ type: "spring", stiffness: 400 }}
                 >
-                  {s.icon}
+                  <s.icon className="w-7 h-7 mx-auto text-forest/70" aria-hidden="true" strokeWidth={1.5} />
                 </motion.span>
-                <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-forest/40 mb-2">
+                <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-forest/75 mb-2">
                   {s.label}
                 </p>
                 <p className="font-serif text-xl font-semibold text-forest group-hover:text-clay transition-colors duration-300">
@@ -181,7 +182,8 @@ export default function SessionInfo({
             />
 
             <p className="font-sans text-sm text-forest/75 leading-relaxed max-w-2xl mx-auto">
-              <span className="font-semibold">⚠️ Important:</span> {notice}
+              <TriangleAlert className="inline w-4 h-4 -mt-0.5 mr-1 text-clay" aria-hidden="true" strokeWidth={1.5} />
+              <span className="font-semibold">Important:</span> {notice}
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 mt-6">
               {helplines.map((line) => (
@@ -193,7 +195,8 @@ export default function SessionInfo({
                   href={`tel:${line.number.replace(/[^\d+]/g, "")}`}
                   className="font-sans text-sm text-forest/65 bg-white/60 rounded-full px-4 py-2 hover:bg-white hover:text-forest transition-colors"
                 >
-                  📞 <strong>{line.name}:</strong> {line.number}
+                  <Phone className="inline w-3.5 h-3.5 -mt-0.5 mr-1.5" aria-hidden="true" strokeWidth={1.5} />
+                  <strong>{line.name}:</strong> {line.number}
                   {line.note ? ` (${line.note})` : ""}
                 </a>
               ))}

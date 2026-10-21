@@ -19,7 +19,6 @@ import {
   valueOr,
 } from "@/lib/dashboard-load";
 import {
-  Lock,
   LogOut,
   Users,
   UserCheck,
@@ -1083,13 +1082,16 @@ export default function AdminPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-cream rounded-3xl p-10 w-full max-w-sm shadow-2xl"
         >
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-14 h-14 bg-forest rounded-2xl flex items-center justify-center">
-              <Lock className="w-6 h-6 text-cream" />
-            </div>
-          </div>
-          <h1 className="font-serif text-2xl font-semibold text-forest text-center mb-2">
-            Samvriti.Space
+          <h1 className="mb-4">
+            <Image
+              src={BRAND.lockup.src}
+              alt={BRAND.alt}
+              width={BRAND.lockup.width}
+              height={BRAND.lockup.height}
+              unoptimized
+              priority
+              className="h-10 w-auto mx-auto"
+            />
           </h1>
           <p className="font-sans text-sm text-forest/50 text-center mb-8">
             {challenge ? "Check your email" : "Admin Dashboard"}

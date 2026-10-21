@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { BRAND } from "@/lib/brand";
 import manifest from "@/app/manifest";
@@ -98,5 +98,25 @@ describe("brand assets", () => {
   it("makes the navbar logo a real link home with a descriptive name", () => {
     const nav = read("components/Navbar.tsx");
     expect(nav).toMatch(/<Link\s+href="\/"\s+aria-label=\{`\$\{BRAND\.alt\} home`\}/);
+  });
+
+  it("draws icons from the icon set, not emoji, in site code", () => {
+    // Emoji render differently on every platform and clash with the line-drawn
+    // mark. Plain typographic symbols (✓, ✕) are fine. Content editors can
+    // still type emoji into dashboard text; this only covers what the code ships.
+    const emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/u;
+    const offenders: string[] = [];
+    for (const dir of ["components", "app"]) {
+      const walk = (d: string): string[] =>
+        readdirSync(path.join(root, d), { withFileTypes: true }).flatMap((e) =>
+          e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith(".tsx") ? [path.join(d, e.name)] : []
+        );
+      for (const f of walk(dir)) {
+        read(f).split("\n").forEach((line, i) => {
+          if (emoji.test(line)) offenders.push(`${f}:${i + 1}`);
+        });
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

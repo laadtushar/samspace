@@ -83,7 +83,7 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
             priority
             className="h-8 w-auto"
           />
-          <span className="text-[10px] font-sans text-sage tracking-widest uppercase hidden sm:block">
+          <span className="text-[10px] font-sans text-forest/75 tracking-widest uppercase hidden sm:block">
             A space to feel seen, heard, and supported.
           </span>
         </Link>

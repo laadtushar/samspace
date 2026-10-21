@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, Mail, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import MagneticButton from "./MagneticButton";
@@ -24,18 +25,18 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
     from the markup was never hiding it from anyone who clicked.
   */
   const infoCards = [
-    { icon: "📧", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
+    { icon: Mail, label: "Email", value: contact.email, href: `mailto:${contact.email}` },
     ...(contact.whatsappLink
       ? [
           {
-            icon: "💬",
+            icon: MessageCircle,
             label: "WhatsApp",
             value: "Send a message",
             href: contact.whatsappLink as string | null,
           },
         ]
       : []),
-    { icon: "🕐", label: "Response Time", value: "Within 24 hours", href: null as string | null },
+    { icon: Clock, label: "Response Time", value: "Within 24 hours", href: null as string | null },
   ];
   return (
     <section id="contact" className="bg-forest text-cream py-28 relative overflow-hidden">
@@ -94,9 +95,9 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
                 whileHover={{ scale: 1.3 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                {c.icon}
+                <c.icon className="w-7 h-7 mx-auto text-clay-light" aria-hidden="true" strokeWidth={1.5} />
               </motion.span>
-              <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-cream/40 mb-2">
+              <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-cream/70 mb-2">
                 {c.label}
               </p>
               {c.href ? (
