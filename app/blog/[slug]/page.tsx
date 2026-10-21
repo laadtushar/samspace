@@ -8,7 +8,7 @@ import {
   getPublishedPostBySlug,
   readingMinutes,
 } from "@/lib/blog";
-import { SITE_URL, serializeJsonLd, absoluteUrl } from "@/lib/site";
+import { SITE_URL, serializeJsonLd, absoluteUrl, withoutSiteSuffix } from "@/lib/site";
 import { AUTHOR } from "@/lib/author";
 import { publicContent } from "@/lib/content";
 import { publicPost } from "@/lib/posts-public";
@@ -37,7 +37,7 @@ export async function generateMetadata({
   const content = await publicContent();
   const post = publicPost(stored, content.slidingScale);
 
-  const title = post.seoTitle || post.title;
+  const title = withoutSiteSuffix(post.seoTitle || post.title);
   const description = post.seoDescription || post.excerpt;
   const url = `${SITE_URL}/blog/${post.slug}`;
 

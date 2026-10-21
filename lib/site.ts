@@ -87,3 +87,12 @@ export function serializeJsonLd(graph: unknown): string {
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029");
 }
+
+/**
+ * A page title without a trailing "| Samvriti.Space": the root layout's title
+ * template adds it, so a title typed with it would show the name twice.
+ */
+export function withoutSiteSuffix(title: string): string {
+  const escaped = SITE_NAME.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return title.replace(new RegExp(`\\s*[|·—-]\\s*${escaped}\\s*$`, "i"), "").trim();
+}

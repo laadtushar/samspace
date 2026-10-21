@@ -127,4 +127,13 @@ describe("brand assets", () => {
     expect(shareImage("https://cdn.example/x.JPG?v=2")).toEqual({ url: "https://cdn.example/x.JPG?v=2" });
     expect(read("app/blog/[slug]/page.tsx")).toContain("shareImage(post.coverImage)");
   });
+
+  it("doesn't let a post title carry the site name twice", async () => {
+    const { withoutSiteSuffix } = await import("@/lib/site");
+    expect(withoutSiteSuffix("Do I Need Therapy or Am I Overreacting? | Samvriti.Space")).toBe("Do I Need Therapy or Am I Overreacting?");
+    expect(withoutSiteSuffix("High-Functioning Anxiety — samvriti.space")).toBe("High-Functioning Anxiety");
+    expect(withoutSiteSuffix("Samvriti.Space and me: a note")).toBe("Samvriti.Space and me: a note");
+    expect(withoutSiteSuffix("Plain title")).toBe("Plain title");
+    expect(read("app/blog/[slug]/page.tsx")).toContain("withoutSiteSuffix(post.seoTitle || post.title)");
+  });
 });
