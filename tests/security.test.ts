@@ -923,8 +923,16 @@ describe("the sliding scale is quoted consistently", () => {
   it("keeps rupee figures out of the head and the shipped posts", async () => {
     const { STARTER_POSTS } = await import("@/lib/starter-posts");
     expect(code(await read("app/layout.tsx"))).not.toMatch(/₹\s*\d/);
+    // Written for readers outside India, who may be quoted a different scale
+    // for their country than the rupee one the token resolves to. The intake
+    // form shows them the rate that applies; the post deliberately names none.
+    const writtenForReadersAbroad = new Set(["study-abroad-reality-indian-students"]);
     for (const post of STARTER_POSTS) {
       expect(post.content, post.slug).not.toMatch(/₹\s*\d/);
+      if (writtenForReadersAbroad.has(post.slug)) {
+        expect(post.content, post.slug).not.toContain("{{rate.");
+        continue;
+      }
       // Each still quotes the scale — as a token, so it tracks the rates list.
       expect(post.content, `${post.slug} never quotes the rate`).toContain(
         "{{rate.range}}"

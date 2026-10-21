@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">Two circles that never meet: as one moves closer, the other drifts back, keeping the same gap inside a faint ring</title>
+  <!--
+    "Avoidant attachment: why some people pull away when things get close."
+    The companion to the anxious-attachment cover. One circle reaches; the
+    other steps back by exactly as much, so the gap between them never changes.
+    The faint ring is the distance kept: not a wall, just a space that is
+    never crossed. They move together, which is the point: it is a pattern
+    between two people, not a fault in one.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      /* Both move by the same amount at the same moment, so the gap holds. */
+      .reach   { animation: reach 7s ease-in-out infinite; }
+      .retreat { animation: retreat 7s ease-in-out infinite; }
+      @keyframes reach   { 0%, 100% { transform: translateX(35px); } 50% { transform: translateX(-35px); } }
+      @keyframes retreat { 0%, 100% { transform: translateX(35px); } 50% { transform: translateX(-35px); } }
+      @media (prefers-reduced-motion: reduce) {
+        .reach, .retreat { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- The one who steps back, and the distance kept around them. -->
+  <g class="retreat">
+    <circle cx="505" cy="320" r="150" fill="none" stroke="#8a9e8c" stroke-opacity="0.45"
+            stroke-width="2.5" stroke-dasharray="6 10"/>
+    <circle cx="505" cy="320" r="46" fill="#2c3a2e"/>
+  </g>
+
+  <!-- The one who reaches. -->
+  <g class="reach">
+    <circle cx="795" cy="320" r="80" fill="url(#warm)"/>
+    <circle cx="795" cy="320" r="46" fill="#c17f5e"/>
+  </g>
+
+  <line x1="120" y1="500" x2="1080" y2="500" stroke="#8a9e8c" stroke-opacity="0.4" stroke-width="2"/>
+
+  <text x="600" y="572" text-anchor="middle" font-family="Georgia, serif"
+        font-size="26" fill="#2c3a2e" opacity="0.6">closer, and then further away</text>
+</svg>
