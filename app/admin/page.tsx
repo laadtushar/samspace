@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoredRate } from "@/lib/fx-store";
+import Image from "next/image";
+import { BRAND } from "@/lib/brand";
 import type { CountryPreview } from "@/lib/country-preview";
 import { mappedCountries } from "@/lib/country-currency";
 import {
@@ -17,7 +19,6 @@ import {
   valueOr,
 } from "@/lib/dashboard-load";
 import {
-  Lock,
   LogOut,
   Users,
   UserCheck,
@@ -1081,13 +1082,16 @@ export default function AdminPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-cream rounded-3xl p-10 w-full max-w-sm shadow-2xl"
         >
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-14 h-14 bg-forest rounded-2xl flex items-center justify-center">
-              <Lock className="w-6 h-6 text-cream" />
-            </div>
-          </div>
-          <h1 className="font-serif text-2xl font-semibold text-forest text-center mb-2">
-            Samvriti.Space
+          <h1 className="mb-4">
+            <Image
+              src={BRAND.lockup.src}
+              alt={BRAND.alt}
+              width={BRAND.lockup.width}
+              height={BRAND.lockup.height}
+              unoptimized
+              priority
+              className="h-10 w-auto mx-auto"
+            />
           </h1>
           <p className="font-sans text-sm text-forest/50 text-center mb-8">
             {challenge ? "Check your email" : "Admin Dashboard"}
@@ -1182,7 +1186,17 @@ export default function AdminPage() {
       {/* Header */}
       <header className="bg-forest text-cream border-b border-sage/20">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-serif text-lg font-semibold">Samvriti.Space Admin</span>
+          <span className="flex items-center gap-3">
+            <Image
+            src={BRAND.lockupReversed.src}
+            alt={BRAND.alt}
+            width={BRAND.lockupReversed.width}
+            height={BRAND.lockupReversed.height}
+            unoptimized
+            className="h-7 w-auto"
+          />
+            <span className="font-serif text-lg font-semibold">Admin</span>
+          </span>
           <div className="flex items-center gap-4">
             {me && (
               <span className="font-sans text-xs text-cream/50 hidden sm:inline">

@@ -11,7 +11,9 @@ import {
   SITE_NAME,
   IS_PRODUCTION_SITE,
   serializeJsonLd,
+  absoluteUrl,
 } from "@/lib/site";
+import { BRAND } from "@/lib/brand";
 import {
   defaultContent,
   publicContent,
@@ -184,6 +186,12 @@ const jsonLd = {
         description:
           "Online counselling and academic mentoring for young adults aged 18–35 by Priyanka Varma, M.Sc. Clinical Psychology.",
         url: SITE_URL,
+        logo: {
+          "@type": "ImageObject",
+          url: absoluteUrl(BRAND.logo512),
+          width: 512,
+          height: 512,
+        },
         image: `${SITE_URL}/priyanka.jpeg`,
         ...(price.range ? { priceRange: price.range } : {}),
         currenciesAccepted: "INR",

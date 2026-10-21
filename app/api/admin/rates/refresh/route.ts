@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { dbConfigured } from "@/lib/db";
-import { refreshRates } from "@/app/api/cron/fx/route";
+import { refreshRates } from "@/lib/fx-refresh";
 import { log, newRef, errorFields } from "@/lib/log";
 
 export const dynamic = "force-dynamic";

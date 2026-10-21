@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     title: `${AUTHOR.name} — ${AUTHOR.jobTitle}`,
     description: AUTHOR.summary,
     siteName: SITE_NAME,
+    images: [BRAND.ogImage],
   },
 };
 

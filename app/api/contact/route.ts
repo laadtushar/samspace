@@ -8,6 +8,7 @@ import {
   escMultiline,
   escSubject,
   sendEmail,
+  emailLogo,
   emailShell,
   THERAPIST_EMAIL,
 } from "@/lib/email";
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
     subject: "We received your message — Samvriti.Space",
     html: emailShell(`
       <div style="text-align: center; margin-bottom: 32px;">
-        <h1 style="font-size: 28px; font-weight: 600; color: #2c3a2e; margin: 0;">Samvriti.Space</h1>
+        ${emailLogo()}
         <p style="font-size: 13px; color: #8a9e8c; margin-top: 4px; letter-spacing: 2px; text-transform: uppercase;">A space to feel seen, heard, and supported</p>
       </div>
       <div style="background: #f7f3ed; border-radius: 16px; padding: 32px; margin-bottom: 24px;">
