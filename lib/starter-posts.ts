@@ -29,6 +29,16 @@ const CRISIS_NOTE = `---
 
 *If you're in immediate distress or having thoughts of self-harm, please reach out for emergency support: iCall 9152987821, or Vandrevala Foundation 1860-2662-345 (24/7). This post is educational and isn't a substitute for individual care.*`;
 
+/**
+ * The same note for a post a reader may be reading from outside India. Someone
+ * abroad needs the emergency services where they are before an Indian helpline,
+ * which may not even be reachable from their phone. The helplines are named as
+ * the site's crisis section names them (Vandrevala 24/7).
+ */
+const CRISIS_NOTE_ABROAD = `---
+
+*If you're in immediate distress or having thoughts of self-harm, please reach out to emergency services in your current country. You can also contact iCall at 9152987821, or Vandrevala Foundation at 1860-2662-345 (24/7). This post is educational and isn't a substitute for individual care.*`;
+
 export const STARTER_POSTS: StarterPost[] = [
   {
     slug: "do-i-need-therapy-or-overreacting",
@@ -498,8 +508,7 @@ ${CRISIS_NOTE}`,
       country (country_pricing). The intake form shows the rate that applies to
       them; a figure here could not.
 
-      Its crisis note is its own for the same reason: someone abroad needs the
-      emergency services where they are before an Indian helpline.
+      For the same reason it ends with CRISIS_NOTE_ABROAD.
     */
     content: `The photos look good. A campus that could be a movie set, a new city in the background, a caption about "new beginnings." You posted them in the first week, when everything was still interesting and the loneliness hadn't fully arrived yet.
 
@@ -567,8 +576,132 @@ If you're still wondering whether any of this is "bad enough" to bring to someon
 
 I work with Indian students abroad on exactly this kind of thing, the gap between how it looks and how it feels, the family pressure, the loneliness, the financial stress, the identity questions that come with living between two cultures. Sessions are held online, work across time zones, and run on a sliding scale. [You can read more or book a session here.](/?intake=true)
 
----
+${CRISIS_NOTE_ABROAD}`,
+  },
 
-*If you're in immediate distress or having thoughts of self-harm, please reach out to emergency services in your current country. You can also contact iCall at 9152987821, or Vandrevala Foundation at 1860-2662-345 (24/7). This post is educational and isn't a substitute for individual care.*`,
+  {
+    slug: "long-distance-relationship-india-abroad",
+    title: "Long Distance Relationships When One Person Moves Abroad: What No One Prepares You For",
+    seoTitle: "Long Distance Relationship with a Partner Abroad: What Helps",
+    seoDescription:
+      "Long distance relationships across countries strain even strong couples. A counselling psychologist on what actually changes, and what tends to help.",
+    excerpt:
+      "Time zones and video calls are the part you plan for. The harder part is two lives changing at different speeds. What actually shifts when one partner moves abroad, where the friction comes from, and what helps.",
+    coverImage: "/blog/long-distance-relationship-india-abroad.svg",
+    coverAlt:
+      "Two small lights far apart, one under a sun and one under a crescent moon, joined by a single dashed arc",
+    tags: ["Relationships", "Long distance", "Young adults"],
+    /*
+      Quotes {{rate.range}} like the other posts. It is written for both people
+      in the couple, and the one who stayed is in India, where the rupee scale is
+      the price. Its crisis note is the abroad one, because the one who moved is
+      reading it too.
+    */
+    content: `You planned for the time zones. You set up WhatsApp calls. You told each other it would be hard but you'd make it work. What you didn't plan for is the specific feeling of watching your partner's life become one you can't quite see into, in a city you've never visited, with people you've never met.
+
+Long distance relationships where one person has moved abroad for studies or work are genuinely different from other kinds of long distance. The gap isn't just physical. It's the gap between two lives that are now changing at very different speeds, in very different directions, and sometimes in ways that are hard to explain across a time difference and a crackling video call.
+
+## What actually changes when one partner moves abroad
+
+Most couples go into this expecting the hard parts to be the obvious ones: missing each other, managing time zones, not being able to be physically present. Those are real. But the harder adjustments are often the ones no one names in advance.
+
+**The person who moved is changing faster.** New country, new people, new pressures, new versions of themselves emerging under conditions the partner at home hasn't experienced. This isn't a problem, it's just what happens when someone moves into an entirely new context. But it can create a strange asymmetry where the person abroad sometimes feels like they're growing in ways that are hard to bring back into the relationship, and the person at home sometimes feels like they're being left behind without quite being able to say so.
+
+**Loneliness compounds.** The person who moved is often dealing with their own version of isolation, which we've written about in the context of [Indian students abroad](/blog/study-abroad-reality-indian-students). But the person who stayed is also dealing with a specific kind of loneliness: the person they'd normally turn to is now the person they're missing, which means they're often going through difficulties with their main source of support unavailable.
+
+**Video calls can't carry everything.** The relationship starts existing primarily in scheduled windows. You both show up, you talk, and then you log off and go back to your separate lives. There's no casual togetherness, no sitting next to each other not saying anything. And over time, if things are difficult, the call can start to feel like a performance of being okay rather than an actual check-in.
+
+**The small things accumulate.** Not being there for the small moments, the bad day at work, the minor illness, the dinner where something funny happened, these feel smaller than the big things but tend to matter more than expected. Intimacy is often built in these ordinary moments, and long distance strips them away almost entirely.
+
+## What tends to create the most friction in a long distance relationship
+
+**Unequal adjustment.** One person has a packed new life and sometimes forgets to reach out. The other has the same life as before, minus the person who mattered most in it. The resulting frustration is real on both sides, and usually isn't about either person doing anything wrong, just two very different situations pulling in different directions.
+
+**Comparisons and jealousy.** The person abroad is meeting new people and building a social life by necessity. This is healthy and normal. It can still feel threatening to watch, especially for someone whose own social world has contracted around the absence. This tends to show up as [anxious attachment](/blog/anxious-attachment-style-relationships) getting louder, even in people who didn't experience it strongly before.
+
+**Different timelines and plans.** When one person is building a life abroad, questions about the future (when will you come back, are you thinking of staying, what are we building toward) can start to feel urgent for one person and premature for the other. Mismatched timelines, even when the commitment is equal, are one of the main reasons couples struggle in this situation.
+
+**Conversations that could wait becoming urgent.** Being apart compresses things. A misunderstanding that could have been resolved in five minutes in the same room can become a two-day text thread. Disagreements that might have naturally diffused now get stuck in the gap between time zones.
+
+## What tends to help when your partner is abroad
+
+**Being explicit about what each person needs.** Don't assume your partner knows. The person who moved might need the calls to be lighter, a break from the emotional weight of navigating a new life. The person at home might need the calls to feel more connected, more real. These are both legitimate and can be worked out when they're said out loud, but when they're not, each person often ends up feeling misunderstood.
+
+**Planning visits, even imperfect ones.** Having something concrete to look forward to matters for both people. Even one confirmed visit on the calendar changes how indefinite the distance feels.
+
+**Maintaining your own life, which is harder than it sounds.** Especially for the person who stayed, keeping their social world active, their interests going, and their sense of self intact doesn't mean caring less about the relationship. It usually means the relationship has less pressure on it to be everything, which tends to help.
+
+**Having the hard conversations, not just the easy ones.** Video calls can become a space where you avoid the things that feel too heavy to carry across a bad connection. But if the real conversations aren't happening, the distance compounds: you're physically apart and emotionally apart at the same time.
+
+**Knowing when you need support outside the relationship.** Long distance is one of the situations where both people are often dealing with something real, and trying to be each other's primary support while managing the relationship itself is a lot. It can be worth having someone else, a therapist, a close friend, to bring the heavier parts to, so the calls aren't the only outlet.
+
+## If this sounds like you
+
+If the distance is weighing on you and you're finding it hard to navigate, whether you're the one who moved or the one who stayed, these are exactly the kinds of things worth bringing to a session. I work with young adults on relationship anxiety, attachment patterns, and the particular pressure of transitions like this. Sessions are on a sliding scale ({{rate.range}}). [You can read more or book a session here.](/?intake=true)
+
+${CRISIS_NOTE_ABROAD}`,
+  },
+
+  {
+    slug: "avoidant-attachment-style",
+    title: "Avoidant Attachment: Why Some People Pull Away When Things Get Close",
+    seoTitle: "Avoidant Attachment Style: Signs, Causes and What Helps",
+    seoDescription:
+      "Avoidant attachment makes closeness feel unsafe, even when you want it. A counselling psychologist explains the signs and what's actually happening underneath.",
+    excerpt:
+      "Things are going well, and then, almost without deciding to, you start pulling back. What avoidant attachment looks like from the inside and the outside, where it tends to come from, and what helps it shift.",
+    coverImage: "/blog/avoidant-attachment-style.svg",
+    coverAlt:
+      "Two circles that never meet: as one moves closer, the other drifts back, keeping the same gap inside a faint ring",
+    tags: ["Relationships", "Attachment", "Young adults"],
+    content: `Things are going well. The relationship feels real, the other person is good, there's nothing obviously wrong. And then, almost without deciding to, you start pulling back. Replies slow down. Reasons to be busy appear. A small thing becomes a bigger deal than it needs to be. The connection that felt easy a few weeks ago now feels like too much, and you're not entirely sure why.
+
+If this is a pattern that repeats across relationships, with different people, in different contexts, always arriving at roughly the same point, it probably isn't about the person you were with. It's more likely about how you learned to relate to closeness itself.
+
+This is often what avoidant attachment looks like from the inside.
+
+## What avoidant attachment actually is
+
+Like [anxious attachment](/blog/anxious-attachment-style-relationships), which we covered in an earlier post, avoidant attachment is a pattern that usually develops early, in response to an environment where emotional needs weren't reliably met. Where anxious attachment learns "I need to stay close and keep checking, or connection will disappear," avoidant attachment learns something different: that needing closeness leads to disappointment, that depending on someone is unsafe, and that the most reliable way to stay okay is to depend on yourself.
+
+The strategy makes complete sense given where it came from. In adulthood, in relationships with people who are actually available, it tends to create exactly the distance it was trying to protect against.
+
+## Signs of avoidant attachment, from the inside
+
+**Discomfort when things get emotionally intense.** Not just nervousness about a new relationship, but a specific discomfort when conversations go deep, when someone expresses strong feelings, or when the relationship starts to feel significant. A pulling away that can feel like boredom or loss of interest, but tends to arrive specifically at moments of closeness rather than randomly.
+
+**Valuing independence to a degree that becomes isolating.** A genuine, strong preference for handling things alone. Pride in not needing much from others. A discomfort asking for help that goes beyond ordinary self-sufficiency into something that makes real intimacy difficult to sustain.
+
+**Noticing flaws more sharply as closeness increases.** A pattern where the more available and close someone becomes, the more their flaws become apparent and disproportionately significant. This can look like having high standards, and sometimes is, but it can also be the attachment system finding reasons to create distance when closeness starts to feel like too much.
+
+**Difficulty with the in-between stage.** Avoidant attachment often shows up most strongly not in early dating, which can feel exciting and light, and not in very casual contact, which doesn't require much emotionally, but in the in-between stage where a relationship is becoming real and the implicit ask to show up emotionally is increasing.
+
+**Feeling fine after endings.** Or appearing to. A capacity to move on from relationships relatively quickly, which can look like emotional maturity but sometimes reflects a pattern of not having been fully present to begin with, or of having started to emotionally disengage before the ending arrived.
+
+## What it looks like from the outside
+
+Partners of avoidant-attached people often describe a specific frustration: the sense that things are good until they get close, and then something shuts down. That the person they're with is warm and present up to a point, and then unavailable in a way that's hard to name or address because nothing specific happened. This is the dynamic at the heart of the anxious-avoidant pattern, where one person's pulling away triggers the other's [anxiety](/blog/anxious-attachment-style-relationships), which triggers more pulling away, which triggers more anxiety, until someone ends the relationship to escape the loop.
+
+## Where avoidant attachment usually comes from
+
+Avoidant attachment tends to develop in environments where emotional needs were met with dismissal, inconsistency, or the message that needing things was burdensome. This doesn't require dramatic neglect. It can be as quiet as a parent who was physically present but emotionally unavailable, or a household where feelings weren't discussed or acknowledged, or a repeated experience of reaching for connection and not finding it, enough times that reaching stopped feeling worth it.
+
+The self-sufficiency that came from this is real and often genuinely useful in many areas of life. The cost tends to show up specifically in intimate relationships, where self-sufficiency keeps the distance that closeness requires you to close.
+
+## What tends to help
+
+**Noticing the pattern without pathologising it.** Avoidant attachment developed for a reason and has served a real function. The goal isn't to dismantle it entirely, but to have more choice about when it runs, rather than having it run automatically every time a relationship reaches a certain depth.
+
+**Slowing down the pull-back response.** Not suppressing the urge to create distance when closeness feels like too much, but pausing between the urge and the action, and asking what's actually happening. Often the discomfort is coming from the situation feeling emotionally real rather than anything being wrong.
+
+**Communicating about the pattern rather than enacting it silently.** This is harder than it sounds, since vulnerability is precisely what avoidant attachment resists. But "I notice I pull back sometimes when things feel close and I'm not sure why" is a different conversation than disappearing without explanation, and tends to produce different results.
+
+**Working with it over time rather than expecting it to shift quickly.** Attachment patterns are slow to change because they're responses to real past experiences, not just habits that can be replaced with better information. The change tends to happen gradually, through repeated experiences of closeness that don't lead to the outcomes the pattern was protecting against.
+
+## If this sounds like you
+
+If this pattern sounds familiar, especially if it keeps arriving at the same point across different relationships, that's worth exploring rather than explaining away. I work with young adults on exactly this kind of pattern, drawing from CBT, humanistic therapy, and trauma-informed care. Sessions run on a sliding scale ({{rate.range}}). [You can read more or book a session here.](/?intake=true)
+
+${CRISIS_NOTE}`,
   },
 ];

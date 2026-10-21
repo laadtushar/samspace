@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">Two small lights far apart, one under a sun and one under a crescent moon, joined by a single dashed arc</title>
+  <!--
+    "Long distance relationships when one person moves abroad."
+    Two people, two skies: one under the day, one under the night, because the
+    same call lands at a different hour on each side. Between them, one thin
+    arc: the call, the thread that carries everything now. It keeps moving.
+    The distance does not shrink; the connection is still there.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#eee6d9"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="crescent">
+      <rect width="1200" height="675" fill="#fff"/>
+      <circle cx="944" cy="220" r="30" fill="#000"/>
+    </mask>
+    <style>
+      /* The dash pattern is 4 + 12 = 16 units, so shifting by 16 loops seamlessly. */
+      .arc   { animation: flow 2.4s linear infinite; }
+      @keyframes flow { to { stroke-dashoffset: -16; } }
+      .glowA { animation: glow 6s ease-in-out infinite; transform-origin: 300px 430px; }
+      .glowB { animation: glow 6s ease-in-out infinite -3s; transform-origin: 900px 430px; }
+      @keyframes glow {
+        0%, 100% { opacity: 0.55; transform: scale(1); }
+        50%      { opacity: 1;    transform: scale(1.08); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .arc, .glowA, .glowB { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- Here: the day. -->
+  <circle cx="300" cy="230" r="34" fill="#c17f5e" fill-opacity="0.8"/>
+  <!-- There: the night, at the same moment. -->
+  <circle cx="900" cy="230" r="34" fill="#2c3a2e" fill-opacity="0.85" mask="url(#crescent)"/>
+
+  <!-- The call: one thread carrying everything now. -->
+  <path class="arc" d="M300 430C440 250 760 250 900 430" fill="none" stroke="#2c3a2e"
+        stroke-opacity="0.55" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 12"/>
+
+  <g class="glowA"><circle cx="300" cy="430" r="60" fill="url(#warm)"/></g>
+  <g class="glowB"><circle cx="900" cy="430" r="60" fill="url(#warm)"/></g>
+  <circle cx="300" cy="430" r="14" fill="#c17f5e"/>
+  <circle cx="900" cy="430" r="14" fill="#c17f5e"/>
+
+  <line x1="120" y1="500" x2="1080" y2="500" stroke="#8a9e8c" stroke-opacity="0.4" stroke-width="2"/>
+
+  <text x="600" y="572" text-anchor="middle" font-family="Georgia, serif"
+        font-size="26" fill="#2c3a2e" opacity="0.6">the same call, two different days</text>
+</svg>
