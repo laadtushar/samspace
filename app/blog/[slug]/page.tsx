@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -53,13 +54,13 @@ export async function generateMetadata({
       modifiedTime: post.updatedAt || undefined,
       authors: [AUTHOR.name],
       tags: post.tags,
-      ...(post.coverImage ? { images: [{ url: post.coverImage }] } : {}),
+      images: [post.coverImage ? { url: post.coverImage } : BRAND.ogImage],
     },
     twitter: {
-      card: post.coverImage ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      ...(post.coverImage ? { images: [post.coverImage] } : {}),
+      images: [post.coverImage || BRAND.ogImage.url],
     },
   };
 }

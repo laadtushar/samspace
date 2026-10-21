@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
+import { BRAND } from "@/lib/brand";
 import SocialLinks from "./SocialLinks";
 
 export default function Footer({
@@ -20,7 +22,14 @@ export default function Footer({
         transition={{ duration: 0.6 }}
         className="max-w-6xl mx-auto px-6 text-center"
       >
-        <p className="font-serif text-lg text-cream/50 mb-3">Samvriti.Space</p>
+        <Image
+            src={BRAND.lockupReversed.src}
+            alt={BRAND.alt}
+            width={BRAND.lockupReversed.width}
+            height={BRAND.lockupReversed.height}
+            unoptimized
+            className="h-8 w-auto mx-auto mb-4"
+          />
         {/*
           The padding here is the tap target, not decoration: at text-xs these
           links were 16px tall, which is a hard thing to hit with a thumb. The

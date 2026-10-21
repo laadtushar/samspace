@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -53,24 +56,37 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
     >
       <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <button
-          onClick={() => {
+        {/*
+          A real link home, so it works without JavaScript, opens in a new tab
+          and is announced as a link. On the homepage itself it scrolls to the
+          top instead of reloading.
+        */}
+        <Link
+          href="/"
+          aria-label={`${BRAND.alt} home`}
+          onClick={(event) => {
             if (window.location.pathname === "/") {
+              event.preventDefault();
               window.scrollTo({ top: 0, behavior: "smooth" });
-            } else {
-              router.push("/");
             }
           }}
-          // py-1/-my-1: a 40px tap target for the wordmark without moving it.
-          className="flex flex-col leading-none py-1 -my-1"
+          // py-1/-my-1: a 40px tap target for the logo without moving it.
+          // gap-2.5: the brand kit's clear space (the wordmark's x-height).
+          className="flex flex-col items-start gap-2.5 leading-none py-1 -my-1"
         >
-          <span className="font-serif text-2xl font-semibold text-forest tracking-wide">
-            Samvriti.Space
-          </span>
+          <Image
+            src={BRAND.lockup.src}
+            alt=""
+            width={BRAND.lockup.width}
+            height={BRAND.lockup.height}
+            unoptimized
+            priority
+            className="h-8 w-auto"
+          />
           <span className="text-[10px] font-sans text-sage tracking-widest uppercase hidden sm:block">
             A space to feel seen, heard, and supported.
           </span>
-        </button>
+        </Link>
 
         {/* Desktop links */}
         <ul className="hidden md:flex items-center gap-8">

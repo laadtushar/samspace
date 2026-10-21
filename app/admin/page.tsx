@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoredRate } from "@/lib/fx-store";
+import Image from "next/image";
+import { BRAND } from "@/lib/brand";
 import type { CountryPreview } from "@/lib/country-preview";
 import { mappedCountries } from "@/lib/country-currency";
 import {
@@ -1182,7 +1184,17 @@ export default function AdminPage() {
       {/* Header */}
       <header className="bg-forest text-cream border-b border-sage/20">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-serif text-lg font-semibold">Samvriti.Space Admin</span>
+          <span className="flex items-center gap-3">
+            <Image
+            src={BRAND.lockupReversed.src}
+            alt={BRAND.alt}
+            width={BRAND.lockupReversed.width}
+            height={BRAND.lockupReversed.height}
+            unoptimized
+            className="h-7 w-auto"
+          />
+            <span className="font-serif text-lg font-semibold">Admin</span>
+          </span>
           <div className="flex items-center gap-4">
             {me && (
               <span className="font-sans text-xs text-cream/50 hidden sm:inline">

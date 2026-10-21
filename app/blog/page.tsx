@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
       "Notes from a counselling psychologist on anxiety, academic stress, self-esteem and boundaries.",
     url: `${SITE_URL}/blog`,
     type: "website",
+    images: [BRAND.ogImage],
   },
 };
 
