@@ -30,3 +30,15 @@ export const BRAND = {
   },
   alt: "Samvriti.Space",
 } as const;
+
+/** Formats social apps (WhatsApp, LinkedIn, X, Facebook) show as a link preview. SVG is not one of them. */
+const SHAREABLE = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
+
+/**
+ * The image a link to a post should preview with: its cover when the cover is
+ * a raster image, otherwise the site's own preview image. Vector covers look
+ * right on the page but show as a blank card when shared.
+ */
+export function shareImage(cover?: string | null): { url: string; width?: number; height?: number; alt?: string } {
+  return cover && SHAREABLE.test(cover) ? { url: cover } : BRAND.ogImage;
+}

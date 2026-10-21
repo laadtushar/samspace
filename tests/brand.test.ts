@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { BRAND } from "@/lib/brand";
+import { BRAND, shareImage } from "@/lib/brand";
 import manifest from "@/app/manifest";
 import { emailLogo } from "@/lib/email";
 
@@ -62,7 +62,7 @@ describe("brand assets", () => {
   });
 
   it("gives pages that set their own openGraph the brand preview image", () => {
-    for (const f of ["app/about/page.tsx", "app/blog/page.tsx", "app/blog/[slug]/page.tsx"]) {
+    for (const f of ["app/about/page.tsx", "app/blog/page.tsx"]) {
       expect(read(f), f).toContain("BRAND.ogImage");
     }
     const png = readFileSync(path.join(root, "app/opengraph-image.png"));
@@ -118,5 +118,13 @@ describe("brand assets", () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("never offers an SVG cover as a link preview", () => {
+    expect(shareImage("/blog/cover.svg")).toEqual(BRAND.ogImage);
+    expect(shareImage(null)).toEqual(BRAND.ogImage);
+    expect(shareImage("/blog/cover.png")).toEqual({ url: "/blog/cover.png" });
+    expect(shareImage("https://cdn.example/x.JPG?v=2")).toEqual({ url: "https://cdn.example/x.JPG?v=2" });
+    expect(read("app/blog/[slug]/page.tsx")).toContain("shareImage(post.coverImage)");
   });
 });

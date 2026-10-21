@@ -1,4 +1,4 @@
-import { BRAND } from "@/lib/brand";
+import { shareImage } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import {
   getPublishedPostBySlug,
   readingMinutes,
 } from "@/lib/blog";
-import { SITE_URL, serializeJsonLd } from "@/lib/site";
+import { SITE_URL, serializeJsonLd, absoluteUrl } from "@/lib/site";
 import { AUTHOR } from "@/lib/author";
 import { publicContent } from "@/lib/content";
 import { publicPost } from "@/lib/posts-public";
@@ -54,13 +54,13 @@ export async function generateMetadata({
       modifiedTime: post.updatedAt || undefined,
       authors: [AUTHOR.name],
       tags: post.tags,
-      images: [post.coverImage ? { url: post.coverImage } : BRAND.ogImage],
+      images: [shareImage(post.coverImage)],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [post.coverImage || BRAND.ogImage.url],
+      images: [shareImage(post.coverImage).url],
     },
   };
 }
@@ -115,7 +115,7 @@ export default async function BlogPostPage({
         author: { "@id": AUTHOR.id },
         publisher: { "@id": `${SITE_URL}#business` },
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
-        ...(post.coverImage ? { image: post.coverImage } : {}),
+        ...(post.coverImage ? { image: absoluteUrl(post.coverImage) } : {}),
       },
       {
         "@type": "BreadcrumbList",
