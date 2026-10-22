@@ -65,6 +65,7 @@ describe("the reserved list keeps up with the site", () => {
       "sitemap.xml",
       "robots.txt",
       "llms.txt",
+      "llms-full.txt",
       "_next",
       ".well-known",
     ]) {

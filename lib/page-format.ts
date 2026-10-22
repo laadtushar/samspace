@@ -56,6 +56,10 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "preview",
   "start",
   "whatsapp",
+  "llms",
+  "llms.txt",
+  "llms-full",
+  "llms-full.txt",
   // Metadata routes Next generates from files in app/
   "apple-icon",
   "apple-icon.png",
@@ -75,8 +79,6 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "twitter-image.png",
   // Files and folders in public/
   "brand",
-  "llms",
-  "llms.txt",
   "priyanka",
   "priyanka.jpeg",
   "bdb330a70c804a9d88ae4ac1b71f25fc",
