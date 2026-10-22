@@ -9,7 +9,7 @@ import {
   readingMinutes,
 } from "@/lib/blog";
 import { SITE_URL, serializeJsonLd, absoluteUrl, withoutSiteSuffix, pageTitle } from "@/lib/site";
-import { AUTHOR } from "@/lib/author";
+import { AUTHOR, AUTHOR_REFERENCE } from "@/lib/author";
 import { publicContent } from "@/lib/content";
 import { publicPost } from "@/lib/posts-public";
 import Navbar from "@/components/Navbar";
@@ -112,7 +112,7 @@ export default async function BlogPostPage({
         keywords: post.tags.join(", ") || undefined,
         wordCount: post.content.trim().split(/\s+/).length,
         inLanguage: "en-IN",
-        author: { "@id": AUTHOR.id },
+        author: AUTHOR_REFERENCE,
         publisher: { "@id": `${SITE_URL}#business` },
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
         ...(post.coverImage ? { image: absoluteUrl(post.coverImage) } : {}),

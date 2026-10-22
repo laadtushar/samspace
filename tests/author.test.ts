@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { AUTHOR, AUTHOR_URL, authorPerson } from "@/lib/author";
+import { AUTHOR, AUTHOR_URL, AUTHOR_REFERENCE, authorPerson } from "@/lib/author";
 import { defaultContent } from "@/lib/default-content";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -21,16 +21,29 @@ describe("authorship", () => {
     const person = authorPerson(defaultContent);
     expect(person.url).toBe(AUTHOR_URL);
     expect(AUTHOR_URL.endsWith(AUTHOR.path)).toBe(true);
-    expect(person.hasCredential.map((c) => c.credentialCategory)).toEqual([
-      ...AUTHOR.credentials,
-    ]);
+    // Each credential by name; credentialCategory is for the kind ("degree").
+    expect(person.hasCredential.map((c) => c.name)).toEqual([...AUTHOR.credentials]);
+    expect(person.hasCredential.some((c) => "credentialCategory" in c)).toBe(false);
   });
 
   it("uses one Person everywhere rather than a second hand-typed copy", () => {
-    expect(read("app/layout.tsx")).toContain("authorPerson(defaultContent)");
+    // The layout reads the same content /about does, so the one @id cannot
+    // carry two different sets of profiles.
+    expect(read("app/layout.tsx")).toContain("authorPerson(head)");
+    expect(read("app/layout.tsx")).not.toContain("defaultContent");
     expect(read("app/layout.tsx")).not.toContain('"@type": "Person"');
     expect(read("app/about/page.tsx")).toContain("mainEntity: authorPerson(content)");
-    expect(read("app/blog/[slug]/page.tsx")).toContain('author: { "@id": AUTHOR.id }');
+    expect(read("app/blog/[slug]/page.tsx")).toContain("author: AUTHOR_REFERENCE");
+  });
+
+  it("names the post author in the post's own block, as Google lists for articles", () => {
+    expect(AUTHOR_REFERENCE).toEqual({
+      "@type": "Person",
+      "@id": authorPerson(defaultContent)["@id"],
+      name: AUTHOR.name,
+      url: AUTHOR_URL,
+      jobTitle: AUTHOR.jobTitle,
+    });
   });
 
   it("lists the author page in the sitemap", () => {
