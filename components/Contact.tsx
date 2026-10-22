@@ -1,9 +1,8 @@
 "use client";
 
 import { Clock, Mail, MessageCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
-import MagneticButton from "./MagneticButton";
+import Reveal from "./Reveal";
 import TextReveal from "./TextReveal";
 import AnimatedContactForm from "./AnimatedContactForm";
 
@@ -40,16 +39,18 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
   ];
   return (
     <section id="contact" className="bg-forest text-cream py-28 relative overflow-hidden">
-      {/* Ambient orbs */}
-      <motion.div
-        animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 right-20 w-72 h-72 rounded-full bg-sage/[0.06] blur-3xl pointer-events-none"
+      {/* Ambient orbs — CSS loops (.drift) */}
+      <div
+        className="drift absolute top-20 right-20 w-72 h-72 rounded-full bg-sage/[0.06] blur-3xl pointer-events-none"
+        style={
+          { "--drift-x": "30px", "--drift-y": "-20px", "--drift-duration": "18s" } as React.CSSProperties
+        }
       />
-      <motion.div
-        animate={{ x: [0, -20, 0], y: [0, 25, 0] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-20 left-20 w-60 h-60 rounded-full bg-clay/[0.04] blur-3xl pointer-events-none"
+      <div
+        className="drift absolute bottom-20 left-20 w-60 h-60 rounded-full bg-clay/[0.04] blur-3xl pointer-events-none"
+        style={
+          { "--drift-x": "-20px", "--drift-y": "25px", "--drift-duration": "15s" } as React.CSSProperties
+        }
       />
 
       <div className="relative max-w-4xl mx-auto px-6">
@@ -62,41 +63,41 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
                 className="text-cream"
               />
             </h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.6 }}
+            <Reveal
+              as="p"
+              duration={0.8}
+              delay={0.6}
+              ease="out"
               className="font-sans text-base text-cream/55 max-w-md mx-auto"
             >
               {contact.subtext}
-            </motion.p>
+            </Reveal>
           </div>
         </AnimatedSection>
 
         {/* Info cards */}
         <div className="grid sm:grid-cols-3 gap-4 mb-16">
           {infoCards.map((c, i) => (
-            <motion.div
+            /*
+              The hover lift moves on the entrance's own timing, delay
+              included, in both directions — as it did in framer-motion.
+            */
+            <Reveal
               key={c.label}
-              initial={{ opacity: 0, y: 30, scale: 0.9 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{
-                duration: 0.6,
-                delay: 0.2 + i * 0.12,
-                ease: [0.23, 0.86, 0.39, 0.96],
-              }}
-              whileHover={{ y: -6, scale: 1.03 }}
-              className="bg-cream/[0.06] backdrop-blur-sm border border-cream/[0.1] rounded-2xl p-7 text-center cursor-default group"
+              y={30}
+              scale={0.9}
+              duration={0.6}
+              delay={0.2 + i * 0.12}
+              ease="soft"
+              className="lift bg-cream/[0.06] backdrop-blur-sm border border-cream/[0.1] rounded-2xl p-7 text-center cursor-default group"
+              style={{ "--lift-y": "-6px", "--lift-scale": 1.03 } as React.CSSProperties}
             >
-              <motion.span
-                className="text-3xl mb-3 block"
-                whileHover={{ scale: 1.3 }}
-                transition={{ type: "spring", stiffness: 400 }}
+              <span
+                className="hover-pop text-3xl mb-3 block"
+                style={{ "--pop-scale": 1.3 } as React.CSSProperties}
               >
                 <c.icon className="w-7 h-7 mx-auto text-clay-light" aria-hidden="true" strokeWidth={1.5} />
-              </motion.span>
+              </span>
               <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-cream/70 mb-2">
                 {c.label}
               </p>
@@ -116,21 +117,21 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
                   {c.value}
                 </p>
               )}
-            </motion.div>
+            </Reveal>
           ))}
         </div>
 
         {/* Book Session CTA */}
         <AnimatedSection delay={0.15}>
           <div className="text-center mb-14">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
+            {/* Grows on hover and dips when pressed, on framer-motion's
+                default scale spring (.press-grow). */}
+            <button
               onClick={() => onBookSession?.()}
-              className="font-sans text-sm font-medium bg-clay text-cream px-8 py-4 rounded-full hover:bg-clay-light transition-all duration-300 shadow-lg shadow-clay/20 mb-3"
+              className="press-grow font-sans text-sm font-medium bg-clay text-cream px-8 py-4 rounded-full hover:bg-clay-light shadow-lg shadow-clay/20 mb-3"
             >
               Fill Therapy Intake Form
-            </motion.button>
+            </button>
             <p className="font-sans text-xs text-cream/40">or send a quick message below</p>
           </div>
         </AnimatedSection>

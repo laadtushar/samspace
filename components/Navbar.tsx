@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
-import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
   { label: "About", href: "#about" },
@@ -139,39 +138,44 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
         </button>
       </nav>
 
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-cream/95 backdrop-blur-md border-b border-sage/20"
-          >
-            <ul className="flex flex-col px-6 py-4 gap-4">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <button
-                    onClick={() => handleNavClick(link.href)}
-                    className="font-sans text-sm w-full text-left tracking-wide py-1 text-forest/80 hover:text-forest transition-colors duration-200"
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-              <li>
+      {/*
+        Mobile menu. It opens and closes in CSS (.mobile-menu in globals.css)
+        the way the framer-motion version did: the panel grows from nothing to
+        its full height and fades in over 0.3s, and on close does the reverse.
+        It stays in the page while closed, so it is also hidden from the
+        keyboard and screen readers then (visibility, once the fade is done).
+      */}
+      <div
+        className={`mobile-menu grid md:hidden bg-cream/95 backdrop-blur-md ${
+          menuOpen ? "is-open border-b border-sage/20" : ""
+        }`}
+      >
+        {/* min-h-0 lets the row close to nothing; the list itself is not
+            clipped, so it shows at full size while the panel grows behind it,
+            as it did before. */}
+        <div className="min-h-0">
+          <ul className="flex flex-col px-6 py-4 gap-4">
+            {navLinks.map((link) => (
+              <li key={link.href}>
                 <button
-                  onClick={() => { onBookSession?.(); setMenuOpen(false); }}
-                  className="font-sans text-sm w-full text-left tracking-wide py-1 text-clay font-medium transition-colors duration-200"
+                  onClick={() => handleNavClick(link.href)}
+                  className="font-sans text-sm w-full text-left tracking-wide py-1 text-forest/80 hover:text-forest transition-colors duration-200"
                 >
-                  Book a Session
+                  {link.label}
                 </button>
               </li>
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ))}
+            <li>
+              <button
+                onClick={() => { onBookSession?.(); setMenuOpen(false); }}
+                className="font-sans text-sm w-full text-left tracking-wide py-1 text-clay font-medium transition-colors duration-200"
+              >
+                Book a Session
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
     </header>
   );
 }

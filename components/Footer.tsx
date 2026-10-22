@@ -1,10 +1,16 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { BRAND } from "@/lib/brand";
+import Reveal from "./Reveal";
+import RevealObserver from "./RevealObserver";
 import SocialLinks from "./SocialLinks";
+
+/*
+  The footer renders on the blog and the other pages as well as the homepage,
+  so it brings its own RevealObserver for its fade-up; on the homepage that is
+  simply a second mount of the same shared observer. With no framer-motion
+  left in it, it no longer needs to be a client component at all.
+*/
 
 export default function Footer({
   instagram,
@@ -15,11 +21,11 @@ export default function Footer({
 } = {}) {
   return (
     <footer className="bg-forest-deep text-cream/60 py-10 relative overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+      <RevealObserver />
+      <Reveal
+        y={10}
+        duration={0.6}
+        ease="out"
         className="max-w-6xl mx-auto px-6 text-center"
       >
         <Image
@@ -62,7 +68,7 @@ export default function Footer({
           Counselling Psychologist &amp; Academic Mentor · All sessions conducted
           ethically under professional supervision
         </p>
-      </motion.div>
+      </Reveal>
     </footer>
   );
 }

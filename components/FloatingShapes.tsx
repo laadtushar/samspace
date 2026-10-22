@@ -1,7 +1,13 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+
+/*
+  The hero's drifting bands. CSS now (.floating-shape in globals.css), like the
+  rest of the hero: each band drops 150px and turns 15° into place over 2.4s
+  while it fades in over 1.2s, then bobs on a 12s loop — framer-motion's exact
+  values, starting from the first paint instead of after hydration. They are
+  decoration (no text or image), so starting at opacity 0 has no bearing on
+  the Largest Contentful Paint. With reduced motion they only fade in.
+*/
 
 interface ShapeProps {
   className?: string;
@@ -21,27 +27,16 @@ function ElegantShape({
   gradient = "from-sage/[0.12]",
 }: ShapeProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -150, rotate: rotate - 15 }}
-      animate={{ opacity: 1, y: 0, rotate }}
-      transition={{
-        duration: 2.4,
-        delay,
-        ease: [0.23, 0.86, 0.39, 0.96],
-        opacity: { duration: 1.2 },
-      }}
-      className={cn("absolute", className)}
+    <div
+      className={cn("absolute floating-shape", className)}
+      style={
+        {
+          "--shape-delay": `${delay}s`,
+          "--shape-rotate": `${rotate}deg`,
+        } as React.CSSProperties
+      }
     >
-      <motion.div
-        animate={{ y: [0, 15, 0] }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        style={{ width, height }}
-        className="relative"
-      >
+      <div style={{ width, height }} className="relative floating-shape-bob">
         <div
           className={cn(
             "absolute inset-0 rounded-full",
@@ -50,8 +45,8 @@ function ElegantShape({
           )}
           style={{ transform: `rotate(${rotate}deg)` }}
         />
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 

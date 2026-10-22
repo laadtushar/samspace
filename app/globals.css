@@ -205,3 +205,475 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hero-rise, .hero-fade, .hero-drop, .hero-pop, .hero-float, .hero-breathe, .nav-enter { animation: none; }
 }
+
+/*
+  Motion below the hero: scroll reveals, hover effects and loops.
+
+  All of this used to be framer-motion, which the homepage had to download,
+  run and hydrate before a single revealed line could appear, and which then
+  drove many of these effects from JavaScript on every frame. Each rule here
+  carries the values it had there — distance, duration, easing, delay — so the
+  page moves as it did; the browser now runs it, mostly on the compositor.
+
+  For reduced motion this follows what framer-motion's reducedMotion: "user"
+  did: movement (transforms, heights) jumps instead of travelling, while fades
+  and colour changes still play. The decorative loops stop.
+*/
+:root {
+  /* The site's soft deceleration: framer-motion ease [0.23, 0.86, 0.39, 0.96]. */
+  --ease-soft: cubic-bezier(0.23, 0.86, 0.39, 0.96);
+  /* framer-motion's default tween (opacity, colour, gap): 0.3s on this curve. */
+  --ease-motion: cubic-bezier(0.25, 0.1, 0.35, 1);
+  /*
+    framer-motion's physics springs (mass 1, starting from rest), sampled into
+    linear() easing curves. Named stiffness-damping; each comment is how long
+    the spring takes to settle, which is the duration it is used with. A
+    browser without linear() falls back to plain `ease`.
+  */
+  /* 1269ms */
+  --spring-100-10: linear(0, 0.019, 0.069, 0.144, 0.236, 0.337, 0.445, 0.554, 0.657, 0.755, 0.845, 0.922, 0.989, 1.045, 1.088, 1.121, 1.143, 1.157, 1.162, 1.161, 1.154, 1.143, 1.129, 1.112, 1.095, 1.078, 1.06, 1.044, 1.029, 1.016, 1.005, 0.995, 0.987, 0.982, 0.978, 0.975, 0.974, 0.974, 0.975, 0.976, 0.978, 0.981, 0.984, 0.987, 0.989, 0.992, 0.995, 0.997, 0.999, 1, 1.002, 1.003, 1.003, 1.004, 1.004, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1);
+  /* 883ms */
+  --spring-200-15: linear(0, 0.035, 0.128, 0.253, 0.395, 0.541, 0.684, 0.808, 0.913, 0.997, 1.061, 1.104, 1.129, 1.139, 1.137, 1.127, 1.111, 1.091, 1.07, 1.051, 1.033, 1.017, 1.004, 0.994, 0.987, 0.983, 0.981, 0.981, 0.982, 0.984, 0.986, 0.989, 0.992, 0.995, 0.997, 0.999, 1, 1.002, 1.002, 1.003, 1.003, 1.003, 1.002, 1.002, 1.002, 1);
+  /* 1280ms */
+  --spring-300-10: linear(0, 0.057, 0.206, 0.413, 0.646, 0.875, 1.075, 1.232, 1.334, 1.382, 1.381, 1.338, 1.266, 1.179, 1.089, 1.005, 0.936, 0.886, 0.858, 0.85, 0.86, 0.883, 0.915, 0.95, 0.984, 1.013, 1.036, 1.051, 1.058, 1.057, 1.05, 1.039, 1.026, 1.012, 1, 0.99, 0.982, 0.978, 0.978, 0.979, 0.983, 0.988, 0.993, 0.998, 1.002, 1.006, 1.008, 1.009, 1.008, 1.007, 1.006, 1.004, 1.002, 1, 0.998, 0.997, 0.997, 0.997, 0.997, 0.997, 0.998, 0.999, 1, 1, 1);
+  /* 627ms */
+  --spring-300-20: linear(0, 0.034, 0.121, 0.238, 0.371, 0.512, 0.642, 0.762, 0.863, 0.945, 1.01, 1.055, 1.085, 1.102, 1.107, 1.105, 1.096, 1.084, 1.069, 1.055, 1.041, 1.027, 1.016, 1.007, 1, 0.995, 0.991, 0.989, 0.988, 0.989, 0.989, 0.991, 0.992, 0.994, 0.995, 0.997, 0.998, 0.999, 1, 1.001, 1);
+  /* 1266ms */
+  --spring-400-10: linear(0, 0.076, 0.265, 0.527, 0.803, 1.063, 1.262, 1.393, 1.443, 1.422, 1.344, 1.235, 1.109, 0.991, 0.897, 0.833, 0.805, 0.809, 0.839, 0.886, 0.942, 0.994, 1.039, 1.069, 1.085, 1.086, 1.075, 1.055, 1.031, 1.007, 0.986, 0.971, 0.963, 0.961, 0.966, 0.974, 0.984, 0.995, 1.005, 1.012, 1.016, 1.017, 1.016, 1.012, 1.008, 1.003, 0.999, 0.995, 0.993, 0.992, 0.993, 0.994, 0.996, 0.998, 1, 1.002, 1.003, 1.003, 1.003, 1.003, 1.002, 1.001, 1, 0.999, 1);
+  /* 489ms — framer-motion's default for x and y */
+  --spring-500-25: linear(0, 0.034, 0.123, 0.242, 0.383, 0.521, 0.659, 0.777, 0.883, 0.964, 1.029, 1.073, 1.101, 1.116, 1.119, 1.113, 1.102, 1.087, 1.071, 1.054, 1.038, 1.025, 1.012, 1.003, 0.996, 0.991, 0.987, 0.986, 0.986, 0.987, 0.988, 0.99, 0.992, 0.994, 0.996, 0.997, 0.999, 1, 1.001, 1.001, 1);
+  /* 471ms — framer-motion's default for scale */
+  --spring-550-30: linear(0, 0.037, 0.122, 0.241, 0.369, 0.504, 0.625, 0.739, 0.831, 0.91, 0.971, 1.014, 1.044, 1.061, 1.07, 1.072, 1.068, 1.062, 1.053, 1.043, 1.034, 1.025, 1.017, 1.011, 1.005, 1.001, 0.999, 0.997, 0.995, 0.995, 0.995, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.999, 0.999, 1, 1);
+}
+
+/*
+  Scroll reveals (components/Reveal.tsx, TextReveal.tsx, RevealObserver.tsx).
+  Nothing here hides anything until RevealObserver has marked it "wait", so
+  without JavaScript every reveal is simply visible. "in" plays the entrance;
+  `backwards` holds the start state through the delay, and when it ends the
+  element is left with no transform at all, free for hover effects.
+*/
+.reveal {
+  --reveal-x: 0px;
+  --reveal-y: 0px;
+  --reveal-scale: 1;
+  --reveal-rotate: 0deg;
+  --reveal-rotate-x: 0deg;
+  --reveal-rotate-y: 0deg;
+  --reveal-blur: 0px;
+  --reveal-duration: 0.6s;
+  --reveal-ease: ease-out;
+  --reveal-delay: 0s;
+}
+.reveal[data-reveal="wait"],
+.reveal-words[data-reveal="wait"] > span {
+  opacity: 0;
+}
+.reveal[data-reveal="in"] {
+  animation: reveal var(--reveal-duration) var(--reveal-ease) var(--reveal-delay) backwards;
+}
+.reveal-blur[data-reveal="in"] {
+  animation-name: reveal-blur;
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translate(var(--reveal-x), var(--reveal-y)) scale(var(--reveal-scale))
+      rotate(var(--reveal-rotate)) rotateX(var(--reveal-rotate-x)) rotateY(var(--reveal-rotate-y));
+  }
+}
+@keyframes reveal-blur {
+  from {
+    opacity: 0;
+    transform: translate(var(--reveal-x), var(--reveal-y)) scale(var(--reveal-scale))
+      rotate(var(--reveal-rotate)) rotateX(var(--reveal-rotate-x)) rotateY(var(--reveal-rotate-y));
+    filter: blur(var(--reveal-blur));
+  }
+}
+/* TextReveal: each word rises out of an 8px blur, --i staggers behind the first. */
+.reveal-words[data-reveal="in"] > span {
+  animation: reveal-word 0.6s var(--ease-soft) backwards;
+  animation-delay: calc(var(--reveal-delay) + var(--i) * var(--reveal-stagger));
+}
+@keyframes reveal-word {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(8px);
+  }
+}
+@keyframes reveal-fade {
+  from { opacity: 0; }
+}
+@keyframes reveal-fade-blur {
+  from { opacity: 0; filter: blur(var(--reveal-blur)); }
+}
+@keyframes reveal-word-fade {
+  from { opacity: 0; filter: blur(8px); }
+}
+/* A page printed before it was scrolled through should still have its text. */
+@media print {
+  .reveal[data-reveal="wait"],
+  .reveal-words[data-reveal="wait"] > span {
+    opacity: 1;
+  }
+}
+
+/*
+  ScrollText: a word's opacity ramps from --dim to 1 as the paragraph's scroll
+  progress (--p, written by the component) passes through that word's slice of
+  the paragraph. Without --p the paragraph is at full strength.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-words > span {
+    opacity: clamp(
+      var(--dim),
+      calc(var(--dim) + (1 - var(--dim)) * (var(--p, 1) * var(--n) - var(--i))),
+      1
+    );
+  }
+}
+
+/*
+  Hover effects. Each moves an individual transform property (translate,
+  scale, rotate), so it composes with a reveal (which uses `transform`) rather
+  than replacing it. Like framer-motion's whileHover, they respond to a real
+  pointer only, not to a tap.
+*/
+.hover-nudge { transition: translate 627ms var(--spring-300-20); }
+.hover-grow { transition: scale 471ms var(--spring-550-30); }
+.hover-pop {
+  transition:
+    scale 1266ms var(--spring-400-10),
+    rotate 1266ms var(--spring-400-10);
+}
+/* Cards that lift: back down (and, unless .lift-quick, up too) on the timing of their own entrance, delay included. */
+.lift {
+  transition-property: translate, scale;
+  transition-duration: var(--reveal-duration);
+  transition-timing-function: var(--reveal-ease);
+  transition-delay: var(--reveal-delay);
+}
+.press-grow {
+  transition:
+    scale 471ms var(--spring-550-30),
+    background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.press-grow:active { scale: 0.97; }
+.tilt-card { transition: scale 0.2s ease-out; }
+/* The ring appears on any hover, a tap included, and vanishes at once on leave. */
+.tilt-card-ring { opacity: 0; }
+.tilt-card:hover > .tilt-card-ring {
+  opacity: 1;
+  transition: opacity 0.3s var(--ease-motion);
+}
+@keyframes wiggle {
+  33.333% { rotate: -10deg; }
+  66.667% { rotate: 10deg; }
+}
+@media (hover: hover) {
+  .hover-nudge:hover { translate: 8px 0; }
+  .hover-grow:hover { scale: 1.02; }
+  .hover-pop:hover { scale: var(--pop-scale); rotate: var(--pop-rotate, 0deg); }
+  .lift:hover { translate: 0 var(--lift-y); scale: var(--lift-scale); }
+  .lift-quick:hover {
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-delay: 0s;
+  }
+  .press-grow:hover { scale: 1.05; }
+  .tilt-card:hover { scale: 1.02; }
+  .hover-wiggle:hover { animation: wiggle 0.5s ease-out; }
+}
+
+/* Background orbs and shapes drifting out and back (x, y, rotate at the half-way point). */
+.drift { animation: drift var(--drift-duration) ease-in-out infinite; }
+@keyframes drift {
+  50% {
+    transform: translate(var(--drift-x, 0px), var(--drift-y, 0px)) rotate(var(--drift-rotate, 0deg));
+  }
+}
+/* SessionInfo: the light running along the crisis notice's top edge. */
+.glow-sweep {
+  transform: translateX(-100%);
+  animation: glow-sweep 4s linear infinite;
+}
+@keyframes glow-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(200%); }
+}
+
+/* FloatingShapes: drop and turn into place while fading in, then bob. */
+.floating-shape {
+  rotate: var(--shape-rotate);
+  animation:
+    shape-enter 2.4s var(--ease-soft) var(--shape-delay) backwards,
+    shape-fade 1.2s ease-out var(--shape-delay) backwards;
+}
+@keyframes shape-enter {
+  from {
+    translate: 0 -150px;
+    rotate: calc(var(--shape-rotate) - 15deg);
+  }
+}
+@keyframes shape-fade {
+  from { opacity: 0; }
+}
+.floating-shape-bob { animation: shape-bob 12s ease-in-out infinite; }
+@keyframes shape-bob {
+  50% { translate: 0 15px; }
+}
+
+/*
+  Marquee: the track loops from -20% to -45% of its width. Duration, start
+  point and direction are set inline; scrolling changes its playbackRate.
+  Where the animation does not run, it rests at -25%, where it always started.
+*/
+.marquee-track {
+  transform: translateX(-25%);
+  animation: marquee linear infinite;
+}
+@keyframes marquee {
+  from { transform: translateX(-20%); }
+  to { transform: translateX(-45%); }
+}
+
+/* Faq: the chevron turns, and the answer opens to its natural height. */
+.faq-chevron { transition: rotate 0.3s ease-out; }
+.faq-chevron.is-open { rotate: 180deg; }
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s var(--ease-soft),
+    opacity 0.35s var(--ease-soft);
+}
+.faq-answer.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* Navbar's mobile menu; hidden from focus and screen readers once it has faded out. */
+.mobile-menu {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.3s ease-out,
+    opacity 0.3s ease-out,
+    visibility 0s linear 0.3s;
+}
+.mobile-menu.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
+/* BreathingPause: the length (4s in, 6s out) is set with each phase. */
+.breath-circle {
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+}
+
+/* AnimatedContactForm */
+.form-field { transition: scale 1269ms var(--spring-100-10) var(--reveal-delay); }
+.form-label {
+  transition:
+    top 1280ms var(--spring-300-10),
+    font-size 1280ms var(--spring-300-10),
+    translate 1280ms var(--spring-300-10),
+    color 1280ms var(--spring-300-10);
+}
+.form-particle { animation: form-particle 0.8s ease-out forwards; }
+@keyframes form-particle {
+  to {
+    opacity: 0;
+    transform: translate(var(--px), var(--py)) scale(0);
+  }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes grow-in {
+  from { scale: 0.8; }
+}
+@keyframes slide-in {
+  from { translate: -10px 0; }
+}
+@keyframes rise-in {
+  from { translate: 0 10px; }
+}
+.form-pop-in {
+  animation:
+    fade-in 0.3s var(--ease-motion) backwards,
+    grow-in 471ms var(--spring-550-30) backwards;
+}
+.form-slide-in {
+  animation:
+    fade-in 0.3s var(--ease-motion) backwards,
+    slide-in 489ms var(--spring-500-25) backwards;
+}
+.form-rise-in {
+  animation:
+    fade-in 0.3s var(--ease-motion) backwards,
+    rise-in 489ms var(--spring-500-25) backwards;
+}
+.form-spin { animation: spin-turn 20s linear infinite; }
+@keyframes spin-turn {
+  to { rotate: 360deg; }
+}
+.form-heartbeat {
+  animation:
+    heart-scale 3s ease-out infinite,
+    heart-rotate 3s ease-out infinite;
+}
+@keyframes heart-scale {
+  50% { scale: 1.2; }
+}
+@keyframes heart-rotate {
+  33.333% { rotate: 10deg; }
+  66.667% { rotate: -10deg; }
+}
+/* Tailwind's transition-all stays first: it smooths the magnetic `translate`, as it smoothed framer-motion's transform. */
+.submit-btn {
+  transition:
+    all 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    scale 471ms var(--spring-550-30),
+    rotate 489ms var(--spring-500-25);
+}
+.submit-btn:not(:disabled):active {
+  scale: 0.92;
+  transition:
+    all 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    scale 471ms var(--spring-550-30);
+}
+@keyframes submit-wiggle {
+  25% { rotate: -2deg; }
+  50% { rotate: 2deg; }
+  75% { rotate: -2deg; }
+}
+.submit-label { transition: gap 0.3s var(--ease-motion); }
+@media (hover: hover) {
+  .form-field:hover {
+    scale: 1.02;
+    transition: scale 0.2s ease-out;
+  }
+  .submit-btn:not(:disabled):hover {
+    scale: 1.05;
+    animation: submit-wiggle 0.5s ease-out;
+    transition:
+      all 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      scale 0.3s ease-out;
+  }
+  .submit-btn:not(:disabled):active {
+    scale: 0.92;
+    transition:
+      all 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      scale 471ms var(--spring-550-30);
+  }
+  .submit-label:hover { gap: 12px; }
+}
+.submit-ripple { animation: submit-ripple 0.6s ease-out forwards; }
+@keyframes submit-ripple {
+  from { scale: 0; opacity: 0.5; }
+  to { scale: 4; opacity: 0; }
+}
+.submit-shimmer { animation: submit-shimmer 3s linear infinite; }
+@keyframes submit-shimmer {
+  50% { transform: translateX(-50%); }
+}
+.submit-success { animation: submit-success 883ms var(--spring-200-15) backwards; }
+@keyframes submit-success {
+  from { scale: 0; rotate: -180deg; }
+}
+/* A 0.5s pulse, then a 0.5s rest. */
+.submit-check { animation: submit-check 1s ease-out infinite; }
+@keyframes submit-check {
+  25% { scale: 1.2; }
+  50%, 100% { scale: 1; }
+}
+.submit-confetti {
+  animation:
+    confetti-pop 1s ease-out 0.1s both,
+    confetti-fly 1s ease-out 0.1s both;
+}
+@keyframes confetti-pop {
+  0% { scale: 0; }
+  50% { scale: 1; }
+  100% { scale: 0; }
+}
+@keyframes confetti-fly {
+  from { translate: 0 0; }
+  to { translate: var(--cx) var(--cy); }
+}
+/* A 1.5s nudge, then a 0.5s rest. */
+.submit-send { animation: submit-send 2s ease-out infinite; }
+@keyframes submit-send {
+  37.5% { transform: translateX(5px) rotate(-15deg); }
+  75%, 100% { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal[data-reveal="in"] { animation-name: reveal-fade; }
+  .reveal-blur[data-reveal="in"] { animation-name: reveal-fade-blur; }
+  .reveal-words[data-reveal="in"] > span { animation-name: reveal-word-fade; }
+
+  .hover-nudge,
+  .hover-grow,
+  .hover-pop,
+  .lift,
+  .tilt-card,
+  .faq-chevron,
+  .breath-circle,
+  .form-field,
+  .form-field:hover {
+    transition: none;
+  }
+  .press-grow { transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1); }
+  .faq-answer { transition: opacity 0.35s var(--ease-soft); }
+  .mobile-menu { transition: opacity 0.3s ease-out, visibility 0s linear 0.3s; }
+  .mobile-menu.is-open { transition: opacity 0.3s ease-out; }
+  .form-label {
+    transition:
+      font-size 1280ms var(--spring-300-10),
+      color 1280ms var(--spring-300-10);
+  }
+  .submit-btn,
+  .submit-btn:not(:disabled):hover,
+  .submit-btn:not(:disabled):active {
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1), scale 0s, rotate 0s, translate 0s;
+    animation: none;
+  }
+
+  .drift,
+  .glow-sweep,
+  .floating-shape-bob,
+  .marquee-track,
+  .hover-wiggle:hover,
+  .form-spin,
+  .form-heartbeat,
+  .submit-shimmer,
+  .submit-success,
+  .submit-check,
+  .submit-send {
+    animation: none;
+  }
+  /* framer-motion jumped a loop to its last keyframe: the far end, here. */
+  .glow-sweep { transform: translateX(200%); }
+  .floating-shape { animation: shape-fade 1.2s ease-out var(--shape-delay) backwards; }
+  .form-pop-in,
+  .form-slide-in,
+  .form-rise-in {
+    animation: fade-in 0.3s var(--ease-motion) backwards;
+  }
+  /* Bursts that are nothing but movement. */
+  .form-particle,
+  .submit-ripple,
+  .submit-confetti {
+    display: none;
+  }
+}

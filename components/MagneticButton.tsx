@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { createSpring, prefersReducedMotion, type Spring } from "./spring";
 
 interface MagneticButtonProps {
   children: React.ReactNode;
@@ -11,44 +11,58 @@ interface MagneticButtonProps {
   strength?: number;
 }
 
+/**
+ * Leans toward the pointer and springs back when it leaves.
+ *
+ * The same spring as before (stiffness 200, damping 20), now from spring.ts
+ * rather than framer-motion. Nothing runs until the pointer first moves over
+ * it, so the hero's buttons cost the page nothing while it loads. It stays put
+ * for anyone whose device asks for reduced motion.
+ */
 export default function MagneticButton({
   children,
   className = "",
-  as: Tag = "div",
   onClick,
   strength = 0.3,
 }: MagneticButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+  const spring = useRef<Spring | null>(null);
 
-  const springX = useSpring(x, { stiffness: 200, damping: 20 });
-  const springY = useSpring(y, { stiffness: 200, damping: 20 });
+  useEffect(() => () => spring.current?.stop(), []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
+    const el = ref.current;
+    if (!el || prefersReducedMotion()) return;
+    spring.current ??= createSpring(
+      { stiffness: 200, damping: 20 },
+      [0, 0],
+      ([x, y]) => {
+        el.style.transform =
+          x || y ? `translateX(${x}px) translateY(${y}px)` : "";
+      }
+    );
+    const rect = el.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    x.set((e.clientX - centerX) * strength);
-    y.set((e.clientY - centerY) * strength);
+    spring.current.set([
+      (e.clientX - centerX) * strength,
+      (e.clientY - centerY) * strength,
+    ]);
   };
 
   const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
+    spring.current?.set([0, 0]);
   };
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      style={{ x: springX, y: springY }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
       className={`inline-block ${className}`}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
