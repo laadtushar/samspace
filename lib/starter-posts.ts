@@ -30,14 +30,21 @@ const CRISIS_NOTE = `---
 *If you're in immediate distress or having thoughts of self-harm, please reach out for emergency support: iCall 9152987821, or Vandrevala Foundation 1860-2662-345 (24/7). This post is educational and isn't a substitute for individual care.*`;
 
 /**
- * The same note for a post a reader may be reading from outside India. Someone
- * abroad needs the emergency services where they are before an Indian helpline,
- * which may not even be reachable from their phone. The helplines are named as
- * the site's crisis section names them (Vandrevala 24/7).
+ * What to do in a crisis, for a reader who may be outside India. Someone abroad
+ * needs the emergency services where they are before an Indian helpline, which
+ * may not even be reachable from their phone. The helplines are named as the
+ * site's crisis section names them (Vandrevala 24/7).
+ *
+ * Exported on its own, without the post framing, so a starter page can say
+ * exactly the same thing (lib/starter-pages.ts) rather than a near-copy.
  */
+export const CRISIS_SUPPORT_ABROAD =
+  "If you're in immediate distress or having thoughts of self-harm, please reach out to emergency services in your current country. You can also contact iCall at 9152987821, or Vandrevala Foundation at 1860-2662-345 (24/7).";
+
+/** The same note as CRISIS_NOTE, for a post a reader may be reading from abroad. */
 const CRISIS_NOTE_ABROAD = `---
 
-*If you're in immediate distress or having thoughts of self-harm, please reach out to emergency services in your current country. You can also contact iCall at 9152987821, or Vandrevala Foundation at 1860-2662-345 (24/7). This post is educational and isn't a substitute for individual care.*`;
+*${CRISIS_SUPPORT_ABROAD} This post is educational and isn't a substitute for individual care.*`;
 
 export const STARTER_POSTS: StarterPost[] = [
   {
