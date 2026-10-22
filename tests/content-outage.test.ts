@@ -91,6 +91,8 @@ describe("every public route survives the outage", () => {
     "app/start/page.tsx",
     "app/blog/page.tsx",
     "app/blog/[slug]/page.tsx",
+    "app/[slug]/page.tsx",
+    "components/PreviewDocument.tsx",
     "app/blog/rss.xml/route.ts",
   ];
 

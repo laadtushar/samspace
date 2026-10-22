@@ -60,6 +60,24 @@ const nextConfig = {
         source: "/api/:path*",
         headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
       },
+      {
+        /*
+          Drafts. Never indexed, never stored by a browser or a CDN, and never
+          announced to another site in a Referer header — a shared link carries
+          its token in the path, and a reviewer clicking out of the draft must
+          not hand that link to wherever they clicked. Listed after the global
+          entry so this Referrer-Policy is the one that applies here.
+
+          Set here for the whole of /preview rather than per route, so a preview
+          route added later is covered without anyone having to remember.
+        */
+        source: "/preview/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
     ];
   },
   /*
