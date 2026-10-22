@@ -73,6 +73,28 @@ export const SITE_NAME = "Samvriti.Space";
 export const SITE_TAGLINE = "A space to feel seen, heard, and supported";
 
 /**
+ * Other ways people write the name. Google reads these from the WebSite
+ * structured data when choosing the site name it shows, and "Samvriti Space"
+ * is how the name is typed into a search box.
+ */
+export const SITE_ALTERNATE_NAMES = ["Samvriti Space"];
+
+/** What the root layout's title template appends to every page title. */
+export const TITLE_SUFFIX = ` | ${SITE_NAME}`;
+
+/**
+ * Roughly where Google cuts a title in search results. Google already shows
+ * the site name above each result, so when the suffix would push a title past
+ * this, it is the suffix that goes rather than the words people search for.
+ */
+export const TITLE_MAX_LENGTH = 60;
+
+/** A page title that keeps the site suffix only while it fits. */
+export function pageTitle(title: string): string | { absolute: string } {
+  return title.length + TITLE_SUFFIX.length > TITLE_MAX_LENGTH ? { absolute: title } : title;
+}
+
+/**
  * Serialises a JSON-LD graph for embedding in a <script> tag.
  *
  * JSON.stringify escapes quotes and backslashes but not `<`, so a stored value

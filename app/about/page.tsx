@@ -5,7 +5,7 @@ import Image from "next/image";
 import { publicContent } from "@/lib/content";
 import { publicPosts } from "@/lib/posts-public";
 import { getCachedPublishedPosts } from "@/lib/blog";
-import { SITE_URL, SITE_NAME, serializeJsonLd } from "@/lib/site";
+import { SITE_URL, SITE_NAME, serializeJsonLd, pageTitle } from "@/lib/site";
 import { AUTHOR, AUTHOR_URL, authorPerson } from "@/lib/author";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: `${AUTHOR.name} — ${AUTHOR.jobTitle}`,
+  title: pageTitle(`${AUTHOR.name} — ${AUTHOR.jobTitle}`),
   description: AUTHOR.summary,
   alternates: { canonical: AUTHOR.path },
   openGraph: {
