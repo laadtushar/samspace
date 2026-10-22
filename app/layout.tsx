@@ -16,11 +16,7 @@ import {
   absoluteUrl,
 } from "@/lib/site";
 import { BRAND } from "@/lib/brand";
-import {
-  defaultContent,
-  publicContent,
-  type SiteContent,
-} from "@/lib/content";
+import { publicContent, type SiteContent } from "@/lib/content";
 import { pricingFrom } from "@/lib/seo-pricing";
 import { AUTHOR, AUTHOR_URL, authorPerson } from "@/lib/author";
 import "./globals.css";
@@ -206,12 +202,16 @@ const jsonLd = {
         availableLanguage: ["English", "Hindi"],
         serviceType: ["Counselling Psychology", "Academic Mentoring"],
         medicalSpecialty: "Psychiatric",
-        email: defaultContent.contact.email,
+        // From the content the page renders, not the shipped defaults: /about
+        // describes the same Person from it, and one @id carrying two sets of
+        // profiles or two addresses is a contradiction an engine has to pick
+        // a side of. publicContent already falls back to the defaults.
+        email: head.contact.email,
         // The wa.me link is deliberately absent: it carries the phone number
         // in the URL, and sameAs is for profiles rather than contact methods.
         sameAs: [
-          defaultContent.social.instagram,
-          defaultContent.social.linkedin,
+          head.social.instagram,
+          head.social.linkedin,
           GOOGLE_BUSINESS_PROFILE,
         ].filter(Boolean),
         founder: { "@id": `${SITE_URL}#priyanka` },
@@ -254,7 +254,7 @@ const jsonLd = {
           ],
         },
       },
-      authorPerson(defaultContent),
+      authorPerson(head),
       {
         "@type": "WebSite",
         "@id": `${SITE_URL}#website`,
