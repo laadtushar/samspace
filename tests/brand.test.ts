@@ -121,11 +121,23 @@ describe("brand assets", () => {
   });
 
   it("never offers an SVG cover as a link preview", () => {
-    expect(shareImage("/blog/cover.svg")).toEqual(BRAND.ogImage);
-    expect(shareImage(null)).toEqual(BRAND.ogImage);
-    expect(shareImage("/blog/cover.png")).toEqual({ url: "/blog/cover.png" });
-    expect(shareImage("https://cdn.example/x.JPG?v=2")).toEqual({ url: "https://cdn.example/x.JPG?v=2" });
-    expect(read("app/blog/[slug]/page.tsx")).toContain("shareImage(post.coverImage)");
+    // No `images` key at all, so the post's generated card is used: Next drops a
+    // file-based image when the same segment's metadata has the key, even as undefined.
+    for (const cover of ["/blog/cover.svg", "/blog/COVER.SVG", null, undefined, ""]) {
+      expect(shareImage(cover), String(cover)).toEqual({});
+      expect(Object.hasOwn(shareImage(cover), "images"), String(cover)).toBe(false);
+    }
+    // A raster cover is still its own preview.
+    expect(shareImage("/blog/cover.png")).toEqual({ images: [{ url: "/blog/cover.png" }] });
+    expect(shareImage("https://cdn.example/x.JPG?v=2")).toEqual({ images: [{ url: "https://cdn.example/x.JPG?v=2" }] });
+
+    // Spread into both openGraph and twitter, never wrapped in an images array of its own.
+    const page = read("app/blog/[slug]/page.tsx");
+    expect(page.match(/\.\.\.shareImage\(post\.coverImage\),/g)?.length).toBe(2);
+    expect(page).not.toMatch(/images:\s*\[shareImage/);
+    for (const f of ["app/blog/[slug]/opengraph-image.tsx", "app/blog/[slug]/twitter-image.tsx"]) {
+      expect(existsSync(path.join(root, f)), f).toBe(true);
+    }
   });
 
   it("doesn't let a post title carry the site name twice", async () => {
