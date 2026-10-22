@@ -155,6 +155,27 @@ async function contentFromDb(): Promise<DbRead> {
   }
 }
 
+/**
+ * When the dashboard last saved the site copy, for the sitemap's lastmod.
+ *
+ * Null when there is nothing stored or it cannot be read: the sitemap then
+ * falls back to the date the shipped copy last changed rather than failing,
+ * since a sitemap that errors tells crawlers less than one with an older date.
+ */
+export async function contentUpdatedAt(): Promise<Date | null> {
+  if (!dbConfigured()) return null;
+  try {
+    const rows = (await sql()`
+      select updated_at from site_content where id = 'site'
+    `) as unknown as { updated_at: string | Date | null }[];
+    const at = rows[0]?.updated_at;
+    return at ? new Date(at) : null;
+  } catch (error) {
+    log.error("content.updated_at_failed", errorFields(error));
+    return null;
+  }
+}
+
 async function writeContentToDb(content: SiteContent): Promise<void> {
   await sql()`
     insert into site_content (id, content, updated_at)

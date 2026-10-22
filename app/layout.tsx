@@ -198,8 +198,8 @@ const jsonLd = {
         ...(price.range ? { priceRange: price.range } : {}),
         currenciesAccepted: "INR",
         alternateName: SITE_ALTERNATE_NAMES,
-        // Sessions are online and priced in the visitor's own currency, for
-        // clients in India and for Indians living abroad.
+        // Sessions are online, for clients in India and for Indians living
+        // abroad.
         areaServed: [{ "@type": "Country", name: "India" }, "Worldwide"],
         availableLanguage: ["English", "Hindi"],
         serviceType: ["Counselling Psychology", "Academic Mentoring"],
