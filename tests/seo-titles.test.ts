@@ -41,3 +41,12 @@ describe("structured data for who the practice serves", () => {
     expect(layout).toContain('areaServed: [{ "@type": "Country", name: "India" }, "Worldwide"]');
   });
 });
+
+describe("IndexNow", () => {
+  it("hosts the key file at the site root, containing only its own name", async () => {
+    const { readdirSync } = await import("node:fs");
+    const keys = readdirSync(path.join(root, "public")).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
+    expect(keys.length).toBe(1);
+    expect(read(`public/${keys[0]}`)).toBe(keys[0].replace(/\.txt$/, ""));
+  });
+});
