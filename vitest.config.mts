@@ -22,4 +22,7 @@ export default defineConfig({
   resolve: {
     alias: { "@": import.meta.dirname },
   },
+  // tsconfig says "preserve" because Next compiles JSX itself; tests that
+  // import a .tsx module (the share image card) need it compiled here instead.
+  oxc: { jsx: { runtime: "automatic" } },
 });

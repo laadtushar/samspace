@@ -20,6 +20,21 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  experimental: {
+    /*
+      The post share images (lib/share-image) read their fonts and the lockup
+      from disk inside the function. The file tracer cannot see paths built at
+      run time, and Next deliberately leaves SVG out of a trace, so without
+      this the deployed function would ship without them. The key matches the
+      generated routes, /blog/[slug]/opengraph-image/[[...__metadata_id__]].
+    */
+    outputFileTracingIncludes: {
+      "/blog/*/{opengraph,twitter}-image/**": [
+        "./lib/share-image/fonts/*.ttf",
+        "./public/brand/lockup-horizontal-color.svg",
+      ],
+    },
+  },
   async headers() {
     return [
       {
