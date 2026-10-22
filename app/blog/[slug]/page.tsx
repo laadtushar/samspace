@@ -54,13 +54,13 @@ export async function generateMetadata({
       modifiedTime: post.updatedAt || undefined,
       authors: [AUTHOR.name],
       tags: post.tags,
-      images: [shareImage(post.coverImage)],
+      ...shareImage(post.coverImage),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [shareImage(post.coverImage).url],
+      ...shareImage(post.coverImage),
     },
   };
 }

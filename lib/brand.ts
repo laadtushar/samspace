@@ -35,10 +35,19 @@ export const BRAND = {
 const SHAREABLE = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
 
 /**
- * The image a link to a post should preview with: its cover when the cover is
- * a raster image, otherwise the site's own preview image. Vector covers look
- * right on the page but show as a blank card when shared.
+ * The `images` a post's openGraph and twitter metadata should carry, to be
+ * spread in: `{ ...shareImage(post.coverImage) }`.
+ *
+ * A raster cover is its own preview, as before. A vector cover looks right on
+ * the page but shows as a blank card when shared, so instead the post's
+ * generated card is used (app/blog/[slug]/opengraph-image.tsx and
+ * twitter-image.tsx, its title on the brand card).
+ *
+ * That card only appears if the key is absent. Next drops a segment's
+ * file-based image whenever that segment's own metadata has an `images`
+ * property — even `images: undefined` — so this returns an empty object, not
+ * an empty value, and never falls back to the site-wide BRAND.ogImage.
  */
-export function shareImage(cover?: string | null): { url: string; width?: number; height?: number; alt?: string } {
-  return cover && SHAREABLE.test(cover) ? { url: cover } : BRAND.ogImage;
+export function shareImage(cover?: string | null): { images: { url: string }[] } | Record<string, never> {
+  return cover && SHAREABLE.test(cover) ? { images: [{ url: cover }] } : {};
 }
