@@ -46,10 +46,30 @@ export function authorPerson(content: Pick<SiteContent, "social" | "contact">) {
     email: content.contact.email,
     knowsLanguage: [...AUTHOR.languages],
     worksFor: { "@id": `${SITE_URL}#business` },
-    hasCredential: AUTHOR.credentials.map((credentialCategory) => ({
+    // The credential's own name. credentialCategory is the kind of credential
+    // ("degree", "certificate"), and these were filed there, which told a
+    // reader the category was "UGC NET-JRF" and the credential had no name.
+    hasCredential: AUTHOR.credentials.map((name) => ({
       "@type": "EducationalOccupationalCredential",
-      credentialCategory,
+      name,
     })),
     knowsAbout: [...AUTHOR.knowsAbout],
   };
 }
+
+/**
+ * The author as a post names her: the same @id as the full Person, plus the
+ * name and author page Google lists for an article's author
+ * (developers.google.com/search/docs/appearance/structured-data/article).
+ *
+ * A bare @id leaves those to be joined from another script block on the page,
+ * and anything that reads the post's block on its own sees an author with no
+ * name. Contact details and profiles stay on the full Person.
+ */
+export const AUTHOR_REFERENCE = {
+  "@type": "Person",
+  "@id": AUTHOR.id,
+  name: AUTHOR.name,
+  url: AUTHOR_URL,
+  jobTitle: AUTHOR.jobTitle,
+} as const;
