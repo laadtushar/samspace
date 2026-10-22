@@ -144,3 +144,64 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ambient-blob { animation: none; }
 }
+
+/*
+  Hero and navbar entrance (components/Hero.tsx, components/Navbar.tsx).
+  Plain CSS, so it starts as soon as the stylesheet arrives rather than after
+  the page's JavaScript has hydrated.
+
+  The large text, the quote card and the navbar only slide; they are visible
+  from the first paint. They are the Largest Contentful Paint candidates, and
+  an element first painted at opacity 0 and revealed by a CSS fade records no
+  LCP at all (the compositor runs the fade without a repaint). Only the small
+  pieces fade. `both` holds each element at its start state through its delay.
+*/
+@keyframes hero-rise {
+  from { transform: translateY(12px); }
+  to { transform: none; }
+}
+.hero-rise {
+  animation: hero-rise 0.5s cubic-bezier(0.23, 0.86, 0.39, 0.96) both;
+  animation-delay: var(--hero-delay, 0s);
+}
+@keyframes hero-fade {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.hero-fade {
+  animation: hero-fade 0.5s cubic-bezier(0.23, 0.86, 0.39, 0.96) both;
+  animation-delay: var(--hero-delay, 0s);
+}
+@keyframes hero-drop {
+  from { transform: translateY(-24px) rotate(-3deg); }
+  to { transform: none; }
+}
+.hero-drop {
+  animation: hero-drop 0.8s cubic-bezier(0.23, 0.86, 0.39, 0.96) both;
+  animation-delay: var(--hero-delay, 0s);
+}
+/* A slight overshoot, in place of the spring the badges used to pop with. */
+@keyframes hero-pop {
+  from { opacity: 0; transform: scale(0) rotate(-10deg); }
+  to { opacity: 1; transform: none; }
+}
+.hero-pop {
+  animation: hero-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: var(--hero-delay, 0s);
+}
+@keyframes hero-float {
+  50% { transform: translateY(-10px); }
+}
+.hero-float { animation: hero-float 5s ease-in-out infinite; }
+@keyframes hero-breathe {
+  50% { transform: scale(1.05); }
+}
+.hero-breathe { animation: hero-breathe 3s ease-in-out infinite; }
+@keyframes nav-enter {
+  from { transform: translateY(-20px); }
+  to { transform: none; }
+}
+.nav-enter { animation: nav-enter 0.6s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise, .hero-fade, .hero-drop, .hero-pop, .hero-float, .hero-breathe, .nav-enter { animation: none; }
+}

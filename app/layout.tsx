@@ -59,7 +59,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Samvriti.Space — Priyanka Varma | Counselling Psychologist & Academic Mentor",
+    // What people search for, within Google's ~60 characters; Google shows the
+    // site name above the result, and the WebSite structured data carries it.
+    default: "Online Therapy with an Indian Counselling Psychologist",
     template: `%s${TITLE_SUFFIX}`,
   },
   description:

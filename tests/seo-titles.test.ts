@@ -50,3 +50,11 @@ describe("IndexNow", () => {
     expect(read(`public/${keys[0]}`)).toBe(keys[0].replace(/\.txt$/, ""));
   });
 });
+
+describe("homepage title", () => {
+  it("leads with what people search for and fits in Google's limit", () => {
+    const title = read("app/layout.tsx").match(/default: "([^"]+)"/)![1];
+    expect(title).toBe("Online Therapy with an Indian Counselling Psychologist");
+    expect(title.length).toBeLessThanOrEqual(TITLE_MAX_LENGTH);
+  });
+});
