@@ -44,11 +44,13 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
   };
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    /*
+      The entrance is CSS (.nav-enter in globals.css): a framer-motion one
+      kept the whole bar, logo included, invisible until the page had
+      hydrated, and the logo then measured as the Largest Contentful Paint.
+    */
+    <header
+      className={`nav-enter fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-cream/80 backdrop-blur-md shadow-sm border-b border-sage/20"
           : "bg-transparent"
@@ -169,6 +171,6 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
+    </header>
   );
 }
