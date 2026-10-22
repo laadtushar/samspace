@@ -9,6 +9,8 @@ import ProductAnalytics from "@/components/ProductAnalytics";
 import {
   SITE_URL,
   SITE_NAME,
+  SITE_ALTERNATE_NAMES,
+  TITLE_SUFFIX,
   IS_PRODUCTION_SITE,
   serializeJsonLd,
   absoluteUrl,
@@ -58,7 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Samvriti.Space — Priyanka Varma | Counselling Psychologist & Academic Mentor",
-    template: "%s | Samvriti.Space",
+    template: `%s${TITLE_SUFFIX}`,
   },
   description:
     "Online therapy and academic mentoring for young adults (18–35) navigating anxiety, academic stress and self-esteem. M.Sc. Clinical Psychology.",
@@ -195,7 +197,10 @@ const jsonLd = {
         image: `${SITE_URL}/priyanka.jpeg`,
         ...(price.range ? { priceRange: price.range } : {}),
         currenciesAccepted: "INR",
-        areaServed: { "@type": "Country", name: "India" },
+        alternateName: SITE_ALTERNATE_NAMES,
+        // Sessions are online and priced in the visitor's own currency, for
+        // clients in India and for Indians living abroad.
+        areaServed: [{ "@type": "Country", name: "India" }, "Worldwide"],
         availableLanguage: ["English", "Hindi"],
         serviceType: ["Counselling Psychology", "Academic Mentoring"],
         medicalSpecialty: "Psychiatric",
@@ -252,6 +257,7 @@ const jsonLd = {
         "@type": "WebSite",
         "@id": `${SITE_URL}#website`,
         name: SITE_NAME,
+        alternateName: SITE_ALTERNATE_NAMES,
         url: SITE_URL,
         inLanguage: "en-IN",
         publisher: { "@id": `${SITE_URL}#business` },

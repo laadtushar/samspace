@@ -8,7 +8,7 @@ import {
   getPublishedPostBySlug,
   readingMinutes,
 } from "@/lib/blog";
-import { SITE_URL, serializeJsonLd, absoluteUrl, withoutSiteSuffix } from "@/lib/site";
+import { SITE_URL, serializeJsonLd, absoluteUrl, withoutSiteSuffix, pageTitle } from "@/lib/site";
 import { AUTHOR } from "@/lib/author";
 import { publicContent } from "@/lib/content";
 import { publicPost } from "@/lib/posts-public";
@@ -42,7 +42,7 @@ export async function generateMetadata({
   const url = `${SITE_URL}/blog/${post.slug}`;
 
   return {
-    title,
+    title: pageTitle(title),
     description,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
