@@ -2,7 +2,6 @@
 
 import { Clock, Lock } from "lucide-react";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import FloatingShapes from "./FloatingShapes";
 import AmbientWash from "./AmbientWash";
 import MagneticButton from "./MagneticButton";
@@ -19,13 +18,15 @@ import MagneticButton from "./MagneticButton";
 */
 
 /**
- * The left column's entrance is plain CSS (.hero-rise in globals.css), not
- * framer-motion. A framer-motion entrance starts from opacity 0 in the server
- * HTML and only animates once the page's JavaScript has loaded and hydrated,
- * so on a mid-range phone the subtext sat invisible for about 3.5s and
- * measured as a 4.2s Largest Contentful Paint. A CSS animation runs as soon as
- * the stylesheet arrives. The blur filters went too: they cost style and paint
- * work on every frame of the entrance for a barely visible effect.
+ * Every animation in the hero is plain CSS (the .hero-* classes in
+ * globals.css), not framer-motion. A framer-motion entrance starts from
+ * opacity 0 in the server HTML and only plays once the page's JavaScript has
+ * loaded and hydrated, so on a mid-range phone the subtext sat invisible for
+ * about 3.5s: a 4.2s Largest Contentful Paint. With only the text moved to
+ * CSS, the quote card became the largest element and waited the same way. A
+ * CSS animation starts as soon as the stylesheet arrives. The blur filters
+ * went too: they cost style and paint work on every frame for an effect
+ * hardly anyone would notice.
  */
 const heroDelay = (seconds: number) =>
   ({ "--hero-delay": `${seconds}s` }) as React.CSSProperties;
@@ -159,25 +160,9 @@ export default function Hero({
 
           {/* Right column — floating cards */}
           <div className="relative flex flex-col items-center gap-5 lg:items-end">
-            {/* Main quote card — drops in with bounce */}
-            <motion.div
-              initial={{ opacity: 0, y: -60, rotate: -6 }}
-              animate={{ opacity: 1, y: 0, rotate: 0 }}
-              transition={{
-                duration: 0.8,
-                delay: 0.25,
-                ease: [0.23, 0.86, 0.39, 0.96],
-              }}
-            >
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="bg-forest text-cream rounded-3xl p-8 max-w-sm shadow-2xl shadow-forest/30 relative overflow-hidden"
-              >
+            {/* Main quote card — drops in, then floats */}
+            <div className="hero-drop" style={heroDelay(0.25)}>
+              <div className="hero-float bg-forest text-cream rounded-3xl p-8 max-w-sm shadow-2xl shadow-forest/30 relative overflow-hidden">
                 {/* Subtle inner glow */}
                 <div className="absolute top-0 left-0 w-32 h-32 bg-sage/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
 
@@ -189,15 +174,7 @@ export default function Hero({
                     {hero.quoteText}
                   </p>
                   <div className="flex items-center gap-3">
-                    <motion.div
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                      className="w-11 h-11 rounded-full overflow-hidden border-2 border-sage/40 flex-shrink-0"
-                    >
+                    <div className="hero-breathe w-11 h-11 rounded-full overflow-hidden border-2 border-sage/40 flex-shrink-0">
                       <Image
                         src="/priyanka.jpeg"
                         alt="Priyanka Varma"
@@ -205,7 +182,7 @@ export default function Hero({
                         height={44}
                         className="w-full h-full object-cover"
                       />
-                    </motion.div>
+                    </div>
                     <div>
                       <p className="font-sans text-sm font-medium text-cream">
                         Priyanka Varma
@@ -216,8 +193,8 @@ export default function Hero({
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
 
             {/* Floating badges — pop in */}
             <div className="flex flex-wrap gap-3 justify-center lg:justify-end">
@@ -225,24 +202,16 @@ export default function Hero({
                 { icon: Lock, text: "Confidential & Ethical" },
                 { icon: Clock, text: `${sessionLength} · Online Sessions` },
               ].map((badge, i) => (
-                <motion.div
+                <div
                   key={badge.text}
-                  initial={{ opacity: 0, scale: 0, rotate: -10 }}
-                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  transition={{
-                    duration: 0.6,
-                    delay: 0.7 + i * 0.1,
-                    type: "spring",
-                    stiffness: 200,
-                    damping: 15,
-                  }}
-                  className="bg-white border border-sage/25 rounded-2xl px-5 py-3 shadow-lg shadow-forest/5 flex items-center gap-2"
+                  className="hero-pop bg-white border border-sage/25 rounded-2xl px-5 py-3 shadow-lg shadow-forest/5 flex items-center gap-2"
+                  style={heroDelay(0.7 + i * 0.1)}
                 >
                   <badge.icon className="w-4 h-4 text-forest/70" aria-hidden="true" strokeWidth={1.5} />
                   <span className="font-sans text-xs font-medium text-forest/80">
                     {badge.text}
                   </span>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
