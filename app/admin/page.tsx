@@ -44,6 +44,12 @@ import {
   Shield,
   UserPlus,
   KeyRound,
+  Files,
+  Link2,
+  Copy,
+  ExternalLink,
+  Ban,
+  Share2,
 } from "lucide-react";
 import { providerFor, SCHEDULING_PROVIDERS } from "@/lib/scheduling";
 import { whatsappLinkProblem } from "@/lib/whatsapp";
@@ -60,6 +66,12 @@ import { parsePath, valueAtPath, withValueAtPath } from "@/lib/content-path";
 import { defaultContent } from "@/lib/default-content";
 import { slugify, readingMinutes, type BlogPost } from "@/lib/blog-format";
 import { SLUG_PATTERN } from "@/lib/validation";
+import {
+  pageSlugProblem,
+  unconfirmedPlaceholders,
+  type Page,
+} from "@/lib/page-format";
+import { PAGE_TOKENS } from "@/lib/pages-public";
 import { describeReferral } from "@/lib/referral";
 
 type AdminTab =
@@ -68,6 +80,7 @@ type AdminTab =
   | "sessions"
   | "content"
   | "blog"
+  | "pages"
   | "settings"
   | "team";
 
@@ -339,6 +352,10 @@ export default function AdminPage() {
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
   const [busySlug, setBusySlug] = useState<string | null>(null);
+  /** The post whose share links are open in the list, if any. */
+  const [sharingPost, setSharingPost] = useState<string | null>(null);
+  /** Reported by the Pages tab, which keeps its own editor state. */
+  const [pagesDirty, setPagesDirty] = useState(false);
   const baselineRef = useRef("");
 
   const endSession = useCallback(() => {
@@ -667,6 +684,14 @@ export default function AdminPage() {
   const switchTab = (next: AdminTab) => {
     if (tab === "blog" && next !== "blog" && !confirmDiscard()) return;
     if (tab === "blog" && next !== "blog") setBlogView("list");
+    if (
+      tab === "pages" &&
+      next !== "pages" &&
+      pagesDirty &&
+      !window.confirm("This page has unsaved changes. Discard them?")
+    ) {
+      return;
+    }
     if (next === "clients" && clientsReady === null) void loadClients();
     if (next === "sessions") {
       if (sessionsReady === null) void loadSessions();
@@ -1223,6 +1248,7 @@ export default function AdminPage() {
             { id: "sessions" as const, label: "Sessions", icon: CalendarDays, count: sessions.length },
             { id: "content" as const, label: "Edit Content", icon: FileText },
             { id: "blog" as const, label: "Blog", icon: Newspaper, count: posts.length },
+            { id: "pages" as const, label: "Pages", icon: Files },
             { id: "settings" as const, label: "Settings", icon: Settings },
             // Managing who can sign in is an owner's job, so a member is not
             // shown a tab that would only answer 403.
@@ -2609,6 +2635,15 @@ export default function AdminPage() {
             {/* ─── Team Tab ─────────────────────── */}
             {tab === "team" && <TeamTab me={me} onSessionLost={endSession} />}
 
+            {/* ─── Pages Tab ────────────────────── */}
+            {tab === "pages" && (
+              <PagesTab
+                me={me}
+                onSessionLost={endSession}
+                onDirtyChange={setPagesDirty}
+              />
+            )}
+
             {tab === "blog" && blogView === "list" && postsError && (
               <SectionError message={postsError} />
             )}
@@ -2678,80 +2713,95 @@ export default function AdminPage() {
                     {posts.map((p) => (
                       <div
                         key={p.slug}
-                        className="bg-white rounded-xl border border-sage/15 px-5 py-4 flex flex-wrap items-center justify-between gap-3"
+                        className="bg-white rounded-xl border border-sage/15 px-5 py-4"
                       >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-serif text-base font-semibold text-forest truncate">
-                              {p.title || "Untitled"}
-                            </p>
-                            <span
-                              className={`font-sans text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                p.status === "published"
-                                  ? "bg-clay/15 text-clay"
-                                  : "bg-sage/20 text-forest/50"
-                              }`}
-                            >
-                              {p.status === "published" ? "Published" : "Draft"}
-                            </span>
-                          </div>
-                          <p className="font-sans text-xs text-forest/40 mt-0.5">
-                            /blog/{p.slug}
-                            &nbsp;·&nbsp;updated{" "}
-                            {new Date(p.updatedAt).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {busySlug === p.slug && (
-                            <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
-                          )}
-                          <button
-                            onClick={() => togglePublish(p)}
-                            disabled={busySlug === p.slug}
-                            className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors disabled:opacity-60"
-                          >
-                            {p.status === "published" ? (
-                              <><EyeOff className="w-3.5 h-3.5" /> Unpublish</>
-                            ) : (
-                              <><Eye className="w-3.5 h-3.5" /> Publish</>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => openEditor(p)}
-                            className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" /> Edit
-                          </button>
-                          {confirmDelete === p.slug ? (
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => deletePost(p.slug)}
-                                disabled={busySlug === p.slug}
-                                className="font-sans text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-serif text-base font-semibold text-forest truncate">
+                                {p.title || "Untitled"}
+                              </p>
+                              <span
+                                className={`font-sans text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                  p.status === "published"
+                                    ? "bg-clay/15 text-clay"
+                                    : "bg-sage/20 text-forest/50"
+                                }`}
                               >
-                                Delete for good
-                              </button>
-                              <button
-                                onClick={() => setConfirmDelete(null)}
-                                className="font-sans text-xs text-forest/40 hover:text-forest px-2 py-2 rounded-lg transition-colors"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                                {p.status === "published" ? "Published" : "Draft"}
+                              </span>
                             </div>
-                          ) : (
+                            <p className="font-sans text-xs text-forest/40 mt-0.5">
+                              /blog/{p.slug}
+                              &nbsp;·&nbsp;updated{" "}
+                              {new Date(p.updatedAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {busySlug === p.slug && (
+                              <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
+                            )}
+                            <PreviewButton kind="post" slug={p.slug} />
                             <button
-                              onClick={() => setConfirmDelete(p.slug)}
-                              className="font-sans text-xs text-red-500/70 hover:text-red-600 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200/60 hover:border-red-300 transition-colors"
+                              onClick={() => setSharingPost(sharingPost === p.id ? null : p.id)}
+                              aria-expanded={sharingPost === p.id}
+                              className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
                             >
-                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                              <Share2 className="w-3.5 h-3.5" /> Share
                             </button>
-                          )}
+                            <button
+                              onClick={() => togglePublish(p)}
+                              disabled={busySlug === p.slug}
+                              className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors disabled:opacity-60"
+                            >
+                              {p.status === "published" ? (
+                                <><EyeOff className="w-3.5 h-3.5" /> Unpublish</>
+                              ) : (
+                                <><Eye className="w-3.5 h-3.5" /> Publish</>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => openEditor(p)}
+                              className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" /> Edit
+                            </button>
+                            {confirmDelete === p.slug ? (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => deletePost(p.slug)}
+                                  disabled={busySlug === p.slug}
+                                  className="font-sans text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
+                                >
+                                  Delete for good
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDelete(null)}
+                                  className="font-sans text-xs text-forest/40 hover:text-forest px-2 py-2 rounded-lg transition-colors"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmDelete(p.slug)}
+                                className="font-sans text-xs text-red-500/70 hover:text-red-600 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200/60 hover:border-red-300 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                              </button>
+                            )}
+                          </div>
                         </div>
+                        {sharingPost === p.id && (
+                          <div className="mt-4 pt-4 border-t border-sage/15">
+                            <PreviewLinks kind="post" targetId={p.id} onSessionLost={endSession} />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -2937,6 +2987,24 @@ export default function AdminPage() {
                       <code className="text-forest/60">/blog/{form.slug || "your-slug"}</code>{" "}
                       right after saving.
                     </p>
+                  </ContentSection>
+
+                  <ContentSection title="Preview">
+                    {form.id && editingSlug ? (
+                      <>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <PreviewButton kind="post" slug={editingSlug} />
+                          <span className="font-sans text-xs text-forest/45">
+                            Shows the last saved version{dirty ? " — save first to see your changes" : ""}.
+                          </span>
+                        </div>
+                        <PreviewLinks kind="post" targetId={form.id} onSessionLost={endSession} />
+                      </>
+                    ) : (
+                      <p className="font-sans text-xs text-forest/45">
+                        Save the post once to preview it or share a link.
+                      </p>
+                    )}
                   </ContentSection>
                 </div>
               </div>
@@ -4500,6 +4568,842 @@ function ContentField({
         <p id={errorId} className="font-sans text-xs text-red-500 mt-1">
           {error}
         </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── Previews ───────────────────────────────────
+   Looking at a draft before it is live, two ways.
+
+   "Preview" opens it under /preview for whoever is signed in here. "Share"
+   makes a link anyone can open without signing in — for a supervisor or a
+   friend reading it through — that stops working after a fortnight unless it
+   is revoked first. The link is shown once, when it is made: the server keeps
+   only a fingerprint of it, so it cannot be looked up again later. */
+
+interface PreviewLinkRow {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  revokedAt: string;
+  createdBy: string;
+  state: "active" | "expired" | "revoked";
+}
+
+function formatDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** Where a signed-in admin previews a post or page. */
+const privatePreviewPath = (kind: "page" | "post", slug: string) =>
+  `/preview/${kind === "page" ? "page" : "blog"}/${encodeURIComponent(slug)}`;
+
+function PreviewLinks({
+  kind,
+  targetId,
+  onSessionLost,
+}: {
+  kind: "page" | "post";
+  targetId: string;
+  onSessionLost: () => void;
+}) {
+  const [links, setLinks] = useState<PreviewLinkRow[]>([]);
+  const [defaultDays, setDefaultDays] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  /** The link just made. Held only in this component, and only until it closes. */
+  const [fresh, setFresh] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await apiJson<{ links: PreviewLinkRow[]; defaultDays: number }>(
+        `/api/admin/previews?kind=${kind}&id=${encodeURIComponent(targetId)}`
+      );
+      setLinks(Array.isArray(data.links) ? data.links : []);
+      setDefaultDays(Number(data.defaultDays) || null);
+      setError("");
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setError(err instanceof Error ? err.message : "Could not load links.");
+    } finally {
+      setLoaded(true);
+    }
+  }, [kind, targetId, onSessionLost]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const create = async () => {
+    setBusy(true);
+    setError("");
+    setCopied(false);
+    try {
+      const data = await apiJson<{ path: string }>("/api/admin/previews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, id: targetId }),
+      });
+      // The origin this dashboard is on, which is the deployment whose
+      // database the link was written to.
+      setFresh(`${window.location.origin}${data.path}`);
+      await load();
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setError(err instanceof Error ? err.message : "Could not make a link.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async (id: string) => {
+    setBusy(true);
+    setError("");
+    try {
+      await apiJson(`/api/admin/previews?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      await load();
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setError(err instanceof Error ? err.message : "Could not revoke that link.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(fresh);
+      setCopied(true);
+    } catch {
+      // Clipboard access can be refused; the field is selectable either way.
+      setCopied(false);
+    }
+  };
+
+  const active = links.filter((l) => l.state === "active");
+  const inactive = links.filter((l) => l.state !== "active");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={create}
+          disabled={busy}
+          className="font-sans text-xs text-forest/70 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/25 hover:border-sage/45 transition-colors disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+          Make a share link
+        </button>
+        <span className="font-sans text-xs text-forest/45">
+          Anyone with the link can read this without signing in
+          {defaultDays ? `, for ${defaultDays} days` : ""}. Search engines are told not to list it.
+        </span>
+      </div>
+
+      {error && <p className="font-sans text-xs text-red-500">{error}</p>}
+
+      {fresh && (
+        <div className="bg-cream rounded-lg border border-clay/30 p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={fresh}
+              aria-label="Share link"
+              onFocus={(e) => e.currentTarget.select()}
+              className="flex-1 min-w-0 bg-white border border-sage/20 rounded-md px-3 py-2 font-mono text-xs text-forest"
+            />
+            <button
+              onClick={copy}
+              className="font-sans text-xs text-cream bg-forest hover:bg-forest-deep flex items-center gap-1.5 px-3 py-2 rounded-md transition-colors"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <p className="font-sans text-xs text-forest/55">
+            Copy it now. Only a fingerprint of the link is kept, so this exact
+            link can&apos;t be shown again — if it is lost, revoke it and make another.
+          </p>
+        </div>
+      )}
+
+      {loaded && links.length > 0 && (
+        <ul className="divide-y divide-sage/10 border border-sage/15 rounded-lg bg-white">
+          {[...active, ...inactive].map((l) => (
+            <li key={l.id} className="px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="font-sans text-xs text-forest/60">
+                Made {formatDay(l.createdAt)}
+                {l.createdBy ? ` by ${l.createdBy}` : ""}
+                {" · "}
+                {l.state === "active" && `works until ${formatDay(l.expiresAt)}`}
+                {l.state === "expired" && `expired ${formatDay(l.expiresAt)}`}
+                {l.state === "revoked" && `revoked ${formatDay(l.revokedAt)}`}
+              </span>
+              {l.state === "active" ? (
+                <button
+                  onClick={() => revoke(l.id)}
+                  disabled={busy}
+                  className="font-sans text-xs text-red-500/80 hover:text-red-600 flex items-center gap-1 px-2 py-1 rounded-md border border-red-200/60 hover:border-red-300 transition-colors disabled:opacity-60"
+                >
+                  <Ban className="w-3 h-3" /> Revoke
+                </button>
+              ) : (
+                <span className="font-sans text-[10px] uppercase tracking-wider text-forest/35">
+                  {l.state === "expired" ? "Expired" : "Revoked"}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Opens the signed-in preview in a new tab. */
+function PreviewButton({ kind, slug }: { kind: "page" | "post"; slug: string }) {
+  return (
+    <a
+      href={privatePreviewPath(kind, slug)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
+    >
+      <ExternalLink className="w-3.5 h-3.5" /> Preview
+    </a>
+  );
+}
+
+/* ─── Pages ──────────────────────────────────────
+   Standalone pages at /<slug> — a landing page for one kind of client, say.
+   Written, previewed and published the way posts are; the list and editor
+   below follow the Blog tab's, so the two read as one tool.
+
+   The tab owns its own state rather than adding to the dashboard's, as the
+   Team tab does. It reports unsaved changes upward so switching tabs can ask
+   before throwing them away. */
+
+interface PageForm {
+  id?: string;
+  slug: string;
+  title: string;
+  content: string;
+  status: "draft" | "published";
+  seoTitle: string;
+  seoDescription: string;
+}
+
+const emptyPage = (): PageForm => ({
+  slug: "",
+  title: "",
+  content: "",
+  status: "draft",
+  seoTitle: "",
+  seoDescription: "",
+});
+
+const toPageForm = (page: Page): PageForm => ({
+  id: page.id,
+  slug: page.slug,
+  title: page.title,
+  content: page.content,
+  status: page.status,
+  seoTitle: page.seoTitle,
+  seoDescription: page.seoDescription,
+});
+
+/**
+ * Placeholders anywhere in a page. The server refuses to publish while there
+ * are any; asking here as well just saves a round trip to be told so.
+ */
+const pagePlaceholders = (p: Pick<PageForm, "title" | "content" | "seoTitle" | "seoDescription">) =>
+  unconfirmedPlaceholders([p.title, p.content, p.seoTitle, p.seoDescription].join("\n"));
+
+function PagesTab({
+  me,
+  onSessionLost,
+  onDirtyChange,
+}: {
+  me: AdminMe | null;
+  onSessionLost: () => void;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
+  const [pages, setPages] = useState<Page[]>([]);
+  const [listError, setListError] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [view, setView] = useState<"list" | "editor">("list");
+  const [form, setForm] = useState<PageForm>(emptyPage);
+  /** Slug the page was loaded under — null while creating. Drives `previousSlug`. */
+  const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [busySlug, setBusySlug] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [sharing, setSharing] = useState<string | null>(null);
+  const [starterRemaining, setStarterRemaining] = useState(0);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
+  const baselineRef = useRef("");
+
+  const dirty = view === "editor" && JSON.stringify(form) !== baselineRef.current;
+
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
+
+  // Leaving the tab unmounts it; whatever was unsaved is gone by then, so the
+  // flag must not outlive it.
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const refreshStarterCount = useCallback(async () => {
+    if (me?.role !== "owner") return;
+    try {
+      const res = await fetch("/api/admin/pages/import");
+      if (!res.ok) return;
+      const data = await res.json();
+      setStarterRemaining(Number(data?.remaining) || 0);
+    } catch {
+      // The panel simply stays hidden.
+    }
+  }, [me?.role]);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await apiJson<Page[]>("/api/admin/pages");
+      setPages(Array.isArray(data) ? data : []);
+      setListError("");
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setListError(err instanceof Error ? err.message : "Could not load pages");
+    } finally {
+      setLoaded(true);
+    }
+  }, [onSessionLost]);
+
+  useEffect(() => {
+    void load();
+    void refreshStarterCount();
+  }, [load, refreshStarterCount]);
+
+  const importStarterPages = async () => {
+    setImporting(true);
+    setImportMessage("");
+    try {
+      const res = await apiFetch("/api/admin/pages/import", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportMessage(data.error ?? "Could not add them.");
+        return;
+      }
+      const added = data.imported?.length ?? 0;
+      const failed = data.failed?.length ?? 0;
+      setImportMessage(
+        failed > 0
+          ? `Added ${added}. ${failed} could not be added (ref ${data.ref}).`
+          : added === 0
+            ? "They are all here already."
+            : `Added ${added} as ${added === 1 ? "a draft" : "drafts"}. Open one to fill in what is marked "To confirm".`
+      );
+      await load();
+      await refreshStarterCount();
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setImportMessage("Could not reach the server.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const confirmDiscard = () =>
+    !dirty || window.confirm("This page has unsaved changes. Discard them?");
+
+  const openEditor = (page?: Page) => {
+    const next = page ? toPageForm(page) : emptyPage();
+    baselineRef.current = JSON.stringify(next);
+    setForm(next);
+    setEditingSlug(page ? page.slug : null);
+    setSlugTouched(Boolean(page));
+    setFormErrors({});
+    setError("");
+    setView("editor");
+  };
+
+  const closeEditor = () => {
+    if (!confirmDiscard()) return;
+    setView("list");
+    setError("");
+  };
+
+  const setField = <K extends keyof PageForm>(key: K, value: PageForm[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const handleTitleChange = (value: string) => {
+    setForm((f) => ({
+      ...f,
+      title: value,
+      // A page's URL never moves on its own once it exists.
+      slug: editingSlug === null && !slugTouched ? slugify(value) : f.slug,
+    }));
+  };
+
+  const placeholders = pagePlaceholders(form);
+
+  const validate = (f: PageForm): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    if (!f.title.trim()) errors.title = "Title is required";
+    const slugProblem = pageSlugProblem(f.slug.trim());
+    if (slugProblem) errors.slug = slugProblem;
+    if (!f.content.trim()) errors.content = "Page content is required";
+    return errors;
+  };
+
+  const sortPages = (list: Page[]) =>
+    [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  const save = async (override?: Partial<PageForm>) => {
+    const candidate = { ...form, ...override };
+    const errors = validate(candidate);
+    setFormErrors(errors);
+    if (Object.keys(errors).length) return false;
+
+    setSaving(true);
+    setError("");
+    try {
+      const res = await apiFetch("/api/admin/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: candidate.id,
+          slug: candidate.slug.trim(),
+          title: candidate.title.trim(),
+          content: candidate.content,
+          status: candidate.status,
+          seoTitle: candidate.seoTitle,
+          seoDescription: candidate.seoDescription,
+          ...(editingSlug ? { previousSlug: editingSlug } : {}),
+        }),
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not save this page"));
+        return false;
+      }
+      const { page } = (await res.json()) as { page: Page };
+      setPages((prev) =>
+        sortPages([page, ...prev.filter((p) => p.id !== page.id)])
+      );
+      const savedForm = toPageForm(page);
+      baselineRef.current = JSON.stringify(savedForm);
+      setForm(savedForm);
+      setEditingSlug(page.slug);
+      setSlugTouched(true);
+      return true;
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setError("Connection error — nothing was saved.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const togglePublish = async (page: Page) => {
+    setBusySlug(page.slug);
+    setError("");
+    try {
+      const res = await apiFetch("/api/admin/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...page,
+          status: page.status === "published" ? "draft" : "published",
+          previousSlug: page.slug,
+        }),
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not update this page"));
+        return;
+      }
+      const { page: updated } = (await res.json()) as { page: Page };
+      setPages((prev) => sortPages(prev.map((p) => (p.id === page.id ? updated : p))));
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setError("Connection error — nothing was changed.");
+    } finally {
+      setBusySlug(null);
+    }
+  };
+
+  const remove = async (slug: string) => {
+    setBusySlug(slug);
+    setError("");
+    try {
+      const res = await apiFetch(`/api/admin/pages?slug=${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res, "Could not delete this page"));
+        return;
+      }
+      setPages((prev) => prev.filter((p) => p.slug !== slug));
+      setConfirmDelete(null);
+    } catch (err) {
+      if (err instanceof SessionExpired) onSessionLost();
+      else setError("Connection error — nothing was deleted.");
+    } finally {
+      setBusySlug(null);
+    }
+  };
+
+  const wordCount = form.content.trim() ? form.content.trim().split(/\s+/).length : 0;
+
+  const errorBox = error && (
+    <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+      <p className="font-sans text-sm text-red-700">{error}</p>
+    </div>
+  );
+
+  if (view === "editor") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <button
+            onClick={closeEditor}
+            className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> All pages
+          </button>
+          <div className="flex items-center gap-2">
+            {dirty && (
+              <span className="font-sans text-xs text-forest/40">Unsaved changes</span>
+            )}
+            <button
+              onClick={() => save()}
+              disabled={saving}
+              className="font-sans text-sm font-medium bg-forest text-cream px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-forest-deep transition-colors disabled:opacity-60"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><Save className="w-4 h-4" /> Save Page</>
+              )}
+            </button>
+            {form.status === "draft" && (
+              <button
+                onClick={async () => {
+                  if (await save({ status: "published" })) setField("status", "published");
+                }}
+                disabled={saving || placeholders.length > 0}
+                title={placeholders.length > 0 ? "Replace the [To confirm: …] placeholders first" : undefined}
+                className="font-sans text-sm font-medium bg-clay text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                <Eye className="w-4 h-4" /> Publish
+              </button>
+            )}
+          </div>
+        </div>
+
+        {errorBox}
+
+        {placeholders.length > 0 && (
+          <div className="mb-4 flex items-start gap-2 bg-clay/10 border border-clay/30 rounded-xl px-4 py-3">
+            <AlertCircle className="w-4 h-4 text-clay mt-0.5 flex-shrink-0" />
+            <div className="font-sans text-sm text-forest/75">
+              <p className="mb-1">
+                {placeholders.length === 1
+                  ? "One fact is still marked to confirm."
+                  : `${placeholders.length} facts are still marked to confirm.`}{" "}
+                The page can be saved and previewed, but not published until
+                each is replaced with the real wording:
+              </p>
+              <ul className="list-disc pl-5 text-xs text-forest/60 space-y-0.5">
+                {placeholders.map((p, i) => (
+                  <li key={i}>{p.replace(/^\[To confirm:\s*/i, "").replace(/\]$/, "")}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          <ContentSection title="Page">
+            <ContentField
+              label="Heading (shown at the top of the page)"
+              value={form.title}
+              onChange={handleTitleChange}
+              error={formErrors.title}
+            />
+            <ContentField
+              label="Slug (the URL: /…)"
+              value={form.slug}
+              onChange={(v) => {
+                setSlugTouched(true);
+                setField("slug", v);
+              }}
+              error={formErrors.slug}
+            />
+            <ContentField
+              label="Content (Markdown)"
+              value={form.content}
+              onChange={(v) => setField("content", v)}
+              textarea
+              rows={22}
+              error={formErrors.content}
+            />
+            <p className="font-sans text-xs text-forest/40">
+              {wordCount.toLocaleString()} words · {form.content.length.toLocaleString()} characters.
+              Write <code className="text-forest/60">{"{{rate.range}}"}</code> for the fee
+              scale and{" "}
+              {PAGE_TOKENS.map((t) => (
+                <code key={t.token} className="text-forest/60">{t.token}</code>
+              ))}{" "}
+              for the session length; both are filled in from Settings when the page is shown.
+            </p>
+          </ContentSection>
+
+          <ContentSection title="SEO">
+            <ContentField
+              label="SEO title (falls back to the heading)"
+              value={form.seoTitle}
+              onChange={(v) => setField("seoTitle", v)}
+            />
+            <ContentField
+              label="SEO description"
+              value={form.seoDescription}
+              onChange={(v) => setField("seoDescription", v)}
+              textarea
+            />
+          </ContentSection>
+
+          <ContentSection title="Status">
+            <div className="flex gap-2">
+              {(["draft", "published"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setField("status", s)}
+                  className={`font-sans text-sm px-5 py-2.5 rounded-xl transition-all ${
+                    form.status === s
+                      ? "bg-forest text-cream"
+                      : "bg-cream text-forest/60 border border-sage/20 hover:bg-forest/5"
+                  }`}
+                >
+                  {s === "draft" ? "Draft" : "Published"}
+                </button>
+              ))}
+            </div>
+            <p className="font-sans text-xs text-forest/40">
+              Drafts answer page-not-found to visitors and stay out of the
+              sitemap. Published pages appear at{" "}
+              <code className="text-forest/60">/{form.slug || "your-slug"}</code>{" "}
+              right after saving.
+            </p>
+          </ContentSection>
+
+          <ContentSection title="Preview">
+            {form.id && editingSlug ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <PreviewButton kind="page" slug={editingSlug} />
+                  <span className="font-sans text-xs text-forest/45">
+                    Shows the last saved version{dirty ? " — save first to see your changes" : ""}.
+                  </span>
+                </div>
+                <PreviewLinks kind="page" targetId={form.id} onSessionLost={onSessionLost} />
+              </>
+            ) : (
+              <p className="font-sans text-xs text-forest/45">
+                Save the page once to preview it or share a link.
+              </p>
+            )}
+          </ContentSection>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-serif text-xl font-semibold text-forest">Pages</h2>
+          <p className="font-sans text-xs text-forest/45 mt-0.5">
+            Standalone pages at their own address, such as a landing page.
+          </p>
+        </div>
+        <button
+          onClick={() => openEditor()}
+          className="font-sans text-sm font-medium bg-forest text-cream px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-forest-deep transition-colors"
+        >
+          <Plus className="w-4 h-4" /> New Page
+        </button>
+      </div>
+
+      {listError && <SectionError message={listError} />}
+
+      {me?.role === "owner" && starterRemaining > 0 && (
+        <div className="mb-5 bg-white rounded-2xl border border-sage/20 p-5">
+          <p className="font-sans text-sm text-forest/75 leading-relaxed mb-1">
+            <strong>
+              {starterRemaining} written{" "}
+              {starterRemaining === 1 ? "page is" : "pages are"} ready to add.
+            </strong>
+          </p>
+          <p className="font-sans text-xs text-forest/45 leading-relaxed mb-4">
+            They arrive as drafts. Anything that still needs your wording is
+            marked &ldquo;To confirm&rdquo;, and a page can&apos;t be published
+            until those are filled in. Any page already here is left as it is.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={importStarterPages}
+              disabled={importing}
+              className="font-sans text-sm font-medium bg-clay text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-clay-light transition-colors disabled:opacity-60"
+            >
+              {importing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              Add them as drafts
+            </button>
+            {importMessage && (
+              <span className="font-sans text-xs text-forest/60">{importMessage}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {errorBox}
+
+      {!loaded ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-forest/40" />
+        </div>
+      ) : pages.length === 0 ? (
+        listError ? null : (
+          <div className="text-center py-20 bg-white rounded-2xl border border-sage/15">
+            <Files className="w-10 h-10 text-sage/30 mx-auto mb-3" />
+            <p className="font-sans text-sm text-forest/40">No pages yet</p>
+          </div>
+        )
+      ) : (
+        <div className="space-y-3">
+          {pages.map((p) => (
+            <div key={p.id} className="bg-white rounded-xl border border-sage/15 px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-serif text-base font-semibold text-forest truncate">
+                      {p.title || "Untitled"}
+                    </p>
+                    <span
+                      className={`font-sans text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        p.status === "published"
+                          ? "bg-clay/15 text-clay"
+                          : "bg-sage/20 text-forest/50"
+                      }`}
+                    >
+                      {p.status === "published" ? "Published" : "Draft"}
+                    </span>
+                  </div>
+                  <p className="font-sans text-xs text-forest/40 mt-0.5">
+                    /{p.slug}
+                    &nbsp;·&nbsp;updated {formatDay(p.updatedAt)}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {busySlug === p.slug && (
+                    <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
+                  )}
+                  <PreviewButton kind="page" slug={p.slug} />
+                  <button
+                    onClick={() => setSharing(sharing === p.id ? null : p.id)}
+                    aria-expanded={sharing === p.id}
+                    className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
+                  >
+                    <Share2 className="w-3.5 h-3.5" /> Share
+                  </button>
+                  <button
+                    onClick={() => togglePublish(p)}
+                    disabled={
+                      busySlug === p.slug ||
+                      (p.status === "draft" && pagePlaceholders(p).length > 0)
+                    }
+                    title={
+                      p.status === "draft" && pagePlaceholders(p).length > 0
+                        ? "Replace the [To confirm: …] placeholders first"
+                        : undefined
+                    }
+                    className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors disabled:opacity-60"
+                  >
+                    {p.status === "published" ? (
+                      <><EyeOff className="w-3.5 h-3.5" /> Unpublish</>
+                    ) : (
+                      <><Eye className="w-3.5 h-3.5" /> Publish</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => openEditor(p)}
+                    className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  {confirmDelete === p.slug ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => remove(p.slug)}
+                        disabled={busySlug === p.slug}
+                        className="font-sans text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
+                      >
+                        Delete for good
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(null)}
+                        className="font-sans text-xs text-forest/40 hover:text-forest px-2 py-2 rounded-lg transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDelete(p.slug)}
+                      className="font-sans text-xs text-red-500/70 hover:text-red-600 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200/60 hover:border-red-300 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+              {sharing === p.id && (
+                <div className="mt-4 pt-4 border-t border-sage/15">
+                  <PreviewLinks kind="page" targetId={p.id} onSessionLost={onSessionLost} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -11,7 +11,11 @@ const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.ur
  */
 describe("authorship", () => {
   it("puts a visible byline on every post, linking to the author page", () => {
-    const post = read("app/blog/[slug]/page.tsx");
+    // The article markup lives in one component, shared by the post page and
+    // the draft preview, so the byline is checked there — and the post page is
+    // checked to be rendering it.
+    expect(read("app/blog/[slug]/page.tsx")).toContain("<PostArticle post={post} />");
+    const post = read("components/PostArticle.tsx");
     expect(post).toContain('rel="author"');
     expect(post).toContain("href={AUTHOR.path}");
     expect(post).toContain("{AUTHOR.name}");

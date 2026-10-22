@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { getCachedPublishedPosts } from "@/lib/blog";
+import { getCachedPublishedPages } from "@/lib/pages";
 import { contentUpdatedAt } from "@/lib/content";
 import { AUTHOR } from "@/lib/author";
 
@@ -21,9 +22,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // copy, so they move when it is saved there; HOME_LAST_EDITED covers changes
   // to the shipped copy in code. changefreq and priority are kept for engines
   // that read them; Google ignores both.
-  const [posts, copySaved] = await Promise.all([
+  // Standalone pages are dated by their own last save, like posts. Only
+  // published ones are read: drafts and preview links never reach this list,
+  // so a draft cannot be announced to a search engine before it is live.
+  const [posts, copySaved, pages] = await Promise.all([
     getCachedPublishedPosts().catch(() => []),
     contentUpdatedAt(),
+    getCachedPublishedPages().catch(() => []),
   ]);
   const pagesEdited = latest(new Date(HOME_LAST_EDITED), copySaved);
   const newestPost = posts[0]?.updatedAt;
@@ -53,6 +58,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(post.updatedAt || post.publishedAt),
       changeFrequency: "yearly" as const,
       priority: 0.7,
+    })),
+    ...pages.map((page) => ({
+      url: `${SITE_URL}/${page.slug}`,
+      lastModified: new Date(page.updatedAt || page.publishedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
     })),
   ];
 }

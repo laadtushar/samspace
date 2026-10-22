@@ -15,7 +15,9 @@ import type { StatsigClient } from "@statsig/js-client";
  *   - while the intake form is open, no user-action event is kept at all —
  *     its answer buttons carry gender, language and the like. The form's
  *     progress is recorded instead as named steps that contain no answers;
- *   - nothing is captured on /admin;
+ *   - nothing is captured on /admin, or on /preview — a shared preview link
+ *     carries its token in the path, and a page view would send that working
+ *     link to a third party;
  *   - copy events and console capture are off;
  *   - session replay is not installed.
  *
@@ -26,7 +28,7 @@ import type { StatsigClient } from "@statsig/js-client";
 const CLIENT_KEY = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
 
 /** Paths where nothing is captured. */
-const PRIVATE_PATHS = ["/admin"];
+const PRIVATE_PATHS = ["/admin", "/preview"];
 
 let client: StatsigClient | null = null;
 let privateSurfaceOpen = false;
