@@ -45,9 +45,10 @@ export default function Navbar({ onBookSession }: { onBookSession?: () => void }
 
   return (
     /*
-      The entrance is CSS (.nav-enter in globals.css): a framer-motion one
-      kept the whole bar, logo included, invisible until the page had
-      hydrated, and the logo then measured as the Largest Contentful Paint.
+      The entrance is a CSS slide (.nav-enter in globals.css), with no fade:
+      a framer-motion fade kept the whole bar, logo included, invisible until
+      the page had hydrated, and the logo then measured as the Largest
+      Contentful Paint.
     */
     <header
       className={`nav-enter fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${

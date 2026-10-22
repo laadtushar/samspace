@@ -22,11 +22,15 @@ import MagneticButton from "./MagneticButton";
  * globals.css), not framer-motion. A framer-motion entrance starts from
  * opacity 0 in the server HTML and only plays once the page's JavaScript has
  * loaded and hydrated, so on a mid-range phone the subtext sat invisible for
- * about 3.5s: a 4.2s Largest Contentful Paint. With only the text moved to
- * CSS, the quote card became the largest element and waited the same way. A
- * CSS animation starts as soon as the stylesheet arrives. The blur filters
- * went too: they cost style and paint work on every frame for an effect
- * hardly anyone would notice.
+ * about 3.5s: a 4.2s Largest Contentful Paint.
+ *
+ * The tag, headline, subtext and quote card only slide (.hero-rise,
+ * .hero-drop); they never fade. Each is a Largest Contentful Paint candidate,
+ * and an element first painted at opacity 0 and revealed by a CSS fade
+ * records no LCP at all, because the compositor runs the fade without a
+ * repaint. Visible from the first paint is also simply what a reader should
+ * see. The smaller pieces (pills, buttons, badges) still fade in. The blur
+ * filters are gone: they cost style and paint work on every frame.
  */
 const heroDelay = (seconds: number) =>
   ({ "--hero-delay": `${seconds}s` }) as React.CSSProperties;
@@ -129,7 +133,7 @@ export default function Hero({
               {credentials.map((c, i) => (
                 <span
                   key={c}
-                  className="hero-rise font-sans text-xs bg-forest/8 text-forest/80 border border-forest/15 rounded-full px-4 py-1.5 font-medium"
+                  className="hero-fade font-sans text-xs bg-forest/8 text-forest/80 border border-forest/15 rounded-full px-4 py-1.5 font-medium"
                   style={heroDelay(0.45 + i * 0.07)}
                 >
                   {c}
@@ -138,7 +142,7 @@ export default function Hero({
             </div>
 
             {/* CTAs — magnetic hover */}
-            <div className="hero-rise flex flex-wrap gap-4" style={heroDelay(0.6)}>
+            <div className="hero-fade flex flex-wrap gap-4" style={heroDelay(0.6)}>
               <MagneticButton strength={0.15}>
                 <button
                   onClick={() => onBookSession?.()}
