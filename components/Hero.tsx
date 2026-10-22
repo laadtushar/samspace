@@ -5,7 +5,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import FloatingShapes from "./FloatingShapes";
 import AmbientWash from "./AmbientWash";
-import TextReveal from "./TextReveal";
 import MagneticButton from "./MagneticButton";
 
 /*
@@ -18,6 +17,18 @@ import MagneticButton from "./MagneticButton";
   painted in 348ms and then sat there. The reveal still staggers, it just no
   longer costs two and a half seconds of someone's first impression.
 */
+
+/**
+ * The left column's entrance is plain CSS (.hero-rise in globals.css), not
+ * framer-motion. A framer-motion entrance starts from opacity 0 in the server
+ * HTML and only animates once the page's JavaScript has loaded and hydrated,
+ * so on a mid-range phone the subtext sat invisible for about 3.5s and
+ * measured as a 4.2s Largest Contentful Paint. A CSS animation runs as soon as
+ * the stylesheet arrives. The blur filters went too: they cost style and paint
+ * work on every frame of the entrance for a barely visible effect.
+ */
+const heroDelay = (seconds: number) =>
+  ({ "--hero-delay": `${seconds}s` }) as React.CSSProperties;
 
 const credentials = [
   "M.Sc. Clinical Psychology",
@@ -40,6 +51,8 @@ export default function Hero({
   sessionLength = SHIPPED_SESSION_LENGTH,
   onBookSession,
 }: HeroProps) {
+  const headlineWords = hero.headline.split(" ");
+
   const handleScroll = (href: string) => {
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -79,62 +92,52 @@ export default function Hero({
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left column */}
           <div>
-            {/* Tag — cinematic fade in */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
+            {/* Tag */}
+            <div className="hero-rise" style={heroDelay(0.1)}>
               <span className="inline-block font-sans text-xs font-medium tracking-widest uppercase text-clay border border-clay/40 rounded-full px-4 py-1.5 mb-8">
                 Counselling Psychologist & Academic Mentor
               </span>
-            </motion.div>
+            </div>
 
-            {/* Headline — word-by-word blur reveal */}
+            {/* Headline — word by word. Each word keeps the space after it as
+                real text, so the heading reads as one sentence to crawlers and
+                screen readers (the reason TextReveal does the same). */}
             <h1 className="font-serif text-5xl sm:text-6xl lg:text-[4.5rem] font-semibold text-forest leading-[1.1] mb-6">
-              <TextReveal
-                text={hero.headline}
-                delay={0.15}
-                staggerDelay={0.035}
-              />
+              {headlineWords.map((word, i) => (
+                <span
+                  key={i}
+                  className="hero-rise inline-block"
+                  style={heroDelay(0.15 + i * 0.035)}
+                >
+                  {word}
+                  {i < headlineWords.length - 1 ? "\u00A0" : ""}
+                </span>
+              ))}
             </h1>
 
-            {/* Subtext — character blur */}
-            <motion.p
-              initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="font-sans text-lg text-forest/60 leading-relaxed mb-8 max-w-lg"
+            {/* Subtext — the page's Largest Contentful Paint */}
+            <p
+              className="hero-rise font-sans text-lg text-forest/60 leading-relaxed mb-8 max-w-lg"
+              style={heroDelay(0.3)}
             >
               {hero.subtext}
-            </motion.p>
+            </p>
 
-            {/* Credential pills — staggered pop */}
+            {/* Credential pills — staggered */}
             <div className="flex flex-wrap gap-2 mb-10">
               {credentials.map((c, i) => (
-                <motion.span
+                <span
                   key={c}
-                  initial={{ opacity: 0, scale: 0.5, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                  transition={{
-                    duration: 0.5,
-                    delay: 0.45 + i * 0.07,
-                    ease: [0.23, 0.86, 0.39, 0.96],
-                  }}
-                  className="font-sans text-xs bg-forest/8 text-forest/80 border border-forest/15 rounded-full px-4 py-1.5 font-medium"
+                  className="hero-rise font-sans text-xs bg-forest/8 text-forest/80 border border-forest/15 rounded-full px-4 py-1.5 font-medium"
+                  style={heroDelay(0.45 + i * 0.07)}
                 >
                   {c}
-                </motion.span>
+                </span>
               ))}
             </div>
 
             {/* CTAs — magnetic hover */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="flex flex-wrap gap-4"
-            >
+            <div className="hero-rise flex flex-wrap gap-4" style={heroDelay(0.6)}>
               <MagneticButton strength={0.15}>
                 <button
                   onClick={() => onBookSession?.()}
@@ -151,7 +154,7 @@ export default function Hero({
                   Explore Services
                 </button>
               </MagneticButton>
-            </motion.div>
+            </div>
           </div>
 
           {/* Right column — floating cards */}

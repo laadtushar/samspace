@@ -144,3 +144,22 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ambient-blob { animation: none; }
 }
+
+/*
+  Hero entrance (components/Hero.tsx). Plain CSS so it starts as soon as the
+  stylesheet arrives, not after the page's JavaScript has hydrated: the hero
+  subtext is the Largest Contentful Paint, and waiting for hydration held it
+  invisible for about 3.5s on a mid-range phone. `both` keeps each element
+  hidden through its delay and visible after.
+*/
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.hero-rise {
+  animation: hero-rise 0.5s cubic-bezier(0.23, 0.86, 0.39, 0.96) both;
+  animation-delay: var(--hero-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise { animation: none; }
+}
