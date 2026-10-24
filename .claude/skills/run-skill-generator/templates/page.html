@@ -1,0 +1,147 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: a working pack — header, then one band per kind of asset, each a wrapping grid. */
+:root{
+  --ink:#000;--ground:#000;--paper:#000;--calm:#000;--calm-l:#000;--accent:#000;--accent-l:#000;
+  --bg:var(--paper);--fg:var(--ink);--muted:#4f5d51;--line:color-mix(in srgb,var(--ink) 14%,transparent);
+  --card:color-mix(in srgb,var(--paper) 70%,#fff);--link:var(--accent);
+  --head:"Cormorant Garamond",Georgia,serif;--text:"DM Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:var(--ground);--fg:var(--paper);--muted:var(--calm-l);
+  --line:color-mix(in srgb,var(--paper) 14%,transparent);--card:color-mix(in srgb,var(--ground) 80%,#000);--link:var(--accent-l);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:var(--ground);--fg:var(--paper);--muted:var(--calm-l);
+  --line:color-mix(in srgb,var(--paper) 14%,transparent);--card:color-mix(in srgb,var(--ground) 80%,#000);--link:var(--accent-l);color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.55 var(--text);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--head);font-weight:600;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:clamp(40px,6vw,72px)} h2{font-size:clamp(30px,4vw,44px)} h3{font-size:26px}
+.eyebrow{font:500 12px/1 var(--text);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.lede{max-width:62ch;color:var(--muted);font-size:18px}
+header{display:grid;gap:18px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+section{padding-top:48px;display:grid;gap:20px}
+.grid{display:grid;gap:22px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.reel{display:grid;gap:10px;align-content:start;min-width:0}
+.reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:14px;display:block}
+.meta{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted)}
+.use{font-size:14px;color:var(--muted);margin:0}
+button{font:500 14px/1 var(--text);border-radius:999px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--fg)}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+details{border-top:1px solid var(--line);padding-top:8px}
+summary{cursor:pointer;font-size:14px}
+pre.cap{white-space:pre-wrap;font:400 14px/1.5 var(--text);margin:8px 0}
+.stills{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.still{display:grid;gap:6px;min-width:0}
+.still img{width:100%;border-radius:8px;border:1px solid var(--line);display:block}
+.still span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.doc{max-width:78ch;min-width:0} .doc h1{font-size:34px;margin-top:20px} .doc h2{font-size:28px;margin-top:28px}
+.doc h3{font-size:22px;margin-top:20px} .doc a{color:var(--link)}
+.doc table{border-collapse:collapse;font-size:14px} .doc td,.doc th{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.tablewrap{overflow-x:auto}
+.doc blockquote{margin:0;padding-left:14px;border-left:3px solid var(--accent)}
+.doc code{font-size:.92em}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px}
+.note{font-size:14px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="handle"></div>
+    <h1 id="h1"></h1>
+    <p class="lede">Five edits of Priyanka's talk, their covers and subtitles, a carousel, quote posts and Stories, the captions for every post, and the tool that made them. Watch here; use the buttons to save files.</p>
+    <div class="row">
+      <button class="primary" id="all">Download everything (.zip)</button>
+      <button id="skillzip">Download the skill pack (.zip)</button>
+      <span class="note" id="status"></span>
+    </div>
+  </header>
+
+  <section id="reels"><div class="eyebrow">Reels · 1080×1920 · 30 fps</div><h2>The five edits</h2><div class="grid" id="reelgrid"></div></section>
+  <section id="stills"><div class="eyebrow">Stills</div><h2>Carousel, quotes and Stories</h2><div class="stills" id="stillgrid"></div></section>
+  <section id="kit"><div class="eyebrow">Captions and plan</div><div class="doc" id="kitdoc"></div></section>
+  <section id="audit"><div class="eyebrow">Checks</div><div class="doc tablewrap" id="auditdoc"></div></section>
+  <section id="skill"><div class="eyebrow">The tool</div><h2>/run-skill-generator</h2>
+    <p class="lede">The pipeline that made this pack, as a Claude Code skill: give it a raw video and it asks a few questions, then produces and audits the same set of files. It is also being added to the website repository under <code>.claude/skills/run-skill-generator</code>.</p>
+    <div class="doc" id="skilldoc"></div></section>
+</div>
+<div id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "text") e.textContent = v; else e.setAttribute(k, v); } kids.forEach(k => e.append(k)); return e; };
+$("handle").textContent = D.brand.handle + " · " + D.brand.site;
+$("h1").textContent = "We were never taught how to be angry";
+
+let dl = null;
+const toast = msg => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); };
+const why = e => ({ declined: "Save cancelled.", rate_limited: "One save at a time — try again in a moment.", too_large: "That file is too large for this device." }[e && e.code] || "Couldn't save that file here.");
+async function save(filename, data) {
+  if (!dl) { toast("Saving isn't available in this view."); return; }
+  try { await dl.save({ filename, data }); toast("Saved " + filename); } catch (e) { toast(why(e)); }
+}
+const fetchBlob = async url => { const r = await fetch(url); if (!r.ok) throw new Error(r.status); return r.blob(); };
+
+function reelCard(r) {
+  const v = el("video", { controls: "", playsinline: "", preload: "metadata" });
+  if (r.cover) v.poster = r.cover; if (r.video) v.src = r.video;
+  const btns = el("div", { class: "row" });
+  const add = (label, fn) => { const b = el("button", { text: label }); b.addEventListener("click", fn); btns.append(b); return b; };
+  add("Video", async () => save(r.files[".mp4"], await fetchBlob(r.video)));
+  add("Cover", async () => save(r.files["-cover.jpg"], await fetchBlob(r.cover)));
+  // The viewer saves .txt but not .srt: single subtitle files arrive as .txt (rename to .srt); the zip keeps .srt.
+  for (const [lang, body] of Object.entries(r.srt)) add(lang.toUpperCase() + " subtitles (.txt → rename .srt)", () => save(`${D.name}-${r.id}.${lang}.srt.txt`, body));
+  const card = el("article", { class: "reel" }, v, el("div", { class: "meta" }, el("h3", { text: r.title }), el("span", { text: r.length })), el("p", { class: "use", text: r.use }), btns);
+  if (r.caption) {
+    const pre = el("pre", { class: "cap", text: r.caption });
+    const copy = el("button", { text: "Copy caption" });
+    copy.addEventListener("click", async () => { try { await navigator.clipboard.writeText(r.caption); toast("Caption copied"); } catch { const s = getSelection(), rg = document.createRange(); rg.selectNodeContents(pre); s.removeAllRanges(); s.addRange(rg); toast("Selected — copy with your keyboard"); } });
+    card.append(el("details", {}, el("summary", { text: "Caption" }), pre, copy));
+  }
+  return card;
+}
+D.reels.forEach(r => $("reelgrid").append(reelCard(r)));
+D.cards.forEach(c => {
+  const b = el("button", { text: "Save" }); b.addEventListener("click", async () => save(c.id + ".png", await fetchBlob(c.url)));
+  $("stillgrid").append(el("div", { class: "still" }, el("img", { src: c.url, alt: c.id.replace(/-/g, " "), loading: "lazy", width: c.w, height: c.h }), el("span", { text: `${c.id} · ${c.w}×${c.h}` }), b));
+});
+const md = s => (window.marked ? marked.parse(s, { mangle: false, headerIds: false }) : "<pre>" + s.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</pre>");
+const safe = h => { const t = document.createElement("template"); t.innerHTML = h; t.content.querySelectorAll("script,iframe,object,embed,style").forEach(n => n.remove()); t.content.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => { if (/^on/i.test(a.name)) n.removeAttribute(a.name); })); t.content.querySelectorAll("table").forEach(tb => { const w = el("div", { class: "tablewrap" }); tb.replaceWith(w); w.append(tb); }); return t.content; };
+$("kitdoc").append(safe(md(D.kit)));
+$("auditdoc").append(safe(md(D.audit)));
+const skillMd = Object.entries(D.skill).find(([p]) => p.endsWith("/SKILL.md"));
+if (skillMd) $("skilldoc").append(safe(md(skillMd[1].replace(/^---[\s\S]*?---\n/, ""))));
+
+async function zipAll(includeMedia) {
+  const z = new JSZip(), status = $("status");
+  for (const [p, body] of Object.entries(D.skill)) z.file("skill/" + p, body);
+  if (includeMedia) {
+    z.file("MARKETING-KIT.md", D.kit); z.file("AUDIT.md", D.audit);
+    const jobs = [];
+    D.reels.forEach(r => { jobs.push(["reels/" + r.files[".mp4"], r.video], ["reels/" + r.files["-cover.jpg"], r.cover]);
+      for (const [lang, body] of Object.entries(r.srt)) z.file(`subtitles/${D.name}-${r.id}.${lang}.srt`, body); });
+    D.cards.forEach(c => jobs.push(["stills/" + c.id + ".png", c.url]));
+    let n = 0;
+    for (const [path, url] of jobs) { status.textContent = `Collecting ${++n} of ${jobs.length}…`; z.file(path, await fetchBlob(url)); }
+  }
+  status.textContent = "Zipping…";
+  const blob = await z.generateAsync({ type: "blob" });
+  status.textContent = "";
+  await save(includeMedia ? `${D.name}-marketing-pack.zip` : "run-skill-generator.zip", blob);
+}
+const guard = (btn, fn) => btn.addEventListener("click", async () => { btn.disabled = true; try { await fn(); } catch { toast("Couldn't build the zip — try the single files."); $("status").textContent = ""; } finally { btn.disabled = false; } });
+guard($("all"), () => zipAll(true));
+guard($("skillzip"), () => zipAll(false));
+
+(async () => {
+  dl = window.claude ? await window.claude.use("downloads") : null;
+  if (!dl) { document.querySelectorAll("button").forEach(b => { if (!/Copy/.test(b.textContent)) b.disabled = true; }); $("status").textContent = "Saving files needs the Claude viewer; you can still watch everything here."; }
+})();
+</script>

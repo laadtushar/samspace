@@ -1,0 +1,197 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;background:transparent;overflow:hidden}
+#stage{position:absolute;inset:0;font-family:"Text";color:var(--paper)}
+.layer{position:absolute;inset:0}
+#ground{background:var(--ground)}
+#grad{background:linear-gradient(180deg,rgba(var(--ground-rgb),.62) 0,rgba(var(--ground-rgb),0) 420px,rgba(var(--ground-rgb),0) 1020px,rgba(var(--ground-rgb),.66) 1920px)}
+#dim{background:var(--ground)}
+#brand{position:absolute;left:76px;top:222px;height:58px}
+#kicker{position:absolute;left:80px;top:308px;font:500 30px "Text";letter-spacing:.18em;text-transform:uppercase;color:var(--calm-l)}
+#kicker i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent-l);margin-right:16px;vertical-align:4px}
+.center{position:absolute;left:80px;right:150px;text-align:left}
+#hook{top:1010px}
+#hook p{font:600 100px/1.04 "Head";letter-spacing:-.01em;margin-bottom:30px;text-shadow:0 4px 30px rgba(0,0,0,.55)}
+#hook p.two{color:var(--accent-l)}
+.w{display:inline-block;white-space:pre}
+#caps{position:absolute;left:80px;right:150px;top:1180px;text-align:left;font:500 64px/1.22 "Text";text-shadow:0 3px 18px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.4)}
+#caps .on{color:var(--accent-l)}
+#ev{top:840px}
+.small{font:500 44px/1.3 "Text";color:var(--calm-l);margin-bottom:28px;max-width:820px}
+.big{font:600 150px/1.0 "Head";letter-spacing:-.015em;position:relative;display:inline-block}
+.big.accent{color:var(--accent-l)}
+.strike{position:absolute;left:-6px;top:56%;height:9px;background:var(--accent-l);border-radius:5px}
+.rows{display:flex;flex-direction:column;gap:46px}
+.row .l{font:500 46px/1.25 "Text";color:var(--paper);opacity:.88}
+.row .r{font:600 98px/1.0 "Head";color:var(--accent-l);margin-top:6px}
+.row.when{display:flex;gap:26px;align-items:flex-start}
+.row.when .dot{flex:0 0 18px;height:18px;border-radius:50%;background:var(--accent-l);margin-top:30px}
+.row.when .l{font:600 76px/1.08 "Head";opacity:1}
+.header{font:500 46px/1.3 "Text";color:var(--calm-l);margin-bottom:54px;max-width:820px}
+.quote{font:600 112px/1.06 "Head";letter-spacing:-.01em}
+.steps{display:flex;flex-direction:column;gap:40px}
+.step{display:flex;align-items:center;gap:34px}
+.step .n{flex:0 0 92px;height:92px;border-radius:50%;border:3px solid var(--calm-l);font:500 40px/86px "Text";text-align:center;color:var(--calm-l)}
+.step .t{font:600 108px/1 "Head"}
+.step:last-child .t{color:var(--accent-l)}
+#end{background:var(--ground);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 110px}
+#end img{width:620px;margin-bottom:84px}
+#end .tag{font:600 72px/1.12 "Head";margin-bottom:60px}
+#end .cta{font:500 40px/1.4 "Text";color:var(--calm-l);letter-spacing:.02em}
+#end .cta b{color:var(--accent-l);font-weight:500}
+/* type-only variant: kinetic captions on the brand ground, no face */
+.typeonly #caps{top:760px;font:600 120px/1.06 "Head";text-shadow:none}
+.typeonly #caps .on{color:var(--accent-l)}
+#wave{position:absolute;left:80px;right:80px;bottom:420px;height:120px;display:flex;align-items:center;gap:10px}
+#wave span{flex:1;background:var(--calm);border-radius:6px;opacity:.55}
+</style></head>
+<body><div id="stage"></div>
+<script>
+const TL = window.TIMELINE;
+(function brand() {
+  const b = TL.brand, c = b.colors, st = document.createElement("style");
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(",");
+  st.textContent = `@font-face{font-family:"Head";src:url("file://${b.font_head}");font-weight:600}
+@font-face{font-family:"Text";src:url("file://${b.font_text}");font-weight:400}
+@font-face{font-family:"Text";src:url("file://${b.font_text_medium || b.font_text}");font-weight:500}
+:root{--ink:${c.ink};--ground:${c.ground};--ground-rgb:${hex(c.ground)};--paper:${c.paper};--calm:${c.calm};--calm-l:${c.calm_light};--accent:${c.accent};--accent-l:${c.accent_light}}`;
+  document.head.appendChild(st);
+})();
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const fade = (t, a, b, inD = .25, outD = .3) => Math.min(ease((t - a) / inD), ease((b - t) / outD));
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+// Caption chunks: break on a long pause, sentence end, or a full line.
+function chunks(words) {
+  const out = []; let cur = [];
+  words.forEach((w, i) => {
+    cur.push(w);
+    const next = words[i + 1];
+    const chars = cur.map(x => x.w).join(" ").length;
+    const end = /[.?!,]$/.test(w.w);
+    // A sentence end always closes the caption when a new sentence follows, even after one word.
+    const newSentence = /[.?!]$/.test(w.w) && next && /^[A-Z]/.test(next.w);
+    // A full line may still take the one word that finishes its sentence, so no caption is a lone "it.".
+    const nextFinishes = next && /[.?!]$/.test(next.w) && chars + 1 + next.w.length <= 44 && next.s - w.e <= .35;
+    if (!next || next.s - w.e > .35 || (end && cur.length >= 2) || newSentence || (chars > 30 && !nextFinishes)) { out.push(cur); cur = []; }
+  });
+  return out.map((c, i, all) => ({ words: c, s: c[0].s - .06,
+    e: Math.min(c[c.length - 1].e + .45, all[i + 1] ? all[i + 1][0].s - .06 : 1e9) }));
+}
+// The hook already shows its own words, so captions start after it (type-only has no hook card).
+const CH = chunks(TL.typeOnly ? TL.words : TL.words.filter(w => w.s >= TL.hook.end - .05));
+
+// Reveal a run of words in step with their own timing, or evenly from `from`.
+function revealWords(text, t, from, per = .14, cls = "") {
+  return text.split(" ").map((w, i) => {
+    const k = ease((t - (from + i * per)) / .28);
+    return `<span class="w ${cls}" style="opacity:${k};transform:translateY(${(1 - k) * 26}px)">${esc(w)}${i < text.split(" ").length - 1 ? " " : ""}</span>`;
+  }).join("");
+}
+function spokenWords(text, t, startHint) {
+  // Match the line's words to the transcript from startHint on, so type lands with the voice.
+  const parts = text.split(" "); let j = TL.words.findIndex(w => w.s >= startHint - .05);
+  return parts.map((p, i) => {
+    const w = TL.words[j + i]; const at = w ? w.s : startHint + i * .2;
+    const k = ease((t - at + .05) / .22);
+    return `<span class="w" style="opacity:${k};transform:translateY(${(1 - k) * 24}px)">${esc(p)}${i < parts.length - 1 ? " " : ""}</span>`;
+  }).join("");
+}
+
+function eventHTML(ev, t) {
+  const k = fade(t, ev.start, ev.end, .3, .3);
+  let h = "";
+  if (ev.type === "word") {
+    if (ev.small) h += `<div class="small" style="opacity:${ease((t - ev.start) / .3)}">${revealWords(ev.small, t, ev.start, .05)}</div>`;
+    const bk = ease((t - ev.bigAt + .04) / .35);
+    const big = ev.reveal ? spokenWords(ev.big, t, ev.bigAt) : esc(ev.big);
+    let strike = "";
+    if (ev.strikeAt) strike = `<span class="strike" style="width:${ease((t - ev.strikeAt) / .45) * 100}%"></span>`;
+    h += `<div class="big ${ev.accent ? "accent" : ""}" style="opacity:${ev.reveal ? 1 : bk};transform:translateY(${ev.reveal ? 0 : (1 - bk) * 40}px) scale(${ev.reveal ? 1 : .96 + .04 * bk})">${big}${strike}</div>`;
+  } else if (ev.type === "list") {
+    if (ev.header) h += `<div class="header" style="opacity:${ease((t - ev.start) / .3)}">${esc(ev.header)}</div>`;
+    h += `<div class="rows">` + ev.rows.filter(r => typeof r.at === "number").map(r => {
+      const a = ease((t - r.at + .05) / .3), b = r.rightAt ? ease((t - r.rightAt + .03) / .3) : 0;
+      if (ev.style === "when") return `<div class="row when" style="opacity:${a};transform:translateX(${(1 - a) * -30}px)"><span class="dot"></span><div class="l">${esc(r.left)}</div></div>`;
+      return `<div class="row" style="opacity:${a};transform:translateY(${(1 - a) * 24}px)"><div class="l">${esc(r.left)}</div><div class="r" style="opacity:${b};transform:translateX(${(1 - b) * 40}px)">${esc(r.right)}</div></div>`;
+    }).join("") + `</div>`;
+  } else if (ev.type === "quote") {
+    h += `<div class="quote">${spokenWords(ev.text, t, ev.from + .3)}</div>`;
+  } else if (ev.type === "steps") {
+    h += `<div class="header" style="opacity:${ease((t - ev.start) / .4)}">${esc(ev.header)}</div><div class="steps">` +
+      ev.steps.filter(s => typeof s.at === "number").map((s, i) => {
+        const a = ease((t - s.at + .05) / .3);
+        return `<div class="step" style="opacity:${a};transform:translateY(${(1 - a) * 30}px)"><div class="n">${i + 1}</div><div class="t">${esc(s.text)}</div></div>`;
+      }).join("") + `</div>`;
+  }
+  return { k, h };
+}
+
+window.render = function (t) {
+  const st = document.getElementById("stage");
+  const typeOnly = !!TL.typeOnly;
+  document.body.className = typeOnly ? "typeonly" : "";
+  let html = "";
+  if (typeOnly) html += `<div class="layer" id="ground"></div>`;
+  else html += `<div class="layer" id="grad"></div>`;
+
+  const hookOn = t < TL.hook.end + .45;
+  const ev = typeOnly ? null : TL.events.find(e => t >= e.start - .3 && t <= e.end + .3);
+  const evOn = ev ? eventHTML(ev, t) : null;
+  const dim = evOn ? .55 * evOn.k : 0;
+  if (!typeOnly) html += `<div class="layer" id="dim" style="opacity:${dim}"></div>`;
+
+  // Brand mark and kicker: present throughout, out of the way of the platform UI.
+  html += `<img id="brand" src="file://${TL.brand.logo_light}" style="opacity:${.92 * ease(t / .5)}">`;
+  if (!hookOn) html += `<div id="kicker" style="opacity:${ease((t - TL.hook.end - .3) / .4)}"><i></i>${esc(TL.kicker)}</div>`;
+
+  if (hookOn && !typeOnly) {
+    const out = 1 - ease((t - TL.hook.end - .05) / .4);
+    html += `<div id="hook" class="center" style="opacity:${out}">` +
+      `<p>${spokenWords(TL.hook.lines[0], t, 0)}</p>` +
+      `<p class="two">${spokenWords(TL.hook.lines[1], t, TL.words.find(w => w.w.toLowerCase().startsWith("we") && w.s > .8)?.s ?? 2)}</p></div>`;
+  }
+
+  if (evOn) html += `<div id="ev" class="center" style="opacity:${evOn.k}">${evOn.h}</div>`;
+
+  // Captions whenever nothing else is carrying the words.
+  if ((typeOnly || (!hookOn && (!ev || dim < .05))) && t < TL.speechEnd + .2) {
+    const c = CH.find(c => t >= c.s && t <= c.e);
+    if (c) {
+      const k = fade(t, c.s, c.e, .12, .15);
+      html += `<div id="caps" style="opacity:${k}">` + c.words.map(w => {
+        const a = ease((t - w.s + .06) / .14);
+        const cur = c.words.filter(x => x.s <= t + .02).pop();
+        const on = w === cur && t <= w.e + .25;
+        return `<span class="w ${on ? "on" : ""}" style="opacity:${a};transform:translateY(${(1 - a) * 16}px)">${esc(w.w)} </span>`;
+      }).join("") + `</div>`;
+    }
+  }
+
+  if (typeOnly && t < TL.speechEnd) {
+    // A quiet level meter so the type-only cut still reads as someone speaking.
+    // Bars follow the measured loudness of her voice at this frame.
+    const L = TL.levels || [], f = Math.round(t * TL.fps);
+    html += `<div id="wave">` + Array.from({ length: 36 }, (_, i) => {
+      const lv = L[Math.max(0, Math.min(L.length - 1, f - Math.abs(i - 17)))] || 0;
+      const v = .06 + .94 * lv * (.55 + .45 * Math.cos(i * 1.3));
+      return `<span style="height:${Math.round(v * 120)}px"></span>`;
+    }).join("") + `</div>`;
+  }
+
+  const ek = ease((t - TL.speechEnd - .15) / .45);
+  if (ek > 0) {
+    const r = x => ease((t - TL.speechEnd - x) / .45);
+    html += `<div class="layer" id="end" style="opacity:${ek}">` +
+      `<img src="file://${TL.brand.logo_light}" style="opacity:${r(.3)};transform:translateY(${(1 - r(.3)) * 20}px)">` +
+      `<div class="tag" style="opacity:${r(.6)};transform:translateY(${(1 - r(.6)) * 20}px)">${esc(TL.brand.end_tagline)}</div>` +
+      `<div class="cta" style="opacity:${r(.9)}">${esc(TL.brand.end_cta)}<br><b>${esc(TL.brand.site)}</b> &nbsp;·&nbsp; link in bio</div></div>`;
+  }
+  st.innerHTML = html;
+};
+// Text boxes the platform UI could cover: everything but the full-screen end card.
+window.textBoxes = () => [...document.querySelectorAll("#hook p, #caps, #ev, #kicker, #brand")].map(e => { const r = e.getBoundingClientRect(); return { id: e.id || e.className, x0: r.left, y0: r.top, x1: r.right, y1: r.bottom, o: +getComputedStyle(e).opacity }; }).filter(b => b.o > .05 && b.y1 > b.y0);
+</script></body></html>
