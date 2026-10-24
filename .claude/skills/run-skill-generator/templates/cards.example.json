@@ -1,0 +1,154 @@
+[
+ {
+  "id": "carousel-01",
+  "w": 1080,
+  "h": 1350,
+  "theme": "dark",
+  "page": "1/7",
+  "kicker": "Anger, in Indian homes",
+  "big": "We were never taught how to be angry.",
+  "swipe": "Swipe",
+  "sub": "Only how to hide it."
+ },
+ {
+  "id": "carousel-02",
+  "w": 1080,
+  "h": 1350,
+  "theme": "light",
+  "page": "2/7",
+  "small": "In most Indian homes, anger had one meaning:",
+  "big": "disrespect.",
+  "accent": true,
+  "xl": true
+ },
+ {
+  "id": "carousel-03",
+  "w": 1080,
+  "h": 1350,
+  "theme": "dark",
+  "page": "3/7",
+  "rows": [
+   [
+    "Raise your voice",
+    "rude."
+   ],
+   [
+    "Push back",
+    "difficult."
+   ],
+   [
+    "Say “this hurt me”",
+    "out of the question."
+   ]
+  ]
+ },
+ {
+  "id": "carousel-04",
+  "w": 1080,
+  "h": 1350,
+  "theme": "light",
+  "page": "4/7",
+  "small": "So we swallowed it. We got so good at it, we called it",
+  "big": "maturity.",
+  "strike": true,
+  "xl": true
+ },
+ {
+  "id": "carousel-05",
+  "w": 1080,
+  "h": 1350,
+  "theme": "dark",
+  "page": "5/7",
+  "big": "Anger is information.",
+  "accent": true,
+  "bullets": [
+   "a boundary has been crossed",
+   "something matters to you deeply",
+   "you’ve been treated in a way that doesn’t sit right"
+  ],
+  "sub": "It tells you when"
+ },
+ {
+  "id": "carousel-06",
+  "w": 1080,
+  "h": 1350,
+  "theme": "light",
+  "page": "6/7",
+  "small": "Feeling it doesn’t make you a bad person.",
+  "big": "It makes you honest.",
+  "xl": true
+ },
+ {
+  "id": "carousel-07",
+  "w": 1080,
+  "h": 1350,
+  "theme": "dark",
+  "page": "7/7",
+  "small": "The goal was never to stop feeling angry.",
+  "steps": [
+   "Feel it.",
+   "Name it.",
+   "Express it honestly."
+  ]
+ },
+ {
+  "id": "quote-body",
+  "w": 1080,
+  "h": 1350,
+  "theme": "dark",
+  "kicker": "Priyanka Varma, Counselling Psychologist",
+  "big": "Your body starts expressing what your mouth was never allowed to say."
+ },
+ {
+  "id": "quote-honest",
+  "w": 1080,
+  "h": 1350,
+  "theme": "light",
+  "kicker": "Priyanka Varma, Counselling Psychologist",
+  "small": "Feeling it doesn’t make you a bad person.",
+  "big": "It makes you honest.",
+  "accent": true
+ },
+ {
+  "id": "story-1-poll",
+  "w": 1080,
+  "h": 1920,
+  "theme": "dark",
+  "kicker": "Quick question",
+  "big": "Growing up, were you allowed to be angry?",
+  "sticker": {
+   "y": 1300,
+   "label": "Poll sticker here"
+  },
+  "top": 430
+ },
+ {
+  "id": "story-2-reel",
+  "w": 1080,
+  "h": 1920,
+  "theme": "light",
+  "kicker": "New reel",
+  "big": "Anger is information.",
+  "accent": true,
+  "sticker": {
+   "y": 1300,
+   "label": "Share the reel here"
+  },
+  "sub": "What it’s telling you, in 30 seconds.",
+  "top": 430
+ },
+ {
+  "id": "story-3-link",
+  "w": 1080,
+  "h": 1920,
+  "theme": "dark",
+  "kicker": "If this resonated",
+  "big": "You don’t have to work it out alone.",
+  "sticker": {
+   "y": 1300,
+   "label": "Link sticker here"
+  },
+  "sub": "Online therapy for young adults, on a sliding scale.",
+  "top": 430
+ }
+]

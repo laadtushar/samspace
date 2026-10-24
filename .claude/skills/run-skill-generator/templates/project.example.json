@@ -1,0 +1,520 @@
+{
+ "_doc": "Times are SOURCE seconds. Anywhere a time is expected you may write {\"w\": word, \"after\": t, \"edge\": \"s\"|\"e\", \"plus\": x} to anchor it to a spoken word.",
+ "name": "anger",
+ "source": "raw.mp4",
+ "transcript": "transcript.json",
+ "word_fixes": [
+  {
+   "w": "So",
+   "near": 56.18,
+   "set_s": 56.57,
+   "why": "Whisper stretched the word over the pause; RMS shows speech at 56.57"
+  },
+  {
+   "w": "lot",
+   "near": 55.16,
+   "set_w": "a lot",
+   "why": "ElevenLabs scribe_v1 and scribe_v2 both hear 'a lot of'; Whisper dropped the 'a'"
+  }
+ ],
+ "brand": {
+  "handle": "@samvriti.space",
+  "site": "samvritispace.com",
+  "end_tagline": "The things nobody taught us in school.",
+  "end_cta": "Online therapy for young adults",
+  "logo_light": "public/brand/lockup-horizontal-reversed.svg",
+  "logo_dark": "public/brand/lockup-horizontal-color.svg",
+  "font_head": "lib/share-image/fonts/CormorantGaramond-SemiBold.ttf",
+  "font_text": "lib/share-image/fonts/DMSans-Regular.ttf",
+  "font_text_medium": "lib/share-image/fonts/DMSans-Medium.ttf",
+  "colors": {
+   "ink": "#2c3a2e",
+   "ground": "#16201a",
+   "paper": "#f7f3ed",
+   "calm": "#8a9e8c",
+   "calm_light": "#a9bba9",
+   "accent": "#c17f5e",
+   "accent_light": "#d4956f"
+  }
+ },
+ "edit": {
+  "tighten_pauses_over": 0.4,
+  "keep_pad": 0.12,
+  "silence_db": -32,
+  "punch_zoom": 0.05,
+  "push_in": 0.035,
+  "end_card": 3.2,
+  "sfx": true
+ },
+ "hook": {
+  "lines": [
+   "We were never taught how to be angry.",
+   "We were only taught how to hide it."
+  ],
+  "end": 4.52
+ },
+ "events": [
+  {
+   "type": "word",
+   "start": {
+    "w": "meaning",
+    "after": 5,
+    "plus": 0.1
+   },
+   "end": 9.6,
+   "small": "In most Indian homes, anger had one meaning",
+   "big": "disrespect.",
+   "bigAt": {
+    "w": "disrespect",
+    "after": 5
+   },
+   "accent": true
+  },
+  {
+   "type": "list",
+   "start": {
+    "w": "raise",
+    "after": 9,
+    "plus": -0.1
+   },
+   "end": 16.45,
+   "rows": [
+    {
+     "left": "Raise your voice",
+     "right": "rude.",
+     "at": {
+      "w": "raise",
+      "after": 9
+     },
+     "rightAt": {
+      "w": "rude",
+      "after": 9
+     }
+    },
+    {
+     "left": "Push back",
+     "right": "difficult.",
+     "at": {
+      "w": "push",
+      "after": 9
+     },
+     "rightAt": {
+      "w": "difficult",
+      "after": 9
+     }
+    },
+    {
+     "left": "Say “this hurt me”",
+     "right": "out of the question.",
+     "at": {
+      "w": "say",
+      "after": 12
+     },
+     "rightAt": {
+      "w": "out",
+      "after": 14
+     }
+    }
+   ]
+  },
+  {
+   "type": "word",
+   "start": {
+    "w": "you",
+    "after": 21.9
+   },
+   "end": 25.68,
+   "small": "You got so good at it, you called it",
+   "big": "maturity.",
+   "bigAt": {
+    "w": "maturity",
+    "after": 22
+   },
+   "strikeAt": {
+    "w": "maturity",
+    "after": 22,
+    "edge": "e",
+    "plus": 0.1
+   }
+  },
+  {
+   "type": "word",
+   "start": {
+    "w": "anger",
+    "after": 27.5
+   },
+   "end": 33.35,
+   "small": "Anger with nowhere to go doesn’t disappear.",
+   "big": "It converts.",
+   "bigAt": {
+    "w": "converts",
+    "after": 28
+   }
+  },
+  {
+   "type": "quote",
+   "start": {
+    "w": "so",
+    "after": 43,
+    "plus": -0.05
+   },
+   "end": 47.6,
+   "text": "Your body starts expressing what your mouth was never allowed to say.",
+   "from": {
+    "w": "so",
+    "after": 43
+   }
+  },
+  {
+   "type": "word",
+   "start": 58.38,
+   "end": 59.95,
+   "big": "Anger is information.",
+   "bigAt": {
+    "w": "anger",
+    "after": 58.3
+   },
+   "reveal": true
+  },
+  {
+   "type": "list",
+   "start": {
+    "w": "it",
+    "after": 59.9,
+    "plus": -0.05
+   },
+   "end": 68.5,
+   "header": "It tells you when",
+   "style": "when",
+   "rows": [
+    {
+     "left": "a boundary has been crossed",
+     "at": {
+      "w": "boundary",
+      "after": 60
+     }
+    },
+    {
+     "left": "something matters to you deeply",
+     "at": {
+      "w": "something",
+      "after": 60
+     }
+    },
+    {
+     "left": "you’ve been treated in a way that doesn’t sit right",
+     "at": {
+      "w": "treated",
+      "after": 64
+     }
+    }
+   ]
+  },
+  {
+   "type": "word",
+   "start": {
+    "w": "feeling",
+    "after": 68.5,
+    "plus": -0.05
+   },
+   "end": 72.95,
+   "small": "Feeling it doesn’t make you a bad person.",
+   "big": "It makes you honest.",
+   "bigAt": {
+    "w": "makes",
+    "after": 71
+   }
+  },
+  {
+   "type": "steps",
+   "start": {
+    "w": "goal",
+    "after": 73,
+    "plus": -0.05
+   },
+   "end": "END",
+   "header": "The goal was never to stop feeling angry.",
+   "steps": [
+    {
+     "text": "Feel it.",
+     "at": {
+      "w": "feel",
+      "after": 76
+     }
+    },
+    {
+     "text": "Name it.",
+     "at": {
+      "w": "name",
+      "after": 76
+     }
+    },
+    {
+     "text": "Express it honestly.",
+     "at": {
+      "w": "express",
+      "after": 76
+     }
+    }
+   ]
+  }
+ ],
+ "reels": {
+  "full": {
+   "kicker": "Anger, in Indian homes",
+   "segments": [
+    [
+     0.0,
+     25.48,
+     1.0
+    ],
+    [
+     25.48,
+     43.1,
+     1.07
+    ],
+    [
+     43.1,
+     56.5,
+     1.0
+    ],
+    [
+     56.5,
+     73.1,
+     1.07
+    ],
+    [
+     73.1,
+     79.65,
+     1.0
+    ]
+   ]
+  },
+  "taught-to-hide": {
+   "kicker": "What we learned about anger",
+   "segments": [
+    [
+     0.0,
+     25.48,
+     1.0
+    ],
+    [
+     56.5,
+     59.85,
+     1.08
+    ]
+   ]
+  },
+  "anger-is-information": {
+   "kicker": "Anger is information",
+   "segments": [
+    [
+     0.0,
+     4.52,
+     1.0
+    ],
+    [
+     56.5,
+     73.1,
+     1.08
+    ],
+    [
+     73.1,
+     79.65,
+     1.0
+    ]
+   ]
+  },
+  "teaser": {
+   "kicker": "Anger is information",
+   "segments": [
+    [
+     0.0,
+     4.52,
+     1.0
+    ],
+    [
+     56.5,
+     59.85,
+     1.08
+    ]
+   ]
+  },
+  "type-only": {
+   "kicker": "Anger is information",
+   "typeOnly": true,
+   "segments": [
+    [
+     0.0,
+     4.52,
+     1.0
+    ],
+    [
+     56.5,
+     73.1,
+     1.0
+    ],
+    [
+     73.1,
+     79.65,
+     1.0
+    ]
+   ]
+  }
+ },
+ "subtitles_hi": [
+  [
+   0.02,
+   4.46,
+   "हमें कभी गुस्सा करना नहीं सिखाया गया, हमें बस उसे छिपाना सिखाया गया।"
+  ],
+  [
+   4.78,
+   9.14,
+   "ज़्यादातर भारतीय घरों में गुस्से का बस एक ही मतलब था: अनादर।"
+  ],
+  [
+   9.66,
+   11.14,
+   "आवाज़ ऊँची की, तो तुम बदतमीज़ हो।"
+  ],
+  [
+   11.3,
+   12.68,
+   "पलटकर बोले, तो तुम्हें संभालना मुश्किल है।"
+  ],
+  [
+   12.92,
+   16.14,
+   "किसी बड़े से कहना कि “इससे मुझे दुख हुआ”, इसका तो सवाल ही नहीं उठता।"
+  ],
+  [
+   16.54,
+   21.66,
+   "तो तुम बहुत जल्दी अपना गुस्सा निगलना सीख जाते हो, और ख़ुद को समझा लेते हो कि कोई बड़ी बात नहीं थी।"
+  ],
+  [
+   22.02,
+   25.4,
+   "तुम इसमें इतने माहिर हो गए कि इसे समझदारी कहने लगे।"
+  ],
+  [
+   25.76,
+   27.9,
+   "लेकिन रिसर्च असल में यह दिखाती है।"
+  ],
+  [
+   27.9,
+   32.8,
+   "जिस गुस्से को कहीं जाने की जगह नहीं मिलती, वह ग़ायब नहीं होता, वह रूप बदल लेता है।"
+  ],
+  [
+   33.52,
+   37.78,
+   "अध्ययनों में लंबे समय तक गुस्सा दबाने और कुछ स्थितियों के बीच सीधा संबंध पाया गया है,"
+  ],
+  [
+   37.78,
+   42.66,
+   "जैसे IBS, लगातार सिरदर्द, हाई ब्लड प्रेशर और कई ऑटोइम्यून बीमारियाँ।"
+  ],
+  [
+   43.22,
+   47.32,
+   "तो तुम्हारा शरीर वह कहने लगता है जो तुम्हारे मुँह को कभी कहने नहीं दिया गया।"
+  ],
+  [
+   47.78,
+   52.28,
+   "भारत में शोधकर्ताओं ने ख़ास तौर पर पाया कि भावनाओं को दबाना"
+  ],
+  [
+   52.28,
+   56.18,
+   "कई युवाओं में एंग्ज़ायटी और डिप्रेशन के सबसे मज़बूत संकेतों में से एक है।"
+  ],
+  [
+   56.57,
+   58.32,
+   "तो समस्या गुस्सा नहीं है।"
+  ],
+  [
+   58.46,
+   59.7,
+   "गुस्सा एक जानकारी है।"
+  ],
+  [
+   60.02,
+   64.16,
+   "यह बताता है कि कब कोई सीमा लाँघी गई, कब कोई चीज़ तुम्हारे लिए गहराई से मायने रखती है,"
+  ],
+  [
+   64.16,
+   68.04,
+   "कब तुम्हारे साथ ऐसा बर्ताव हुआ जो ठीक नहीं लगा।"
+  ],
+  [
+   68.92,
+   70.96,
+   "इसे महसूस करने से तुम बुरे इंसान नहीं बन जाते।"
+  ],
+  [
+   71.26,
+   72.52,
+   "इससे तुम ईमानदार बनते हो।"
+  ],
+  [
+   73.2,
+   76.6,
+   "मक़सद कभी गुस्सा महसूस करना बंद करना नहीं था,"
+  ],
+  [
+   76.6,
+   79.6,
+   "मक़सद है उसे महसूस करना, नाम देना और ईमानदारी से ज़ाहिर करना।"
+  ]
+ ],
+ "word_decisions": [
+  {
+   "at": 68.8,
+   "heard": {
+    "whisper-medium": "Feeling",
+    "whisper-slice": "No, feeling",
+    "scribe_v1": "Not feeling",
+    "scribe_v2": "Not feeling"
+   },
+   "captioned": "Feeling it doesn't make you a bad person",
+   "why": "Matches her next line ('It makes you honest'); 'Not feeling' would invert it. Ask the user to listen."
+  }
+ ],
+ "delivery": {
+  "page_title": "Anger Reel Pack",
+  "reels": {
+   "taught-to-hide": {
+    "title": "Taught to hide",
+    "use": "Reel 1 — post first. The strongest hook.",
+    "caption": "In a lot of Indian homes, anger had one meaning: disrespect. Raise your voice and you were rude. Push back and you were difficult. “This hurt me”, said to an elder, was out of the question.\n\nSo we learned early to swallow it, and to tell ourselves it wasn’t a big deal. Some of us got so good at it we started calling it maturity.\n\nBut anger was never the problem. It’s information.\n\nLink in bio if this resonates. 🤍\n\nSound effects: ElevenLabs (elevenlabs.io)"
+   },
+   "anger-is-information": {
+    "title": "Anger is information",
+    "use": "Reel 2 — three or four days later. The reframe.",
+    "caption": "Anger is not the problem. Anger is information.\n\nIt tells you when a boundary has been crossed. When something matters to you deeply. When you’ve been treated in a way that doesn’t sit right.\n\nFeeling it doesn’t make you a bad person. It makes you honest. The goal was never to stop feeling angry — it’s to feel it, name it, and say it honestly.\n\nWhich of the three is hardest for you?\n\nLink in bio if this resonates. 🤍\n\nSound effects: ElevenLabs (elevenlabs.io)"
+   },
+   "full": {
+    "title": "The full talk",
+    "use": "Reel 3 and YouTube Shorts. Every shot kept.",
+    "caption": "We were never taught how to be angry. We were only taught how to hide it.\n\nMost of us grew up where anger meant disrespect, so we swallowed it and called it maturity. But anger with nowhere to go doesn’t disappear — it goes somewhere, and often the body ends up saying what we were never allowed to.\n\nAnger isn’t the problem. It’s information. Feel it, name it, express it honestly.\n\n[your notice line]\n\nLink in bio if this resonates. 🤍\n\nSound effects: ElevenLabs (elevenlabs.io)"
+   },
+   "teaser": {
+    "title": "Teaser",
+    "use": "Stories, ads and WhatsApp status.",
+    "caption": "Anger isn’t the problem. It’s information. 🤍 samvritispace.com\n\nSound effects: ElevenLabs (elevenlabs.io)"
+   },
+   "type-only": {
+    "title": "Type only",
+    "use": "LinkedIn and WhatsApp status — her voice, no face.",
+    "caption": "We were never taught how to be angry, only how to hide it. In many Indian homes, pushing back still reads as ‘difficult’. But anger is information: it marks a boundary, a value, or a way of being treated that doesn’t sit right. The skill isn’t to stop feeling it — it’s to feel it, name it, and say it honestly.\n\n— Priyanka Varma, Counselling Psychologist · samvritispace.com\n\nSound effects: ElevenLabs (elevenlabs.io)"
+   }
+  }
+ }
+}

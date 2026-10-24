@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow:hidden}
+#c{position:relative;display:flex;flex-direction:column;justify-content:center;padding:150px 110px;font-family:"Text";overflow:hidden}
+.dark{background:var(--ground);color:var(--paper)}
+.light{background:var(--paper);color:var(--ink)}
+.brand{position:absolute;left:110px;top:96px;height:56px}
+.page{position:absolute;right:110px;top:110px;font:500 30px "Text";letter-spacing:.12em;opacity:.55}
+.kicker{font:500 32px "Text";letter-spacing:.18em;text-transform:uppercase;margin-bottom:40px}
+.dark .kicker{color:var(--calm-l)} .light .kicker{color:var(--accent)}
+.kicker i{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--accent-l);margin-right:18px;vertical-align:5px}
+.small{font:500 48px/1.32 "Text";margin-bottom:36px;max-width:860px}
+.dark .small{color:var(--calm-l)} .light .small{color:#4f5d51}
+.big{font:600 132px/1.02 "Head";letter-spacing:-.015em;position:relative;display:inline-block;max-width:880px}
+.big.xl{font-size:156px}
+.big.accent{color:var(--accent-l)} .light .big.accent{color:var(--accent)}
+.strike{position:absolute;left:-6px;right:-6px;top:56%;height:10px;border-radius:5px;background:var(--accent-l)}
+.rows{display:flex;flex-direction:column;gap:44px;margin-top:10px}
+.row .l{font:500 48px/1.25 "Text";opacity:.88}
+.row .r{font:600 104px/1 "Head";margin-top:6px}
+.dark .row .r{color:var(--accent-l)} .light .row .r{color:var(--accent)}
+.bul{display:flex;gap:26px;align-items:flex-start;margin-top:30px}
+.bul .d{flex:0 0 18px;height:18px;border-radius:50%;background:var(--accent-l);margin-top:30px}
+.bul .t{font:600 70px/1.1 "Head"}
+.step{display:flex;align-items:center;gap:36px;margin-top:34px}
+.step .n{flex:0 0 96px;height:96px;border-radius:50%;border:3px solid var(--calm-l);font:500 42px/90px "Text";text-align:center;color:var(--calm-l)}
+.light .step .n{border-color:var(--calm);color:var(--calm)}
+.step .t{font:600 112px/1 "Head"}
+.step:last-child .t{color:var(--accent-l)}
+.light .step:last-child .t{color:var(--accent)}
+.foot{position:absolute;left:110px;right:110px;bottom:96px;display:flex;justify-content:space-between;font:500 32px "Text";opacity:.8}
+.foot b{font-weight:500;color:var(--accent-l)} .light .foot b{color:var(--accent)}
+.sticker{position:absolute;left:150px;right:150px;height:230px;border:3px dashed currentColor;border-radius:36px;opacity:.35;display:flex;align-items:center;justify-content:center;font:500 34px "Text";letter-spacing:.08em;text-transform:uppercase}
+.sub{font:500 48px/1.32 "Text";margin-top:34px;max-width:860px}
+.dark .sub{color:var(--calm-l)} .light .sub{color:#4f5d51}
+.swipe{margin-top:56px;font:500 36px "Text";letter-spacing:.06em;opacity:.7}
+</style></head>
+<body><div id="c"></div>
+<script>
+const B = window.BRAND, C = window.CARD, col = B.colors;
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(",");
+const st = document.createElement("style");
+st.textContent = `@font-face{font-family:"Head";src:url("file://${B.font_head}");font-weight:600}
+@font-face{font-family:"Text";src:url("file://${B.font_text}");font-weight:400}
+@font-face{font-family:"Text";src:url("file://${B.font_text_medium || B.font_text}");font-weight:500}
+:root{--ink:${col.ink};--ground:${col.ground};--paper:${col.paper};--calm:${col.calm};--calm-l:${col.calm_light};--accent:${col.accent};--accent-l:${col.accent_light}}`;
+document.head.appendChild(st);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const c = document.getElementById("c");
+c.className = C.theme || "dark";
+c.style.width = C.w + "px"; c.style.height = C.h + "px";
+document.body.style.width = C.w + "px"; document.body.style.height = C.h + "px";
+let h = "";
+const logo = (C.theme === "light" ? B.logo_dark : B.logo_light) || B.logo_light;
+if (C.brand !== false && logo) h += `<img class="brand" src="file://${logo}">`;
+if (C.page) h += `<div class="page">${esc(C.page)}</div>`;
+if (C.kicker) h += `<div class="kicker"><i></i>${esc(C.kicker)}</div>`;
+if (C.small) h += `<div class="small">${esc(C.small)}</div>`;
+if (C.big) h += `<div><div class="big ${C.accent ? "accent" : ""} ${C.xl ? "xl" : ""}">${esc(C.big)}${C.strike ? '<span class="strike"></span>' : ""}</div></div>`;
+if (C.sub) h += `<div class="sub">${esc(C.sub)}</div>`;
+if (C.rows) h += `<div class="rows">` + C.rows.map(([l, r]) => `<div class="row"><div class="l">${esc(l)}</div><div class="r">${esc(r)}</div></div>`).join("") + `</div>`;
+if (C.bullets) h += C.bullets.map(b => `<div class="bul"><span class="d"></span><div class="t">${esc(b)}</div></div>`).join("");
+if (C.steps) h += C.steps.map((s, i) => `<div class="step"><div class="n">${i + 1}</div><div class="t">${esc(s)}</div></div>`).join("");
+if (C.swipe) h += `<div class="swipe">${esc(C.swipe)} →</div>`;
+// A sticker guide is drawn only on request; the exported card keeps the space clear instead.
+if (C.sticker && C.sticker.guide) h += `<div class="sticker" style="top:${C.sticker.y}px">${esc(C.sticker.label)}</div>`;
+if (C.top) { c.style.justifyContent = "flex-start"; c.style.paddingTop = C.top + "px"; }
+if (C.foot !== false) h += `<div class="foot"><span>${esc(B.handle)}</span><b>${esc(B.site)}</b></div>`;
+c.innerHTML = h;
+// Anything that spills past the card is reported by the renderer.
+window.overflow = () => [...c.querySelectorAll(".big,.small,.sub,.row,.bul,.step,.kicker,.swipe")].some(e => {
+  const r = e.getBoundingClientRect(); return r.right > C.w - 60 || r.bottom > C.h - 150;
+});
+</script></body></html>
