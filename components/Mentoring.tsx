@@ -1,8 +1,6 @@
-"use client";
-
 import { BookOpen, GraduationCap, TriangleAlert } from "lucide-react";
-import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import Reveal from "./Reveal";
 import TiltCard from "./TiltCard";
 import TextReveal from "./TextReveal";
 
@@ -23,16 +21,18 @@ export default function Mentoring({ mentoring }: MentoringProps) {
       id="mentoring"
       className="bg-gradient-to-b from-cream via-white to-cream py-28 relative overflow-hidden"
     >
-      {/* Decorative floating shapes */}
-      <motion.div
-        animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 right-10 w-40 h-40 rounded-full bg-sage/[0.06] blur-2xl pointer-events-none"
+      {/* Decorative floating shapes — CSS loops (.drift in motion.css) */}
+      <div
+        className="drift absolute top-20 right-10 w-40 h-40 rounded-full bg-sage/[0.06] blur-2xl pointer-events-none"
+        style={
+          { "--drift-y": "-20px", "--drift-rotate": "5deg", "--drift-duration": "15s" } as React.CSSProperties
+        }
       />
-      <motion.div
-        animate={{ y: [0, 15, 0], rotate: [0, -3, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-20 left-10 w-32 h-32 rounded-full bg-clay/[0.05] blur-2xl pointer-events-none"
+      <div
+        className="drift absolute bottom-20 left-10 w-32 h-32 rounded-full bg-clay/[0.05] blur-2xl pointer-events-none"
+        style={
+          { "--drift-y": "15px", "--drift-rotate": "-3deg", "--drift-duration": "12s" } as React.CSSProperties
+        }
       />
 
       <div className="relative max-w-6xl mx-auto px-6">
@@ -47,17 +47,17 @@ export default function Mentoring({ mentoring }: MentoringProps) {
             <p className="font-sans text-base text-forest/55 max-w-2xl mx-auto leading-relaxed mb-4">
               {mentoring.subtext}
             </p>
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+            <Reveal
+              as="p"
+              duration={0.6}
+              delay={0.4}
+              ease="out"
               className="font-sans text-sm text-forest/45 italic max-w-xl mx-auto"
             >
               <TriangleAlert className="inline w-4 h-4 -mt-0.5 mr-1 not-italic" aria-hidden="true" strokeWidth={1.5} />
               These sessions are not psychotherapy and do not involve clinical
               diagnosis or treatment.
-            </motion.p>
+            </Reveal>
           </div>
         </AnimatedSection>
 
@@ -71,31 +71,29 @@ export default function Mentoring({ mentoring }: MentoringProps) {
               <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-sage/[0.06] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-sage/[0.12] transition-all duration-700" />
                 <div className="relative">
-                  <motion.div
-                    whileHover={{ rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-5 inline-block"
-                  >
+                  {/* A quick shake of the icon on hover (.hover-wiggle) */}
+                  <div className="hover-wiggle mb-5 inline-block">
                     <BookOpen className="w-9 h-9 text-forest/70" aria-hidden="true" strokeWidth={1.5} />
-                  </motion.div>
+                  </div>
                   <h3 className="font-serif text-2xl font-semibold text-forest mb-6">
                     {mentoring.card1Title}
                   </h3>
                   <ul className="space-y-3.5">
                     {mentoring.card1Items.map((item, i) => (
-                      <motion.li
+                      <Reveal
+                        as="li"
                         key={item}
-                        initial={{ opacity: 0, x: -15 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: 0.2 + i * 0.08 }}
+                        x={-15}
+                        duration={0.4}
+                        delay={0.2 + i * 0.08}
+                        ease="out"
                         className="flex items-start gap-3 group/item"
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-clay mt-2 flex-shrink-0 group-hover/item:scale-150 transition-transform duration-200" />
                         <span className="font-sans text-sm text-forest/65 leading-relaxed group-hover/item:text-forest/85 transition-colors duration-200">
                           {item}
                         </span>
-                      </motion.li>
+                      </Reveal>
                     ))}
                   </ul>
                 </div>
@@ -109,31 +107,28 @@ export default function Mentoring({ mentoring }: MentoringProps) {
               <div className="bg-white rounded-2xl p-8 border border-sage/15 h-full group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-clay/[0.05] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-clay/[0.1] transition-all duration-700" />
                 <div className="relative">
-                  <motion.div
-                    whileHover={{ rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-5 inline-block"
-                  >
+                  <div className="hover-wiggle mb-5 inline-block">
                     <GraduationCap className="w-9 h-9 text-forest/70" aria-hidden="true" strokeWidth={1.5} />
-                  </motion.div>
+                  </div>
                   <h3 className="font-serif text-2xl font-semibold text-forest mb-6">
                     {mentoring.card2Title}
                   </h3>
                   <ul className="space-y-3.5">
                     {mentoring.card2Items.map((item, i) => (
-                      <motion.li
+                      <Reveal
+                        as="li"
                         key={item}
-                        initial={{ opacity: 0, x: -15 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: 0.35 + i * 0.08 }}
+                        x={-15}
+                        duration={0.4}
+                        delay={0.35 + i * 0.08}
+                        ease="out"
                         className="flex items-start gap-3 group/item"
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-clay mt-2 flex-shrink-0 group-hover/item:scale-150 transition-transform duration-200" />
                         <span className="font-sans text-sm text-forest/65 leading-relaxed group-hover/item:text-forest/85 transition-colors duration-200">
                           {item}
                         </span>
-                      </motion.li>
+                      </Reveal>
                     ))}
                   </ul>
                 </div>

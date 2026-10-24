@@ -1,7 +1,4 @@
-"use client";
-
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import Reveal from "./Reveal";
 
 interface Props {
   children: React.ReactNode;
@@ -9,19 +6,24 @@ interface Props {
   delay?: number;
 }
 
+/**
+ * A block that rises 40px and fades in as it scrolls into view.
+ *
+ * CSS now (see Reveal), with the same distance, duration, easing and trigger
+ * point it had as a framer-motion component, and visible in the server HTML
+ * rather than waiting at opacity 0 for JavaScript.
+ */
 export default function AnimatedSection({ children, className = "", delay = 0 }: Props) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, ease: "easeOut", delay }}
+    <Reveal
+      y={40}
+      duration={0.7}
+      ease="out"
+      delay={delay}
+      margin="-80px"
       className={className}
     >
       {children}
-    </motion.div>
+    </Reveal>
   );
 }

@@ -3,10 +3,11 @@
 import { Award, BookOpen, GraduationCap, ScrollText as ScrollIcon } from "lucide-react";
 import { useRef } from "react";
 import Image from "next/image";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import Reveal from "./Reveal";
 import TextReveal from "./TextReveal";
 import ScrollText from "./ScrollText";
+import { useScrollProgress } from "./useScrollProgress";
 
 const credentialCards = [
   { label: "M.Sc. Clinical Psychology", icon: GraduationCap },
@@ -24,16 +25,16 @@ interface AboutProps {
 }
 
 export default function About({ about }: AboutProps) {
-  const sectionRef = useRef(null);
-  const headingRef = useRef(null);
-  const headingInView = useInView(headingRef, { once: true, margin: "-80px" });
+  const sectionRef = useRef<HTMLElement>(null);
+  const patternRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
+  // The background drifts down 15% of its height while the section crosses the
+  // screen (framer-motion's offset ["start end", "end start"]).
+  useScrollProgress(sectionRef, [1, 0], (progress) => {
+    if (patternRef.current) {
+      patternRef.current.style.transform = `translateY(${progress * 15}%)`;
+    }
   });
-
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
 
   return (
     <section
@@ -42,19 +43,16 @@ export default function About({ about }: AboutProps) {
       className="relative bg-forest text-cream py-28 overflow-hidden"
     >
       {/* Parallax subtle pattern */}
-      <motion.div
-        style={{ y: bgY }}
-        className="absolute inset-0 pointer-events-none"
-      >
+      <div ref={patternRef} className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 right-20 w-80 h-80 rounded-full bg-sage/[0.06] blur-3xl" />
         <div className="absolute bottom-20 left-10 w-60 h-60 rounded-full bg-clay/[0.04] blur-3xl" />
-      </motion.div>
+      </div>
 
       <div className="relative max-w-6xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left */}
           <div>
-            <div ref={headingRef}>
+            <div>
               <h2 className="font-serif text-4xl sm:text-5xl font-semibold mb-8 leading-tight">
                 <TextReveal
                   text={about.heading}
@@ -73,11 +71,8 @@ export default function About({ about }: AboutProps) {
             <div className="space-y-6">
               {about.features.map((f, i) => (
                 <AnimatedSection key={f.title} delay={0.4 + i * 0.15}>
-                  <motion.div
-                    whileHover={{ x: 8 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="flex items-start gap-4 group cursor-default"
-                  >
+                  {/* Slides 8px right on hover, on a stiffness 300 spring. */}
+                  <div className="hover-nudge flex items-start gap-4 group cursor-default">
                     <span className="text-2xl mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
                       {f.icon}
                     </span>
@@ -87,7 +82,7 @@ export default function About({ about }: AboutProps) {
                       </h3>
                       <p className="font-sans text-sm text-cream/55">{f.desc}</p>
                     </div>
-                  </motion.div>
+                  </div>
                 </AnimatedSection>
               ))}
             </div>
@@ -96,10 +91,7 @@ export default function About({ about }: AboutProps) {
           {/* Right — photo + credential cards */}
           <div>
             <AnimatedSection delay={0.15}>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="relative w-48 h-48 mx-auto mb-8 rounded-3xl overflow-hidden border-2 border-cream/15 shadow-2xl shadow-black/30"
-              >
+              <div className="hover-grow relative w-48 h-48 mx-auto mb-8 rounded-3xl overflow-hidden border-2 border-cream/15 shadow-2xl shadow-black/30">
                 <Image
                   src="/priyanka.jpeg"
                   alt="Priyanka Varma — Counselling Psychologist"
@@ -108,40 +100,34 @@ export default function About({ about }: AboutProps) {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-forest/40 to-transparent" />
-              </motion.div>
+              </div>
             </AnimatedSection>
 
             <AnimatedSection delay={0.2}>
               <div className="grid grid-cols-2 gap-4">
               {credentialCards.map((c, i) => (
-                <motion.div
+                /*
+                  Tips up into place, then lifts on hover: quickly on the way
+                  up (0.3s), and on the way back down with the entrance's own
+                  timing, delay included — which is what framer-motion did.
+                */
+                <Reveal
                   key={c.label}
-                  initial={{ opacity: 0, y: 30, rotate: -3 }}
-                  whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    duration: 0.6,
-                    delay: 0.3 + i * 0.12,
-                    ease: [0.23, 0.86, 0.39, 0.96],
-                  }}
-                  whileHover={{
-                    y: -8,
-                    scale: 1.03,
-                    transition: { duration: 0.3 },
-                  }}
-                  className="bg-cream/[0.07] backdrop-blur-sm border border-cream/[0.12] rounded-2xl p-7 flex flex-col items-center justify-center text-center gap-3 cursor-default group"
+                  y={30}
+                  rotate={-3}
+                  duration={0.6}
+                  delay={0.3 + i * 0.12}
+                  ease="soft"
+                  lift
+                  className="lift lift-quick lift-y-8 lift-scale-103 bg-cream/[0.07] backdrop-blur-sm border border-cream/[0.12] rounded-2xl p-7 flex flex-col items-center justify-center text-center gap-3 cursor-default group"
                 >
-                  <motion.span
-                    className="text-3xl"
-                    whileHover={{ scale: 1.2, rotate: 10 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
+                  <span className="hover-pop pop-scale-120 pop-rotate-10 text-3xl">
                     <c.icon className="w-7 h-7 text-clay-light" aria-hidden="true" strokeWidth={1.5} />
-                  </motion.span>
+                  </span>
                   <span className="font-serif text-base font-medium text-cream/85 group-hover:text-cream transition-colors duration-300">
                     {c.label}
                   </span>
-                </motion.div>
+                </Reveal>
               ))}
               </div>
             </AnimatedSection>

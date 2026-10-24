@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import AnimatedSection from "./AnimatedSection";
 import ConvertedText from "./ConvertedText";
@@ -28,11 +27,12 @@ export default function Faq({ faq, localCurrency = false }: FaqProps) {
 
   return (
     <section id="faq" className="bg-white py-28 relative overflow-hidden">
-      {/* Animated background orb */}
-      <motion.div
-        animate={{ x: [0, -35, 0], y: [0, 25, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/3 right-0 w-[450px] h-[450px] rounded-full bg-clay/[0.04] blur-3xl pointer-events-none"
+      {/* Animated background orb — a CSS loop (.drift) */}
+      <div
+        className="drift absolute top-1/3 right-0 w-[450px] h-[450px] rounded-full bg-clay/[0.04] blur-3xl pointer-events-none"
+        style={
+          { "--drift-x": "-35px", "--drift-y": "25px", "--drift-duration": "22s" } as React.CSSProperties
+        }
       />
 
       <div className="relative max-w-3xl mx-auto px-6">
@@ -68,31 +68,33 @@ export default function Faq({ faq, localCurrency = false }: FaqProps) {
                       {/* Also admin-editable, and a question can name a rate
                           just as readily as the answer below it. */}
                       <ConvertedText text={item.question} enabled={localCurrency} />
-                      <motion.span
-                        animate={{ rotate: isOpen ? 180 : 0 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                        className="flex-shrink-0 mt-1"
+                      <span
+                        className={`faq-chevron flex-shrink-0 mt-1 ${isOpen ? "is-open" : ""}`}
                       >
                         <ChevronDown className="w-5 h-5 text-clay" />
-                      </motion.span>
+                      </span>
                     </button>
                   </h3>
 
                   {/* The answer stays mounted whether or not it is expanded, so
-                      crawlers always see the text the FAQ schema promises. */}
-                  <motion.div
+                      crawlers always see the text the FAQ schema promises.
+
+                      It opens to its natural height in CSS (.faq-answer): a
+                      one-row grid whose row grows from 0fr to 1fr, which the
+                      browser animates the way framer-motion animated
+                      height: "auto" — same 0.35s, same curve, with the fade. */}
+                  <div
                     id={`faq-answer-${i}`}
                     role="region"
                     aria-labelledby={`faq-question-${i}`}
-                    initial={false}
-                    animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
-                    transition={{ duration: 0.35, ease: [0.23, 0.86, 0.39, 0.96] }}
-                    className="overflow-hidden"
+                    className={`faq-answer ${isOpen ? "is-open" : ""}`}
                   >
-                    <p className="font-sans text-sm text-forest/65 leading-relaxed px-6 pb-5">
-                      <ConvertedText text={item.answer} enabled={localCurrency} />
-                    </p>
-                  </motion.div>
+                    <div className="overflow-hidden">
+                      <p className="font-sans text-sm text-forest/65 leading-relaxed px-6 pb-5">
+                        <ConvertedText text={item.answer} enabled={localCurrency} />
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </AnimatedSection>
             );

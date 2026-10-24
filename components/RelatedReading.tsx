@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 
 /**
  * A few posts, offered where someone is already deciding.
@@ -34,12 +32,13 @@ export default function RelatedReading({
       <p className="font-sans text-xs text-forest/45 mb-3">{label}</p>
       <ul className="flex flex-col gap-2">
         {posts.map((post, i) => (
-          <motion.li
+          <Reveal
+            as="li"
             key={post.slug}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.08 }}
+            y={10}
+            duration={0.5}
+            delay={i * 0.08}
+            ease="out"
           >
             <Link
               href={`/blog/${post.slug}`}
@@ -54,7 +53,7 @@ export default function RelatedReading({
                 {post.title}
               </span>
             </Link>
-          </motion.li>
+          </Reveal>
         ))}
       </ul>
     </div>

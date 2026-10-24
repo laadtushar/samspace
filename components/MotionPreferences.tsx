@@ -3,14 +3,19 @@
 import { MotionConfig } from "framer-motion";
 
 /**
- * Honours "reduce motion" across every animation on the site.
+ * Honours "reduce motion" across every framer-motion animation on the site.
  *
- * The CSS already quietened one slider, but everything else — the hero reveal,
- * the floating cards, the scroll-triggered sections — is framer-motion and ran
- * regardless of what the reader had asked their device for. `reducedMotion:
- * "user"` makes framer-motion drop transform and layout animation for those
- * people while leaving opacity alone, so content still appears; it simply
- * stops moving.
+ * framer-motion ran regardless of what the reader had asked their device for.
+ * `reducedMotion: "user"` makes it drop transform and layout animation for
+ * those people while leaving opacity alone, so content still appears; it
+ * simply stops moving.
+ *
+ * Most of the site no longer animates with framer-motion — the homepage, the
+ * navbar and the footer are CSS now, and honour the same setting through
+ * `prefers-reduced-motion` in globals.css and motion.css. What is left (the
+ * intake form, the /start page, the admin dashboard) still relies on this. It costs about a
+ * kilobyte in every page's first download: MotionConfig and its context, not
+ * the animation engine, which only loads with those components.
  *
  * This matters more here than on most sites. Motion triggers nausea and
  * dizziness for anyone with a vestibular disorder, and a page about anxiety is

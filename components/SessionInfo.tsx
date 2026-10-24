@@ -1,8 +1,6 @@
-"use client";
-
 import { Clock, Laptop, Lock, Phone, TriangleAlert } from "lucide-react";
-import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import Reveal from "./Reveal";
 import RelatedReading, { type PostLink } from "./RelatedReading";
 
 const SHIPPED_SESSION_LENGTH = "45–50 minutes";
@@ -86,33 +84,30 @@ export default function SessionInfo({
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
             {stats.map((s, i) => (
-              <motion.div
+              /*
+                The hover lift moves on the entrance's own timing, delay
+                included, in both directions — as it did in framer-motion.
+              */
+              <Reveal
                 key={s.label}
-                initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.6,
-                  delay: i * 0.12,
-                  ease: [0.23, 0.86, 0.39, 0.96],
-                }}
-                whileHover={{ y: -6, scale: 1.02 }}
-                className="bg-cream rounded-2xl p-10 text-center border border-sage/10 cursor-default group"
+                y={40}
+                scale={0.9}
+                duration={0.6}
+                delay={i * 0.12}
+                ease="soft"
+                lift
+                className="lift lift-y-6 lift-scale-102 bg-cream rounded-2xl p-10 text-center border border-sage/10 cursor-default group"
               >
-                <motion.span
-                  className="text-4xl mb-4 block"
-                  whileHover={{ scale: 1.3, rotate: 15 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
+                <span className="hover-pop pop-scale-130 pop-rotate-15 text-4xl mb-4 block">
                   <s.icon className="w-7 h-7 mx-auto text-forest/70" aria-hidden="true" strokeWidth={1.5} />
-                </motion.span>
+                </span>
                 <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-forest/75 mb-2">
                   {s.label}
                 </p>
                 <p className="font-serif text-xl font-semibold text-forest group-hover:text-clay transition-colors duration-300">
                   {s.value}
                 </p>
-              </motion.div>
+              </Reveal>
             ))}
           </div>
         </AnimatedSection>
@@ -129,16 +124,13 @@ export default function SessionInfo({
 
               <ol className="relative border-l border-sage/25 ml-3 space-y-7">
                 {steps.map((step, i) => (
-                  <motion.li
+                  <Reveal
+                    as="li"
                     key={step.title}
-                    initial={{ opacity: 0, x: 16 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 0.5,
-                      delay: i * 0.1,
-                      ease: [0.23, 0.86, 0.39, 0.96],
-                    }}
+                    x={16}
+                    duration={0.5}
+                    delay={i * 0.1}
+                    ease="soft"
                     className="pl-7"
                   >
                     <span
@@ -151,7 +143,7 @@ export default function SessionInfo({
                     <p className="font-sans text-sm text-forest/60 leading-relaxed">
                       {step.desc}
                     </p>
-                  </motion.li>
+                  </Reveal>
                 ))}
               </ol>
 
@@ -167,19 +159,15 @@ export default function SessionInfo({
         )}
 
         <AnimatedSection delay={0.2}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+          <Reveal
+            scale={0.95}
+            duration={0.6}
+            delay={0.3}
+            ease="out"
             className="bg-gradient-to-r from-clay/[0.08] via-clay/[0.12] to-clay/[0.08] border border-clay/20 rounded-2xl p-8 text-center relative overflow-hidden"
           >
-            {/* Animated border glow */}
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              className="absolute top-0 left-0 w-1/3 h-[2px] bg-gradient-to-r from-transparent via-clay/60 to-transparent"
-            />
+            {/* Animated border glow — a CSS loop (.glow-sweep) */}
+            <div className="glow-sweep absolute top-0 left-0 w-1/3 h-[2px] bg-gradient-to-r from-transparent via-clay/60 to-transparent" />
 
             <p className="font-sans text-sm text-forest/75 leading-relaxed max-w-2xl mx-auto">
               <TriangleAlert className="inline w-4 h-4 -mt-0.5 mr-1 text-clay" aria-hidden="true" strokeWidth={1.5} />
@@ -201,7 +189,7 @@ export default function SessionInfo({
                 </a>
               ))}
             </div>
-          </motion.div>
+          </Reveal>
         </AnimatedSection>
       </div>
     </section>

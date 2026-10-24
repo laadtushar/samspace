@@ -1,8 +1,3 @@
-"use client";
-
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
-
 interface TextRevealProps {
   text: string;
   className?: string;
@@ -11,6 +6,15 @@ interface TextRevealProps {
   staggerDelay?: number;
 }
 
+/**
+ * A heading whose words rise out of a blur one after another.
+ *
+ * Pure markup: RevealObserver marks the wrapper when it scrolls into view and
+ * the .reveal-words rules in motion.css play each word, each one
+ * `staggerDelay` behind the last — the same 20px rise, 8px blur, 0.6s and
+ * curve as the framer-motion version. The words are visible in the server HTML;
+ * they are only hidden once the observer is running and about to reveal them.
+ */
 export default function TextReveal({
   text,
   className = "",
@@ -18,9 +22,6 @@ export default function TextReveal({
   delay = 0,
   staggerDelay = 0.04,
 }: TextRevealProps) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-
   const parts = splitBy === "word" ? text.split(" ") : text.split("");
 
   /*
@@ -32,22 +33,18 @@ export default function TextReveal({
     heading twice. One correctly-spaced copy serves both readers and crawlers.
   */
   return (
-    <span ref={ref} className={`inline ${className}`}>
+    <span className={`inline reveal-words ${className}`} data-reveal-margin="-60px">
       {parts.map((part, i) => (
-        <motion.span
+        <span
           key={i}
-          initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-          animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
-          transition={{
-            duration: 0.6,
-            ease: [0.23, 0.86, 0.39, 0.96],
-            delay: delay + i * staggerDelay,
-          }}
           className="inline-block"
+          // A plain longhand, not a custom property: a custom property on
+          // every word made the page's first style pass measurably slower.
+          style={{ animationDelay: `${+(delay + i * staggerDelay).toFixed(3)}s` }}
         >
           {part}
-          {splitBy === "word" && i < parts.length - 1 ? "\u00A0" : ""}
-        </motion.span>
+          {splitBy === "word" && i < parts.length - 1 ? " " : ""}
+        </span>
       ))}
     </span>
   );

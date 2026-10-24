@@ -1,16 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import {
-  motion,
-  useScroll,
-  useSpring,
-  useTransform,
-  useVelocity,
-  useMotionValue,
-  useAnimationFrame,
-} from "framer-motion";
-import { wrap } from "@motionone/utils";
+import { useEffect, useRef } from "react";
+import { createSpring, prefersReducedMotion, type Spring } from "./spring";
 
 interface MarqueeProps {
   children: string;
@@ -18,46 +9,184 @@ interface MarqueeProps {
   className?: string;
 }
 
+/*
+  The marquee's drift is a CSS animation (.marquee-track in motion.css), so it
+  runs on the compositor. The framer-motion version moved it from a
+  requestAnimationFrame callback on the main thread, every frame, for as long
+  as the page was open — four of them. Where it rests until then is in
+  globals.css.
+
+  What JavaScript still adds is the part a keyframe can't know: scrolling
+  speeds the strips up, and scrolling back up reverses them. That used to be
+  useVelocity(scrollY) through a spring (stiffness 400, damping 50) into a
+  factor of 2 per 1000px/s. Here the same chain sets each animation's
+  playbackRate instead of its position — one shared loop that runs only while
+  the page is scrolling or settling, and only touches strips that are on
+  screen.
+
+  The geometry is the framer-motion version's: the track slides between -20%
+  and -45% of its width, starting at -25%, at |baseVelocity| percent a second.
+*/
+
+const LOOP_PERCENT = 25;
+/** framer-motion's velocity window: older than this and scrolling has stopped. */
+const MAX_VELOCITY_DELTA = 30;
+
+/** null: not found yet (not on screen yet, or motion.css not loaded yet). */
+const tracks = new Map<HTMLElement, Animation | null>();
+const onScreen = new Set<HTMLElement>();
+const visible = new Set<Animation>();
+let observer: IntersectionObserver | null = null;
+let smoothVelocity: Spring | null = null;
+let rate = 1;
+let direction = 1;
+let velocity = 0;
+let lastY = 0;
+let lastChange = 0;
+let frame = 0;
+
+function applyRate(animation: Animation) {
+  if (animation.playbackRate === rate) return;
+  if (animation.updatePlaybackRate) animation.updatePlaybackRate(rate);
+  else animation.playbackRate = rate;
+}
+
+function tick(now: number) {
+  frame = 0;
+  const y = window.scrollY;
+  if (!lastChange) {
+    // The first frame only takes a reading: the position from before the
+    // strips came on screen would read as one enormous jump. Frame times
+    // throughout, as framer-motion used, so no interval is a sliver.
+    lastY = y;
+    lastChange = now;
+  } else if (y !== lastY) {
+    // As framer-motion measured it: the change since the last frame, over the
+    // time since the last change, that time capped at 30ms.
+    velocity = ((y - lastY) / Math.min(now - lastChange, MAX_VELOCITY_DELTA)) * 1000;
+    lastY = y;
+    lastChange = now;
+  } else if (now - lastChange > MAX_VELOCITY_DELTA) {
+    velocity = 0;
+  }
+  smoothVelocity?.set([velocity]);
+  // Keep sampling until scrolling has been quiet for a few frames.
+  if (now - lastChange <= MAX_VELOCITY_DELTA * 4) {
+    frame = requestAnimationFrame(tick);
+  } else {
+    lastChange = 0;
+  }
+}
+
+function onScroll() {
+  // A strip that came on screen before motion.css had loaded is picked up here.
+  onScreen.forEach(steer);
+  if (frame || visible.size === 0) return;
+  frame = requestAnimationFrame(tick);
+}
+
+/*
+  A strip's animation is looked up the first time it comes on screen, not when
+  the page hydrates: getAnimations() makes the browser bring style up to date
+  on the spot, and during hydration that is a full pass the page would wait on.
+  In an observer callback the work is already done.
+*/
+function prepare(el: HTMLElement) {
+  // Reduced motion: the strips stand still, there is nothing to steer.
+  if (prefersReducedMotion()) return null;
+  const animation = el.getAnimations()[0];
+  if (!animation) return null;
+  // Playing backwards stops at time zero, so start a long way into the loop.
+  // Whole loops only, so nothing visibly moves.
+  const loop = Number(animation.effect?.getComputedTiming().duration) || 0;
+  if (loop > 0) {
+    animation.currentTime = Number(animation.currentTime ?? 0) + loop * 100_000;
+  }
+  return animation;
+}
+
+/** Start steering an on-screen strip, if its animation is there yet. */
+function steer(el: HTMLElement) {
+  let anim = tracks.get(el);
+  if (anim === undefined) return;
+  if (anim === null) {
+    anim = prepare(el);
+    if (!anim) return;
+    tracks.set(el, anim);
+  }
+  visible.add(anim);
+  applyRate(anim);
+}
+
+function register(el: HTMLElement) {
+  if (!observer) {
+    observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const el = entry.target as HTMLElement;
+        if (entry.isIntersecting) {
+          onScreen.add(el);
+          steer(el);
+        } else {
+          onScreen.delete(el);
+          const anim = tracks.get(el);
+          if (anim) visible.delete(anim);
+        }
+      }
+    });
+    smoothVelocity = createSpring(
+      { stiffness: 400, damping: 50, restDelta: 0.5, restSpeed: 2 },
+      [0],
+      ([v]) => {
+        const factor = v / 500;
+        if (factor < 0) direction = -1;
+        else if (factor > 0) direction = 1;
+        rate = direction * (1 + Math.abs(factor));
+        visible.forEach(applyRate);
+      }
+    );
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  tracks.set(el, null);
+  observer.observe(el);
+  return () => {
+    const anim = tracks.get(el);
+    if (anim) visible.delete(anim);
+    onScreen.delete(el);
+    tracks.delete(el);
+    observer?.unobserve(el);
+  };
+}
+
 export default function Marquee({
   children,
   baseVelocity = -2,
   className = "",
 }: MarqueeProps) {
-  const baseX = useMotionValue(0);
-  const { scrollY } = useScroll();
-  const scrollVelocity = useVelocity(scrollY);
-  const smoothVelocity = useSpring(scrollVelocity, {
-    damping: 50,
-    stiffness: 400,
-  });
-  const velocityFactor = useTransform(smoothVelocity, [0, 1000], [0, 2], {
-    clamp: false,
-  });
+  const trackRef = useRef<HTMLDivElement>(null);
 
-  const x = useTransform(baseX, (v) => `${wrap(-20, -45, v)}%`);
-  const directionFactor = useRef(1);
+  useEffect(() => {
+    if (trackRef.current) return register(trackRef.current);
+  }, []);
 
-  useAnimationFrame((_, delta) => {
-    let moveBy = directionFactor.current * baseVelocity * (delta / 1000);
-
-    if (velocityFactor.get() < 0) {
-      directionFactor.current = -1;
-    } else if (velocityFactor.get() > 0) {
-      directionFactor.current = 1;
-    }
-
-    moveBy += directionFactor.current * moveBy * velocityFactor.get();
-    baseX.set(baseX.get() + moveBy);
-  });
+  const seconds = LOOP_PERCENT / Math.abs(baseVelocity);
+  // The loop runs -20% → -45%; -25% is a fifth of the way along it (four
+  // fifths, counted from the other end, when it runs in reverse).
+  const startAt = baseVelocity < 0 ? 0.2 : 0.8;
 
   return (
     <div
       aria-hidden="true"
       className="overflow-hidden whitespace-nowrap flex flex-nowrap py-6"
     >
-      <motion.div
-        className="flex whitespace-nowrap gap-12 flex-nowrap"
-        style={{ x }}
+      <div
+        ref={trackRef}
+        className="marquee-track flex whitespace-nowrap gap-12 flex-nowrap"
+        style={{
+          animationDuration: `${seconds}s`,
+          animationDelay: `${-startAt * seconds}s`,
+          animationDirection: baseVelocity < 0 ? "normal" : "reverse",
+        }}
       >
         {[...Array(4)].map((_, i) => (
           <span
@@ -67,7 +196,7 @@ export default function Marquee({
             {children}
           </span>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }

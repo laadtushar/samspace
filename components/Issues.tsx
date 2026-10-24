@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 import MagneticButton from "./MagneticButton";
+import Reveal from "./Reveal";
 import TextReveal from "./TextReveal";
 import RelatedReading, { type PostLink } from "./RelatedReading";
 
@@ -33,13 +33,17 @@ export default function Issues({ issues, posts = [] }: IssuesProps) {
   return (
     <section className="bg-white py-28 relative overflow-hidden">
       {/* Animated background orb */}
-      <motion.div
-        animate={{
-          x: [0, 40, 0],
-          y: [0, -30, 0],
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-sage/[0.04] blur-3xl pointer-events-none"
+      {/*
+        A CSS loop now (.drift in motion.css). It carries no -translate-1/2
+        centring classes: framer-motion's inline transform always overrode
+        them, so the orb has only ever sat with its corner at the centre, and
+        a CSS animation would override them the same way.
+      */}
+      <div
+        className="drift absolute top-1/2 left-1/2 w-[500px] h-[500px] rounded-full bg-sage/[0.04] blur-3xl pointer-events-none"
+        style={
+          { "--drift-x": "40px", "--drift-y": "-30px", "--drift-duration": "20s" } as React.CSSProperties
+        }
       />
 
       <div className="relative max-w-6xl mx-auto px-6">
@@ -68,23 +72,20 @@ export default function Issues({ issues, posts = [] }: IssuesProps) {
           {/* Right — magnetic pills */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {issues.items.map((issue, i) => (
-              <motion.div
+              <Reveal
                 key={issue}
-                initial={{ opacity: 0, x: 30, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.1 + i * 0.07,
-                  ease: [0.23, 0.86, 0.39, 0.96],
-                }}
+                x={30}
+                blur={6}
+                duration={0.5}
+                delay={0.1 + i * 0.07}
+                ease="soft"
               >
                 <MagneticButton strength={0.2} className="w-full">
                   <div className="bg-cream border border-sage/20 rounded-xl px-5 py-4 font-sans text-sm text-forest/75 hover:border-clay/50 hover:bg-clay/[0.04] hover:text-forest transition-all duration-300 cursor-default w-full">
                     {issue}
                   </div>
                 </MagneticButton>
-              </motion.div>
+              </Reveal>
             ))}
           </div>
         </div>

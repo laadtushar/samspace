@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { track } from "@/lib/analytics";
 
 /**
@@ -10,8 +9,12 @@ import { track } from "@/lib/analytics";
  * Nothing moves until the visitor presses start: a page read by anxious people
  * should not begin animating at them. The circle grows on the in-breath and
  * shrinks on the longer out-breath; the words say the same thing, so it still
- * works for anyone whose device asks for reduced motion — framer-motion drops
- * the scaling for them (MotionPreferences) and the label carries it alone.
+ * works for anyone whose device asks for reduced motion — the scaling is
+ * dropped for them (.breath-circle in motion.css) and the label carries it
+ * alone.
+ *
+ * The growing and shrinking is a CSS transition whose length is set with each
+ * phase, 4s in and 6s out, eased in and out as before.
  */
 
 const INHALE_SECONDS = 4;
@@ -37,6 +40,7 @@ export default function BreathingPause() {
   }, [phase, cycle]);
 
   const running = phase === "in" || phase === "out";
+  const breathSeconds = phase === "in" ? INHALE_SECONDS : EXHALE_SECONDS;
   const start = () => {
     track("breathing_started");
     setCycle(0);
@@ -63,24 +67,20 @@ export default function BreathingPause() {
         </h2>
 
         <div className="relative mx-auto mb-10 flex items-center justify-center w-56 h-56">
-          <motion.div
+          <div
             aria-hidden="true"
-            className="absolute inset-0 rounded-full bg-sage/25"
-            animate={{ scale: phase === "in" ? 1 : 0.55 }}
-            initial={{ scale: 0.55 }}
-            transition={{
-              duration: phase === "in" ? INHALE_SECONDS : EXHALE_SECONDS,
-              ease: "easeInOut",
+            className="breath-circle absolute inset-0 rounded-full bg-sage/25"
+            style={{
+              transform: `scale(${phase === "in" ? 1 : 0.55})`,
+              transitionDuration: `${breathSeconds}s`,
             }}
           />
-          <motion.div
+          <div
             aria-hidden="true"
-            className="absolute rounded-full bg-forest/80 w-28 h-28"
-            animate={{ scale: phase === "in" ? 1.35 : 0.85 }}
-            initial={{ scale: 0.85 }}
-            transition={{
-              duration: phase === "in" ? INHALE_SECONDS : EXHALE_SECONDS,
-              ease: "easeInOut",
+            className="breath-circle absolute rounded-full bg-forest/80 w-28 h-28"
+            style={{
+              transform: `scale(${phase === "in" ? 1.35 : 0.85})`,
+              transitionDuration: `${breathSeconds}s`,
             }}
           />
           <p

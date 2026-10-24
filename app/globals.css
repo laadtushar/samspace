@@ -205,3 +205,85 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hero-rise, .hero-fade, .hero-drop, .hero-pop, .hero-float, .hero-breathe, .nav-enter { animation: none; }
 }
+
+/*
+  Motion below the hero, the part that has to be there for the first paint:
+  the hero's drifting bands, where the marquee and the glow sit at rest, the
+  FAQ's closed answers, the closed mobile menu and the tilt cards' hidden ring.
+  Everything else that moves (scroll reveals, hover effects, loops, the
+  contact form) is components/motion.css, which loads with the page's
+  JavaScript instead of holding up its first paint; until it arrives, the page
+  is simply still. These used to be framer-motion: each rule keeps the values
+  it had there.
+*/
+/* FloatingShapes: drop and turn into place while fading in, then bob. */
+.floating-shape {
+  rotate: var(--shape-rotate);
+  animation:
+    shape-enter 2.4s cubic-bezier(0.23, 0.86, 0.39, 0.96) var(--shape-delay) backwards,
+    shape-fade 1.2s ease-out var(--shape-delay) backwards;
+}
+@keyframes shape-enter {
+  from {
+    translate: 0 -150px;
+    rotate: calc(var(--shape-rotate) - 15deg);
+  }
+}
+@keyframes shape-fade {
+  from { opacity: 0; }
+}
+.floating-shape-bob { animation: shape-bob 12s ease-in-out infinite; }
+@keyframes shape-bob {
+  50% { translate: 0 15px; }
+}
+
+/* Marquee: where the track rests, -25% of its width, which is where its loop (motion.css) starts. */
+.marquee-track { transform: translateX(-25%); }
+/* SessionInfo's glow rests off to the left until motion.css moves it. */
+.glow-sweep { transform: translateX(-100%); }
+/* The tilt cards' ring stays hidden until a hover shows it (motion.css). */
+.tilt-card-ring { opacity: 0; }
+
+/* Faq: the chevron turns, and the answer opens to its natural height. */
+.faq-chevron { transition: rotate 0.3s ease-out; }
+.faq-chevron.is-open { rotate: 180deg; }
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s cubic-bezier(0.23, 0.86, 0.39, 0.96),
+    opacity 0.35s cubic-bezier(0.23, 0.86, 0.39, 0.96);
+}
+.faq-answer.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* Navbar's mobile menu; hidden from focus and screen readers once it has faded out. */
+.mobile-menu {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.3s ease-out,
+    opacity 0.3s ease-out,
+    visibility 0s linear 0.3s;
+}
+.mobile-menu.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-shape { animation: shape-fade 1.2s ease-out var(--shape-delay) backwards; }
+  .floating-shape-bob { animation: none; }
+  .faq-chevron { transition: none; }
+  .faq-answer { transition: opacity 0.35s cubic-bezier(0.23, 0.86, 0.39, 0.96); }
+  .mobile-menu { transition: opacity 0.3s ease-out, visibility 0s linear 0.3s; }
+  .mobile-menu.is-open { transition: opacity 0.3s ease-out; }
+}
