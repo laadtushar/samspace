@@ -46,7 +46,7 @@ pre.cap{white-space:pre-wrap;font:400 14px/1.5 var(--text);margin:8px 0}
 .doc blockquote{margin:0;padding-left:14px;border-left:3px solid var(--accent)}
 .doc code{font-size:.92em}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px}
-.note{font-size:14px;color:var(--muted)}
+.note{font-size:14px;color:var(--muted)} a.note{color:var(--link)}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
 <div class="wrap">
@@ -57,6 +57,7 @@ pre.cap{white-space:pre-wrap;font:400 14px/1.5 var(--text);margin:8px 0}
     <div class="row">
       <button class="primary" id="all">Download everything (.zip)</button>
       <button id="skillzip">Download the skill pack (.zip)</button>
+      <a class="note" id="masters" hidden target="_blank" rel="noopener">Full-quality masters on GitHub ↗</a>
       <span class="note" id="status"></span>
     </div>
   </header>
@@ -79,6 +80,7 @@ const $ = id => document.getElementById(id);
 const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "text") e.textContent = v; else e.setAttribute(k, v); } kids.forEach(k => e.append(k)); return e; };
 $("handle").textContent = D.brand.handle + " · " + D.brand.site;
 $("h1").textContent = "We were never taught how to be angry";
+if (D.masters) { $("masters").href = D.masters; $("masters").hidden = false; }
 
 let dl = null;
 const toast = msg => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); };

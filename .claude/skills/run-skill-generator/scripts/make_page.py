@@ -14,6 +14,7 @@ from pathlib import Path
 ap = argparse.ArgumentParser()
 ap.add_argument("project_dir"); ap.add_argument("assets"); ap.add_argument("out")
 ap.add_argument("--skill-dir")
+ap.add_argument("--masters", help="link to full-quality masters (e.g. a media-only git branch)")
 a = ap.parse_args()
 pdir = Path(a.project_dir); out = pdir / "out"
 proj = json.loads((pdir / "project.json").read_text())
@@ -50,7 +51,7 @@ if a.skill_dir:
             skill[str(f.relative_to(sd.parent))] = f.read_text()
 
 data = {"name": name, "reels": reels, "cards": cards, "kit": text(out / "MARKETING-KIT.md"),
-        "audit": text(out / "AUDIT.md"), "skill": skill, "brand": {"handle": b["handle"], "site": b["site"]}}
+        "audit": text(out / "AUDIT.md"), "skill": skill, "masters": a.masters, "brand": {"handle": b["handle"], "site": b["site"]}}
 blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
 
 page = (Path(__file__).parent.parent / "templates" / "page.html").read_text()
