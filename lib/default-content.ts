@@ -271,9 +271,12 @@ export const defaultContent: SiteContent = {
     // into the HTML of every page on the day stored content stops being
     // readable — which is exactly what address harvesters read.
     phone: "",
-    // Ships for the same reason the booking link does. A handle rather than a
-    // number, which is why this one is safe to render.
-    whatsappLink: "https://wa.me/samvriti.space",
+    // Empty until the practitioner enters a link she has opened herself. This
+    // used to ship wa.me/samvriti.space, a handle nobody had confirmed, and
+    // WhatsApp answered "The username samvriti.space isn't on WhatsApp": a
+    // button that fails is worse than none. Empty hides the WhatsApp card and
+    // sends /whatsapp to the contact section.
+    whatsappLink: "",
   },
   social: {
     instagram: "https://www.instagram.com/samvriti.space",

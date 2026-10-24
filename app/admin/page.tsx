@@ -2479,7 +2479,7 @@ export default function AdminPage() {
 
                   <ContentSection title="Contact Details">
                     <ContentField
-                      label="WhatsApp username or short link — a link containing your phone number is refused"
+                      label="WhatsApp username or short link — open it on your phone first to check it reaches your chat; a link containing your phone number is refused; leave empty to hide the WhatsApp button"
                       value={(content as any).contact?.whatsappLink || ""}
                       onChange={(v) =>
                         setContent({

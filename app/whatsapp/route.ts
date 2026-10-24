@@ -12,9 +12,9 @@ import { SITE_URL } from "@/lib/site";
  *
  * The route stays because a stored /start link may still point here, and a dead
  * link on the one page an Instagram bio points at is worse than a redirect. It
- * forwards to the configured handle, falling back to the shipped one and then
- * to the contact section — and it can no longer forward to a number, because
- * the schema will not store one and the defaults carry a handle, not a number.
+ * forwards to the handle configured in the dashboard, or to the contact section
+ * when there is none — the defaults ship no handle — and it can no longer
+ * forward to a number, because the schema will not store one.
  *
  * Resolved per request, not at build time. With `revalidate` the redirect target
  * was baked into the build as a response header, and a build renders before it

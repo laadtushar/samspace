@@ -202,13 +202,12 @@ describe("the practitioner's own number is not in the codebase", () => {
       number, and lib/whatsapp.ts is explicit that a handle names the account
       without naming the number, which is why it is safe in an href at all.
 
-      The defaults now carry a handle, because an empty one took the WhatsApp
-      link off the live site on the day storage stopped being readable. So the
-      assertion says what it means — no wa.me link with a number in it — using
-      the same seven-digit rule the production code enforces.
+      So the assertion says what it means — no wa.me link with a number in it —
+      using the same seven-digit rule the production code enforces. The
+      defaults currently carry no WhatsApp link at all, which passes trivially;
+      the next test proves the check still bites.
     */
     const links = whatsappLinksIn(defaultContent);
-    expect(links.length).toBeGreaterThan(0);
     for (const link of links) expect(link).not.toMatch(/\d{7,}/);
     expect(defaultContent.contact.phone).toBe("");
   });
@@ -553,22 +552,16 @@ describe("contact details kept out of the browser", () => {
     expect("phone" in publicContent.contact).toBe(false);
   });
 
-  it("ships a WhatsApp handle, and a handle is not a number", () => {
+  it("ships no WhatsApp handle of its own", () => {
     /*
-      The defaults used to carry none, on the reasoning that nothing should ship
-      in a public repository until it was configured. An outage showed the cost
-      of that: stored content became unreadable, every visitor was served this
-      object, and the WhatsApp link disappeared from the site.
-
-      A handle is safe to serve — that is the premise lib/whatsapp.ts is built
-      on — so what matters is that the shipped one carries no number, which the
-      sanitiser is asked directly rather than inferred from the string.
+      The defaults carried wa.me/samvriti.space so the button would survive an
+      outage of stored content. Nobody had confirmed the account, and WhatsApp
+      answered "The username samvriti.space isn't on WhatsApp": every visitor
+      who tapped it hit an error. A handle only the practitioner can confirm
+      belongs in the dashboard, so the default is empty and the card is hidden
+      until she enters one.
     */
-    expect(publicContent.contact.whatsappLink).toBeTruthy();
-    expect(safeWhatsappLink(publicContent.contact.whatsappLink)).toBe(
-      publicContent.contact.whatsappLink
-    );
-    expect(publicContent.contact.whatsappLink).not.toMatch(/\d{7,}/);
+    expect(publicContent.contact.whatsappLink).toBe("");
   });
 
   it("leaves no trace of a number anywhere in the serialised object", () => {
