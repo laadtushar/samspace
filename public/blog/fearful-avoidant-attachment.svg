@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">A small dark circle moving towards a warm light and back again, past faint traces of where it has been, its outer ring tightening as it nears</title>
+  <!--
+    "Fearful-avoidant attachment: when you want closeness and run from it at
+    the same time."
+    The third of the attachment covers. Here only one circle moves: it is drawn
+    towards the warm light, and the nearer it gets the tighter its own ring
+    pulls in, until it backs away, the ring loosens, and the longing starts it
+    moving again. The light never moves; the push and pull is inside. The faint
+    shapes along the way are where it has already been, more than once.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      /* A slow approach, a quick retreat, a pause, and again. */
+      .drawn { animation: drawn 8s ease-in-out infinite; }
+      .ring  { transform-origin: 400px 320px; animation: tighten 8s ease-in-out infinite; }
+      @keyframes drawn {
+        0%, 100% { transform: translateX(0); }
+        48%      { transform: translateX(250px); }
+        56%      { transform: translateX(250px); }
+        70%      { transform: translateX(-20px); }
+      }
+      @keyframes tighten {
+        0%, 100% { transform: scale(1);    stroke-opacity: 0.45; }
+        48%, 56% { transform: scale(0.58); stroke-opacity: 0.85; }
+        70%      { transform: scale(1.04); stroke-opacity: 0.4; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .drawn, .ring { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- The ground it keeps covering, there and back. -->
+  <line x1="320" y1="320" x2="740" y2="320" stroke="#8a9e8c" stroke-opacity="0.35"
+        stroke-width="2" stroke-dasharray="4 12" stroke-linecap="round"/>
+
+  <!-- Where it has been: close, and back, and close again. -->
+  <g fill="#2c3a2e">
+    <circle cx="540" cy="320" r="40" opacity="0.07"/>
+    <circle cx="650" cy="320" r="40" opacity="0.12"/>
+  </g>
+
+  <!-- Closeness: warm, and still. -->
+  <circle cx="830" cy="320" r="96" fill="url(#warm)"/>
+  <circle cx="830" cy="320" r="46" fill="#c17f5e"/>
+
+  <!-- The one who wants it, and pulls in as it nears. -->
+  <g class="drawn">
+    <circle class="ring" cx="400" cy="320" r="104" fill="none" stroke="#8a9e8c"
+            stroke-opacity="0.45" stroke-width="2.5" stroke-dasharray="6 10"/>
+    <circle cx="400" cy="320" r="40" fill="#2c3a2e"/>
+  </g>
+
+  <g fill="#8a9e8c" opacity="0.45">
+    <circle cx="200" cy="200" r="3.5"/>
+    <circle cx="1010" cy="470" r="3.5"/>
+    <circle cx="980" cy="168" r="2.5"/>
+    <circle cx="240" cy="470" r="2.5"/>
+  </g>
+
+  <line x1="120" y1="560" x2="1080" y2="560" stroke="#8a9e8c" stroke-opacity="0.25" stroke-width="1.5"/>
+</svg>

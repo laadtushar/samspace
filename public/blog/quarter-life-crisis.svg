@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">One path that divides into several faint branches, with a small figure paused at the fork</title>
+  <!--
+    "The quarter-life crisis is real."
+    The road so far is one clear line: the script that was followed. Then it
+    divides, and none of the branches is marked as the right one; they flicker
+    in turn, each looking possible for a moment. The figure is not lost and not
+    racing. It has stopped at the fork, which is where the post says the real
+    work is: slowing down enough to look.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .branch { animation: maybe 8s ease-in-out infinite; stroke-opacity: 0.3; }
+      .b2 { animation-delay: -2s; }
+      .b3 { animation-delay: -4s; }
+      .b4 { animation-delay: -6s; }
+      @keyframes maybe {
+        0%, 100% { stroke-opacity: 0.3; }
+        20%      { stroke-opacity: 0.75; }
+        40%      { stroke-opacity: 0.3; }
+      }
+      .pause { transform-origin: 560px 370px; animation: breathe 6s ease-in-out infinite; }
+      @keyframes breathe {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50%      { opacity: 1;   transform: scale(1.1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .branch, .pause { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- Every way it could go from here. -->
+  <g fill="none" stroke="#2c3a2e" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 14">
+    <path class="branch"    d="M560 370C700 340 820 220 1040 170"/>
+    <path class="branch b2" d="M560 370C710 360 840 300 1050 290"/>
+    <path class="branch b3" d="M560 370C710 380 850 420 1050 420"/>
+    <path class="branch b4" d="M560 370C700 400 820 510 1030 540"/>
+  </g>
+
+  <!-- The road so far: one line, clearly drawn. -->
+  <path d="M150 500C300 500 420 380 560 370" fill="none" stroke="#2c3a2e"
+        stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Paused at the fork. -->
+  <g class="pause"><circle cx="560" cy="370" r="64" fill="url(#warm)"/></g>
+  <circle cx="560" cy="370" r="16" fill="#c17f5e"/>
+
+  <g fill="#8a9e8c" opacity="0.45">
+    <circle cx="230" cy="210" r="3.5"/>
+    <circle cx="420" cy="170" r="2.5"/>
+    <circle cx="300" cy="590" r="2.5"/>
+  </g>
+
+  <line x1="120" y1="610" x2="1080" y2="610" stroke="#8a9e8c" stroke-opacity="0.22" stroke-width="1.5"/>
+</svg>
