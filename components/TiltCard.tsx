@@ -17,7 +17,7 @@ const MAX_TILT = 8;
  * The tilt follows the same spring as before (stiffness 150, damping 20), from
  * spring.ts rather than framer-motion, and is written straight to the card's
  * transform — no re-render per frame. The 1.02 lift and the clay ring are CSS
- * (.tilt-card in globals.css): the lift only for a real hover, as framer-motion's
+ * (.tilt-card in motion.css): the lift only for a real hover, as framer-motion's
  * whileHover was, and the ring fading in and vanishing on leave as before.
  *
  * Nothing runs until the pointer first moves over a card. For anyone whose

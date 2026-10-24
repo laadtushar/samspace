@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createSpring, type Spring } from "./spring";
+import { createSpring, prefersReducedMotion, type Spring } from "./spring";
 
 interface MarqueeProps {
   children: string;
@@ -10,10 +10,11 @@ interface MarqueeProps {
 }
 
 /*
-  The marquee's drift is a CSS animation (.marquee-track in globals.css), so it
-  runs on the compositor from the first paint with no JavaScript at all. The
-  framer-motion version moved it from a requestAnimationFrame callback on the
-  main thread, every frame, for as long as the page was open — four of them.
+  The marquee's drift is a CSS animation (.marquee-track in motion.css), so it
+  runs on the compositor. The framer-motion version moved it from a
+  requestAnimationFrame callback on the main thread, every frame, for as long
+  as the page was open — four of them. Where it rests until then is in
+  globals.css.
 
   What JavaScript still adds is the part a keyframe can't know: scrolling
   speeds the strips up, and scrolling back up reverses them. That used to be
@@ -31,8 +32,9 @@ const LOOP_PERCENT = 25;
 /** framer-motion's velocity window: older than this and scrolling has stopped. */
 const MAX_VELOCITY_DELTA = 30;
 
-/** null: not on screen yet; false: nothing to steer. */
-const tracks = new Map<HTMLElement, Animation | null | false>();
+/** null: not found yet (not on screen yet, or motion.css not loaded yet). */
+const tracks = new Map<HTMLElement, Animation | null>();
+const onScreen = new Set<HTMLElement>();
 const visible = new Set<Animation>();
 let observer: IntersectionObserver | null = null;
 let smoothVelocity: Spring | null = null;
@@ -77,6 +79,8 @@ function tick(now: number) {
 }
 
 function onScroll() {
+  // A strip that came on screen before motion.css had loaded is picked up here.
+  onScreen.forEach(steer);
   if (frame || visible.size === 0) return;
   frame = requestAnimationFrame(tick);
 }
@@ -88,9 +92,10 @@ function onScroll() {
   In an observer callback the work is already done.
 */
 function prepare(el: HTMLElement) {
-  // No animation means reduced motion (or none supported): nothing to steer.
+  // Reduced motion: the strips stand still, there is nothing to steer.
+  if (prefersReducedMotion()) return null;
   const animation = el.getAnimations()[0];
-  if (!animation) return false;
+  if (!animation) return null;
   // Playing backwards stops at time zero, so start a long way into the loop.
   // Whole loops only, so nothing visibly moves.
   const loop = Number(animation.effect?.getComputedTiming().duration) || 0;
@@ -100,22 +105,31 @@ function prepare(el: HTMLElement) {
   return animation;
 }
 
+/** Start steering an on-screen strip, if its animation is there yet. */
+function steer(el: HTMLElement) {
+  let anim = tracks.get(el);
+  if (anim === undefined) return;
+  if (anim === null) {
+    anim = prepare(el);
+    if (!anim) return;
+    tracks.set(el, anim);
+  }
+  visible.add(anim);
+  applyRate(anim);
+}
+
 function register(el: HTMLElement) {
   if (!observer) {
     observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         const el = entry.target as HTMLElement;
-        let anim = tracks.get(el);
-        if (anim === null && entry.isIntersecting) {
-          anim = prepare(el);
-          tracks.set(el, anim);
-        }
-        if (!anim) continue;
         if (entry.isIntersecting) {
-          visible.add(anim);
-          applyRate(anim);
+          onScreen.add(el);
+          steer(el);
         } else {
-          visible.delete(anim);
+          onScreen.delete(el);
+          const anim = tracks.get(el);
+          if (anim) visible.delete(anim);
         }
       }
     });
@@ -138,6 +152,7 @@ function register(el: HTMLElement) {
   return () => {
     const anim = tracks.get(el);
     if (anim) visible.delete(anim);
+    onScreen.delete(el);
     tracks.delete(el);
     observer?.unobserve(el);
   };

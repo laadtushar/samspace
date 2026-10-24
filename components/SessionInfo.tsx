@@ -95,13 +95,10 @@ export default function SessionInfo({
                 duration={0.6}
                 delay={i * 0.12}
                 ease="soft"
-                className="lift bg-cream rounded-2xl p-10 text-center border border-sage/10 cursor-default group"
-                style={{ "--lift-y": "-6px", "--lift-scale": 1.02 } as React.CSSProperties}
+                lift
+                className="lift lift-y-6 lift-scale-102 bg-cream rounded-2xl p-10 text-center border border-sage/10 cursor-default group"
               >
-                <span
-                  className="hover-pop text-4xl mb-4 block"
-                  style={{ "--pop-scale": 1.3, "--pop-rotate": "15deg" } as React.CSSProperties}
-                >
+                <span className="hover-pop pop-scale-130 pop-rotate-15 text-4xl mb-4 block">
                   <s.icon className="w-7 h-7 mx-auto text-forest/70" aria-hidden="true" strokeWidth={1.5} />
                 </span>
                 <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-forest/75 mb-2">

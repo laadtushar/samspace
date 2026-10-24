@@ -10,7 +10,7 @@ import { track } from "@/lib/analytics";
  * should not begin animating at them. The circle grows on the in-breath and
  * shrinks on the longer out-breath; the words say the same thing, so it still
  * works for anyone whose device asks for reduced motion — the scaling is
- * dropped for them (.breath-circle in globals.css) and the label carries it
+ * dropped for them (.breath-circle in motion.css) and the label carries it
  * alone.
  *
  * The growing and shrinking is a CSS transition whose length is set with each

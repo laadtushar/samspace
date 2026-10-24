@@ -21,7 +21,7 @@ export default function Mentoring({ mentoring }: MentoringProps) {
       id="mentoring"
       className="bg-gradient-to-b from-cream via-white to-cream py-28 relative overflow-hidden"
     >
-      {/* Decorative floating shapes — CSS loops (.drift in globals.css) */}
+      {/* Decorative floating shapes — CSS loops (.drift in motion.css) */}
       <div
         className="drift absolute top-20 right-10 w-40 h-40 rounded-full bg-sage/[0.06] blur-2xl pointer-events-none"
         style={

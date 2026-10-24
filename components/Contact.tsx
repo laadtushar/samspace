@@ -89,13 +89,10 @@ export default function Contact({ contact, onBookSession }: ContactProps) {
               duration={0.6}
               delay={0.2 + i * 0.12}
               ease="soft"
-              className="lift bg-cream/[0.06] backdrop-blur-sm border border-cream/[0.1] rounded-2xl p-7 text-center cursor-default group"
-              style={{ "--lift-y": "-6px", "--lift-scale": 1.03 } as React.CSSProperties}
+              lift
+              className="lift lift-y-6 lift-scale-103 bg-cream/[0.06] backdrop-blur-sm border border-cream/[0.1] rounded-2xl p-7 text-center cursor-default group"
             >
-              <span
-                className="hover-pop text-3xl mb-3 block"
-                style={{ "--pop-scale": 1.3 } as React.CSSProperties}
-              >
+              <span className="hover-pop pop-scale-130 text-3xl mb-3 block">
                 <c.icon className="w-7 h-7 mx-auto text-clay-light" aria-hidden="true" strokeWidth={1.5} />
               </span>
               <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-cream/70 mb-2">

@@ -7,7 +7,7 @@ import { createSpring, prefersReducedMotion, type Spring } from "./spring";
 
 /*
   Every effect in this form was framer-motion and is now CSS (the .form-* and
-  .submit-* rules in globals.css) plus one small spring for the magnetic submit
+  .submit-* rules in motion.css) plus one small spring for the magnetic submit
   button. The values are framer-motion's own: springs are sampled into CSS
   linear() curves with the same stiffness and damping, keyframe loops keep
   their timings and per-segment easing, and each hover-out keeps the delay
@@ -74,7 +74,7 @@ function FloatingLabelInput({
   const field = revealProps(
     { x: -50, rotateY: -15, ease: "spring100", delay, margin: "-50px" },
     "form-field relative",
-    { perspective: "1000px" }
+    { perspective: "1000px", transitionDelay: `${delay}s` }
   );
 
   return (

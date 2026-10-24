@@ -10,8 +10,8 @@ interface TextRevealProps {
  * A heading whose words rise out of a blur one after another.
  *
  * Pure markup: RevealObserver marks the wrapper when it scrolls into view and
- * the .reveal-words rules in globals.css stagger the words, each `--i` steps of
- * `staggerDelay` behind the first — the same 20px rise, 8px blur, 0.6s and
+ * the .reveal-words rules in motion.css play each word, each one
+ * `staggerDelay` behind the last — the same 20px rise, 8px blur, 0.6s and
  * curve as the framer-motion version. The words are visible in the server HTML;
  * they are only hidden once the observer is running and about to reveal them.
  */
@@ -33,21 +33,14 @@ export default function TextReveal({
     heading twice. One correctly-spaced copy serves both readers and crawlers.
   */
   return (
-    <span
-      className={`inline reveal-words ${className}`}
-      data-reveal-margin="-60px"
-      style={
-        {
-          "--reveal-delay": `${delay}s`,
-          "--reveal-stagger": `${staggerDelay}s`,
-        } as React.CSSProperties
-      }
-    >
+    <span className={`inline reveal-words ${className}`} data-reveal-margin="-60px">
       {parts.map((part, i) => (
         <span
           key={i}
           className="inline-block"
-          style={{ "--i": i } as React.CSSProperties}
+          // A plain longhand, not a custom property: a custom property on
+          // every word made the page's first style pass measurably slower.
+          style={{ animationDelay: `${+(delay + i * staggerDelay).toFixed(3)}s` }}
         >
           {part}
           {splitBy === "word" && i < parts.length - 1 ? " " : ""}

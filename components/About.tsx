@@ -118,13 +118,10 @@ export default function About({ about }: AboutProps) {
                   duration={0.6}
                   delay={0.3 + i * 0.12}
                   ease="soft"
-                  className="lift lift-quick bg-cream/[0.07] backdrop-blur-sm border border-cream/[0.12] rounded-2xl p-7 flex flex-col items-center justify-center text-center gap-3 cursor-default group"
-                  style={{ "--lift-y": "-8px", "--lift-scale": 1.03 } as React.CSSProperties}
+                  lift
+                  className="lift lift-quick lift-y-8 lift-scale-103 bg-cream/[0.07] backdrop-blur-sm border border-cream/[0.12] rounded-2xl p-7 flex flex-col items-center justify-center text-center gap-3 cursor-default group"
                 >
-                  <span
-                    className="hover-pop text-3xl"
-                    style={{ "--pop-scale": 1.2, "--pop-rotate": "10deg" } as React.CSSProperties}
-                  >
+                  <span className="hover-pop pop-scale-120 pop-rotate-10 text-3xl">
                     <c.icon className="w-7 h-7 text-clay-light" aria-hidden="true" strokeWidth={1.5} />
                   </span>
                   <span className="font-serif text-base font-medium text-cream/85 group-hover:text-cream transition-colors duration-300">

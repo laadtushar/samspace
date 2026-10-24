@@ -12,8 +12,8 @@ import { MotionConfig } from "framer-motion";
  *
  * Most of the site no longer animates with framer-motion — the homepage, the
  * navbar and the footer are CSS now, and honour the same setting through
- * `prefers-reduced-motion` in globals.css. What is left (the intake form, the
- * /start page, the admin dashboard) still relies on this. It costs about a
+ * `prefers-reduced-motion` in globals.css and motion.css. What is left (the
+ * intake form, the /start page, the admin dashboard) still relies on this. It costs about a
  * kilobyte in every page's first download: MotionConfig and its context, not
  * the animation engine, which only loads with those components.
  *

@@ -34,7 +34,7 @@ export default function Issues({ issues, posts = [] }: IssuesProps) {
     <section className="bg-white py-28 relative overflow-hidden">
       {/* Animated background orb */}
       {/*
-        A CSS loop now (.drift in globals.css). It carries no -translate-1/2
+        A CSS loop now (.drift in motion.css). It carries no -translate-1/2
         centring classes: framer-motion's inline transform always overrode
         them, so the orb has only ever sat with its corner at the centre, and
         a CSS animation would override them the same way.

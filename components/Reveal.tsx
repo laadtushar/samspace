@@ -5,20 +5,27 @@ import type { CSSProperties, HTMLAttributes } from "react";
  * scrolls into view — the CSS replacement for framer-motion's
  * `initial` + `whileInView`.
  *
- * It renders plain, fully visible markup with the entrance described in CSS
- * custom properties; RevealObserver decides when it plays, and the `.reveal`
- * rules in globals.css play it. Each option maps to the framer-motion value it
- * replaces, so a call site reads the same as the motion component it was:
- * `y: 30` is `initial={{ y: 30 }}`, `duration` and `delay` are in seconds.
+ * It renders plain, fully visible markup; RevealObserver decides when the
+ * entrance plays, and the `.reveal` rules in motion.css play it. Each option
+ * maps to the framer-motion value it replaces, so a call site reads the same
+ * as the motion component it was: `y: 30` is `initial={{ y: 30 }}`, `duration`
+ * and `delay` are in seconds.
  *
  * Only opacity, transform and filter move, so a reveal never shifts layout.
+ *
+ * The starting offsets are classes (.reveal-y-40, .reveal-x-n15 for -15, …),
+ * and the timing is plain inline animation-* properties. An earlier version
+ * wrote everything as inline custom properties, and measured: on this page
+ * those made the browser's first style pass, the one in front of the first
+ * paint, take nearly twice as long. An offset with no class in motion.css
+ * falls back to an inline custom property, so it still works.
  */
 
 export const EASE = {
   /** framer-motion's "easeOut" — the same curve as CSS ease-out. */
   out: "ease-out",
   /** The site's soft deceleration, [0.23, 0.86, 0.39, 0.96]. */
-  soft: "var(--ease-soft)",
+  soft: "cubic-bezier(0.23, 0.86, 0.39, 0.96)",
   /**
    * A stiffness 100 spring (framer-motion's damping default of 10), sampled
    * into a CSS linear() curve. A spring has no duration of its own — it takes
@@ -41,41 +48,64 @@ export interface RevealOptions {
   ease?: keyof typeof EASE;
   /** useInView's `margin`: negative waits until the element is further in. */
   margin?: string;
+  /**
+   * A .lift card: its hover lift moves on the entrance's own timing, delay
+   * included, as framer-motion's whileHover did.
+   */
+  lift?: boolean;
 }
+
+/** Offsets that have a class in motion.css; anything else goes inline. */
+const OFFSET_CLASSES: Record<string, number[]> = {
+  x: [30, 16, -15, -50],
+  y: [40, 30, 10],
+  scale: [0.9, 0.95],
+  rotate: [-3],
+  "rotate-x": [10],
+  "rotate-y": [-15],
+  blur: [6],
+};
+const UNITS: Record<string, string> = {
+  x: "px", y: "px", scale: "", rotate: "deg", "rotate-x": "deg", "rotate-y": "deg", blur: "px",
+};
 
 /** The props that make any element a reveal; for elements Reveal can't be. */
 export function revealProps(
-  {
-    x,
-    y,
-    scale,
-    rotate,
-    rotateX,
-    rotateY,
-    blur,
-    duration,
-    delay,
-    ease,
-    margin,
-  }: RevealOptions,
+  { x, y, scale, rotate, rotateX, rotateY, blur, duration, delay, ease, margin, lift }: RevealOptions,
   className = "",
   style?: CSSProperties
 ) {
-  const vars: Record<string, string | number> = {};
-  if (x) vars["--reveal-x"] = `${x}px`;
-  if (y) vars["--reveal-y"] = `${y}px`;
-  if (scale !== undefined) vars["--reveal-scale"] = scale;
-  if (rotate) vars["--reveal-rotate"] = `${rotate}deg`;
-  if (rotateX) vars["--reveal-rotate-x"] = `${rotateX}deg`;
-  if (rotateY) vars["--reveal-rotate-y"] = `${rotateY}deg`;
-  if (blur) vars["--reveal-blur"] = `${blur}px`;
+  const classes = ["reveal"];
+  const inline: Record<string, string | number> = {};
+  const offsets: [string, number | undefined][] = [
+    ["x", x], ["y", y], ["scale", scale], ["rotate", rotate],
+    ["rotate-x", rotateX], ["rotate-y", rotateY], ["blur", blur],
+  ];
+  for (const [name, value] of offsets) {
+    if (!value || (name === "scale" && value === 1)) continue;
+    if (OFFSET_CLASSES[name].includes(value)) {
+      const token = name === "scale" ? Math.round(value * 100) : value < 0 ? `n${-value}` : value;
+      classes.push(`reveal-${name}-${token}`);
+    } else {
+      inline[`--reveal-${name}`] = `${value}${UNITS[name]}`;
+    }
+  }
+  if (blur) classes.push("reveal-blur");
+
   const seconds = ease === "spring100" ? 1.269 : duration;
-  if (seconds !== undefined) vars["--reveal-duration"] = `${seconds}s`;
-  if (delay) vars["--reveal-delay"] = `${delay}s`;
-  if (ease) vars["--reveal-ease"] = EASE[ease];
+  const timing: CSSProperties = {};
+  if (seconds !== undefined) timing.animationDuration = `${seconds}s`;
+  if (ease) timing.animationTimingFunction = EASE[ease];
+  if (delay) timing.animationDelay = `${+delay.toFixed(3)}s`;
+  if (lift) {
+    timing.transitionDuration = timing.animationDuration;
+    timing.transitionTimingFunction = timing.animationTimingFunction;
+    timing.transitionDelay = timing.animationDelay;
+  }
+
   return {
-    className: `reveal${blur ? " reveal-blur" : ""} ${className}`.trim(),
-    style: { ...vars, ...style } as CSSProperties,
+    className: `${classes.join(" ")} ${className}`.trim(),
+    style: { ...inline, ...timing, ...style } as CSSProperties,
     ...(margin ? { "data-reveal-margin": margin } : {}),
   };
 }
@@ -98,6 +128,7 @@ export default function Reveal({
   delay,
   ease,
   margin,
+  lift,
   className,
   style,
   ...rest
@@ -106,7 +137,7 @@ export default function Reveal({
     <Tag
       {...rest}
       {...revealProps(
-        { x, y, scale, rotate, rotateX, rotateY, blur, duration, delay, ease, margin },
+        { x, y, scale, rotate, rotateX, rotateY, blur, duration, delay, ease, margin, lift },
         className,
         style
       )}
