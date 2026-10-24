@@ -62,7 +62,7 @@ describe("public routes go through publicContent", () => {
 });
 
 describe("the WhatsApp redirect stands on the shipped floor", () => {
-  it("forwards to the shipped handle when storage cannot be read", async () => {
+  it("forwards to the contact section when storage cannot be read", async () => {
     vi.resetModules();
     vi.doMock("next/cache", async (importOriginal) => ({
       ...(await importOriginal<typeof import("next/cache")>()),
@@ -81,10 +81,9 @@ describe("the WhatsApp redirect stands on the shipped floor", () => {
     const res = await GET();
 
     expect(res.status).toBe(302);
-    // The behaviour this exists for: a handle, not the contact anchor.
-    expect(res.headers.get("location")).toBe(
-      defaultContent.contact.whatsappLink
-    );
-    expect(res.headers.get("location")).not.toContain("#contact");
+    // The defaults ship no handle (the last one did not exist on WhatsApp), so
+    // the floor is the contact section: a working page, never an error.
+    expect(defaultContent.contact.whatsappLink).toBe("");
+    expect(res.headers.get("location")).toMatch(/\/#contact$/);
   });
 });

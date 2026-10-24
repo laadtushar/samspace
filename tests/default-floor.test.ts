@@ -24,10 +24,12 @@ describe("the shipped defaults are a working site", () => {
     expect(providerFor(defaultContent.calendlyUrl)).not.toBeNull();
   });
 
-  it("offers a WhatsApp link the redirect will accept", () => {
-    expect(safeWhatsappLink(defaultContent.contact.whatsappLink)).toBe(
-      defaultContent.contact.whatsappLink
-    );
+  it("ships no WhatsApp link of its own", () => {
+    // A default handle is a guess about an account only the practitioner can
+    // confirm; the last one did not exist. The card stays hidden until she
+    // enters one in the dashboard.
+    expect(defaultContent.contact.whatsappLink).toBe("");
+    expect(safeWhatsappLink(defaultContent.contact.whatsappLink)).toBe("");
   });
 
   it("keeps the private number out, even here", () => {
