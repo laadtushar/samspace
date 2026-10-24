@@ -25,6 +25,8 @@ const PUBLIC_ROUTES = [
   "app/start/page.tsx",
   "app/blog/page.tsx",
   "app/blog/[slug]/page.tsx",
+  "app/[slug]/page.tsx",
+  "components/PreviewDocument.tsx",
   "app/blog/rss.xml/route.ts",
   "app/whatsapp/route.ts",
   "app/api/pricing/route.ts",
