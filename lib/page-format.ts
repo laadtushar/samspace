@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SLUG_PATTERN } from "@/lib/validation";
+import { unconfirmedPlaceholders, placeholderRefusal } from "@/lib/placeholders";
 
 /**
  * Standalone pages: their shape, and the rules for where one may live.
@@ -142,25 +143,9 @@ export function isUsablePageSlug(slug: string): boolean {
   return pageSlugProblem(slug) === null;
 }
 
-/**
- * A fact still waiting for the practitioner, written into a draft.
- *
- * Square brackets so it is unmistakable on the page, bold so it cannot be read
- * past, and one fixed form so it can be found by machine: the API refuses to
- * publish a page that still contains one. A guess about payment or
- * confidentiality that looks finished is exactly what must not go live.
- */
-export function toConfirm(what: string): string {
-  return `**[To confirm: ${what}]**`;
-}
-
-/** Finds every [To confirm: …] placeholder, bold or not. */
-export const PLACEHOLDER_PATTERN = /\[To confirm:[^\]]*\]/gi;
-
-/** The placeholders still in a piece of text, as written. */
-export function unconfirmedPlaceholders(text: string): string[] {
-  return text.match(PLACEHOLDER_PATTERN) ?? [];
-}
+// Shared with posts (lib/validation.ts); re-exported so existing callers keep
+// one import.
+export { toConfirm, PLACEHOLDER_PATTERN, unconfirmedPlaceholders } from "@/lib/placeholders";
 
 const trimmed = (max: number) => z.string().trim().max(max);
 
@@ -192,8 +177,7 @@ export const pageSchema = z.object({
     ctx.addIssue({
       code: "custom",
       path: ["status"],
-      message:
-        "This page still has [To confirm: …] placeholders. Replace them before publishing.",
+      message: placeholderRefusal("page"),
     });
   }
 });

@@ -351,6 +351,12 @@ export default function AdminPage() {
   const [starterRemaining, setStarterRemaining] = useState(0);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  /** Shipped posts already in the blog whose words no longer match the shipped version. */
+  const [starterDiffering, setStarterDiffering] = useState<StarterDifference[]>([]);
+  /** The post whose update to the shipped version is waiting for a yes. */
+  const [confirmReplace, setConfirmReplace] = useState<string | null>(null);
+  const [replacingSlug, setReplacingSlug] = useState<string | null>(null);
+  const [replaceMessage, setReplaceMessage] = useState("");
   const [busySlug, setBusySlug] = useState<string | null>(null);
   /** The post whose share links are open in the list, if any. */
   const [sharingPost, setSharingPost] = useState<string | null>(null);
@@ -460,6 +466,15 @@ export default function AdminPage() {
       if (!res.ok) return;
       const data = await res.json();
       setStarterRemaining(Number(data?.remaining) || 0);
+      const listed: unknown[] = Array.isArray(data?.posts) ? data.posts : [];
+      setStarterDiffering(
+        listed.flatMap((p) => {
+          const row = p as Record<string, unknown> | null;
+          return row?.state === "differs" && typeof row.slug === "string" && typeof row.title === "string"
+            ? [{ slug: row.slug, title: row.title, published: row.status === "published" }]
+            : [];
+        })
+      );
     } catch {
       // The panel simply stays hidden; nothing here is worth an error message.
     }
@@ -498,6 +513,43 @@ export default function AdminPage() {
       setImportMessage("Could not reach the server.");
     } finally {
       setImporting(false);
+    }
+  };
+
+  /** Replaces one post's words with the version that ships with the site. */
+  const replaceStarterPost = async (slug: string) => {
+    setReplacingSlug(slug);
+    setReplaceMessage("");
+    try {
+      const res = await fetch("/api/admin/blog/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ replace: [slug] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setReplaceMessage(data.error ?? "Could not update it.");
+        return;
+      }
+      setReplaceMessage(
+        data.failed?.length > 0
+          ? `Could not update it (ref ${data.ref}).`
+          : "Updated. The address, publish date and cover are as they were."
+      );
+      setConfirmReplace(null);
+
+      // Redraw from the server rather than from what we hoped happened.
+      const fresh = await apiJson<BlogPost[]>("/api/admin/blog");
+      setPosts(Array.isArray(fresh) ? fresh : []);
+      await refreshStarterCount();
+    } catch (err) {
+      if (err instanceof SessionExpired) {
+        endSession();
+        return;
+      }
+      setReplaceMessage("Could not reach the server.");
+    } finally {
+      setReplacingSlug(null);
     }
   };
 
@@ -2696,6 +2748,83 @@ export default function AdminPage() {
                   </div>
                 )}
 
+                {me?.role === "owner" && (starterDiffering.length > 0 || replaceMessage) && (
+                  <div className="mb-5 bg-white rounded-2xl border border-sage/20 p-5">
+                    {starterDiffering.length > 0 && (
+                      <>
+                        <p className="font-sans text-sm text-forest/75 leading-relaxed mb-1">
+                          <strong>
+                            {starterDiffering.length === 1
+                              ? "1 post here differs"
+                              : `${starterDiffering.length} posts here differ`}{" "}
+                            from the version that ships with the site.
+                          </strong>
+                        </p>
+                        <p className="font-sans text-xs text-forest/45 leading-relaxed mb-4">
+                          Either the shipped text was rewritten, or the post was edited
+                          here. Updating replaces the title, excerpt, text, tags and SEO
+                          fields with the shipped version. The address, publish date,
+                          status and cover stay as they are.
+                        </p>
+                        <ul className="space-y-3">
+                          {starterDiffering.map((d) => (
+                            <li key={d.slug} className="flex flex-wrap items-center justify-between gap-3">
+                              <span className="font-sans text-sm text-forest/75">
+                                {d.title}
+                                <span className="text-forest/40">
+                                  {" "}· /blog/{d.slug}{d.published ? " · live" : " · draft"}
+                                </span>
+                              </span>
+                              {confirmReplace === d.slug ? (
+                                <div className="basis-full bg-cream/60 border border-sage/20 rounded-xl p-4">
+                                  <p className="font-sans text-xs text-forest/70 leading-relaxed mb-3">
+                                    This replaces the {d.published ? "live" : "draft"} text of
+                                    this post with the shipped version, and discards any edits
+                                    made to its text here in the dashboard. The address, publish
+                                    date and cover stay.
+                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={() => replaceStarterPost(d.slug)}
+                                      disabled={replacingSlug !== null}
+                                      className="font-sans text-xs font-medium bg-clay text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-clay-light transition-colors disabled:opacity-60"
+                                    >
+                                      {replacingSlug === d.slug && (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      )}
+                                      Replace the text
+                                    </button>
+                                    <button
+                                      onClick={() => setConfirmReplace(null)}
+                                      aria-label="Cancel"
+                                      className="font-sans text-xs text-forest/40 hover:text-forest px-2 py-2 rounded-lg transition-colors"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setReplaceMessage("");
+                                    setConfirmReplace(d.slug);
+                                  }}
+                                  className="font-sans text-xs text-forest/50 hover:text-forest flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage/20 hover:border-sage/40 transition-colors"
+                                >
+                                  <Download className="w-3.5 h-3.5" /> Update to the shipped version
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {replaceMessage && (
+                      <p className="font-sans text-xs text-forest/60 mt-3">{replaceMessage}</p>
+                    )}
+                  </div>
+                )}
+
                 {postError && (
                   <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                     <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
@@ -4825,6 +4954,13 @@ const toPageForm = (page: Page): PageForm => ({
  * Placeholders anywhere in a page. The server refuses to publish while there
  * are any; asking here as well just saves a round trip to be told so.
  */
+/** A shipped post whose text in the blog no longer matches the shipped version. */
+interface StarterDifference {
+  slug: string;
+  title: string;
+  published: boolean;
+}
+
 const pagePlaceholders = (p: Pick<PageForm, "title" | "content" | "seoTitle" | "seoDescription">) =>
   unconfirmedPlaceholders([p.title, p.content, p.seoTitle, p.seoDescription].join("\n"));
 
