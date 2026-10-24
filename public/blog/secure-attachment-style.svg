@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">Two circles, each inside its own ring, that drift a little apart and come back together above one steady line</title>
+  <!--
+    "What secure attachment looks like, and whether you can build it."
+    The companion to the anxious and avoidant covers. Each circle keeps its own
+    ring: a self that is not absorbed by the relationship. They do drift apart,
+    because secure is not conflict-free, and then they come back, which is the
+    repair. Underneath, one line that never moves: the secure base.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <style>
+      /* Apart by the same amount, and back together, at the same moment. */
+      .left  { animation: left 9s ease-in-out infinite; }
+      .right { animation: right 9s ease-in-out infinite; }
+      @keyframes left  { 0%, 25%, 75%, 100% { transform: translateX(0); } 50% { transform: translateX(-45px); } }
+      @keyframes right { 0%, 25%, 75%, 100% { transform: translateX(0); } 50% { transform: translateX(45px); } }
+      @media (prefers-reduced-motion: reduce) {
+        .left, .right { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <g class="left">
+    <circle cx="520" cy="320" r="92" fill="none" stroke="#8a9e8c" stroke-opacity="0.5" stroke-width="2.5"/>
+    <circle cx="520" cy="320" r="42" fill="#2c3a2e"/>
+  </g>
+
+  <g class="right">
+    <circle cx="680" cy="320" r="92" fill="none" stroke="#c17f5e" stroke-opacity="0.5" stroke-width="2.5"/>
+    <circle cx="680" cy="320" r="42" fill="#c17f5e"/>
+  </g>
+
+  <!-- The secure base: steady under both, whatever happens above it. -->
+  <path d="M380 470H820" fill="none" stroke="#2c3a2e" stroke-opacity="0.8" stroke-width="6" stroke-linecap="round"/>
+
+  <g fill="#8a9e8c" opacity="0.45">
+    <circle cx="230" cy="220" r="3.5"/>
+    <circle cx="980" cy="200" r="2.5"/>
+    <circle cx="960" cy="480" r="3.5"/>
+    <circle cx="260" cy="500" r="2.5"/>
+  </g>
+
+  <line x1="120" y1="580" x2="1080" y2="580" stroke="#8a9e8c" stroke-opacity="0.22" stroke-width="1.5"/>
+</svg>

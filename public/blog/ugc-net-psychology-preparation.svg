@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">Four steps rising from left to right, with a small figure climbing them one at a time</title>
+  <!--
+    "Preparing for UGC NET Psychology."
+    The post's plan is four phases, done in order: take stock, a first pass, a
+    second pass with practice, then full timed papers. So: four steps, the same
+    size each, and a figure that rests on every one before moving to the next.
+    No step is skipped and none is a leap.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      /* Rest on a step, move up to the next; then start the climb again. */
+      .climb { animation: climb 10s ease-in-out infinite; }
+      @keyframes climb {
+        0%, 14%   { transform: translate(0, 0);         opacity: 1; }
+        22%, 36%  { transform: translate(170px, -80px);  opacity: 1; }
+        44%, 58%  { transform: translate(340px, -160px); opacity: 1; }
+        66%, 88%  { transform: translate(510px, -240px); opacity: 1; }
+        94%       { transform: translate(510px, -240px); opacity: 0; }
+        97%       { transform: translate(0, 0);         opacity: 0; }
+        100%      { transform: translate(0, 0);         opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .climb { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- Four phases, each the same size, in order. -->
+  <path d="M250 500H420V420H590V340H760V260H930" fill="none" stroke="#2c3a2e"
+        stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Where each phase begins. -->
+  <g fill="#8a9e8c" opacity="0.6">
+    <circle cx="250" cy="500" r="6"/>
+    <circle cx="420" cy="420" r="6"/>
+    <circle cx="590" cy="340" r="6"/>
+    <circle cx="760" cy="260" r="6"/>
+  </g>
+
+  <!-- The one doing the work, a step at a time. -->
+  <g class="climb">
+    <circle cx="335" cy="481" r="44" fill="url(#warm)"/>
+    <circle cx="335" cy="481" r="15" fill="#c17f5e"/>
+  </g>
+
+  <g fill="#8a9e8c" opacity="0.45">
+    <circle cx="220" cy="230" r="3.5"/>
+    <circle cx="1010" cy="430" r="3.5"/>
+    <circle cx="960" cy="170" r="2.5"/>
+  </g>
+
+  <line x1="120" y1="580" x2="1080" y2="580" stroke="#8a9e8c" stroke-opacity="0.22" stroke-width="1.5"/>
+</svg>

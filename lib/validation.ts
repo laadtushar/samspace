@@ -2,6 +2,7 @@ import { REFERRAL_KEYS, REFERRAL_DETAIL_MAX } from "@/lib/referral";
 import { z } from "zod";
 import { safeWhatsappLink } from "@/lib/whatsapp";
 import { SCHEDULING_HOSTS } from "@/lib/scheduling";
+import { unconfirmedPlaceholders, placeholderRefusal } from "@/lib/placeholders";
 
 /**
  * Server-side schemas for everything that arrives over HTTP.
@@ -271,6 +272,22 @@ export const blogPostSchema = z.object({
   seoTitle: trimmed(200).optional().default(""),
   seoDescription: trimmed(400).optional().default(""),
   publishedAt: trimmed(40).optional().default(""),
+}).superRefine((post, ctx) => {
+  /*
+    The same rule pages have (lib/page-format.ts). A draft may hold
+    "[To confirm: …]" placeholders — a shipped post can arrive with gaps only the
+    practitioner can fill — but a published one would show them to readers, so
+    it is refused here, where every save, import and update passes.
+  */
+  if (post.status !== "published") return;
+  const fields = [post.title, post.excerpt, post.content, post.seoTitle, post.seoDescription];
+  if (fields.some((f) => unconfirmedPlaceholders(f).length > 0)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["status"],
+      message: placeholderRefusal("post"),
+    });
+  }
 });
 
 export type BlogPostInput = z.infer<typeof blogPostSchema>;

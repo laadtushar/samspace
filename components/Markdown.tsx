@@ -16,7 +16,9 @@ import { MEDIA_PREFIX } from "@/lib/media";
  */
 export default function Markdown({ children }: { children: string }) {
   return (
-    <div className="font-sans text-forest/80 leading-relaxed">
+    // break-words: a long address written as link text has no spaces to wrap
+    // at, and on a phone it pushed the whole page wider than the screen.
+    <div className="font-sans text-forest/80 leading-relaxed break-words">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -47,13 +49,36 @@ export default function Markdown({ children }: { children: string }) {
               {children}
             </a>
           ),
-          ul: ({ children }) => (
-            <ul className="list-disc pl-5 mb-5 space-y-2">{children}</ul>
-          ),
+          /*
+            A "- [ ]" checklist (remark-gfm marks it with these class names) is a
+            list of things to try, not a form: no bullet as well as a box, and
+            the box is drawn rather than a disabled checkbox, which a screen
+            reader would announce as a control nobody can use.
+          */
+          ul: ({ className, children }) =>
+            className?.includes("contains-task-list") ? (
+              <ul className="list-none pl-0 mb-5 space-y-2">{children}</ul>
+            ) : (
+              <ul className="list-disc pl-5 mb-5 space-y-2">{children}</ul>
+            ),
           ol: ({ children }) => (
             <ol className="list-decimal pl-5 mb-5 space-y-2">{children}</ol>
           ),
-          li: ({ children }) => <li className="text-base">{children}</li>,
+          li: ({ className, children }) =>
+            className?.includes("task-list-item") ? (
+              <li className="text-base relative pl-7">{children}</li>
+            ) : (
+              <li className="text-base">{children}</li>
+            ),
+          input: ({ type, checked }) =>
+            type === "checkbox" ? (
+              <span
+                aria-hidden="true"
+                className={`absolute left-0 top-[0.3em] w-4 h-4 rounded border-2 border-sage/60 ${
+                  checked ? "bg-sage/60" : ""
+                }`}
+              />
+            ) : null,
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-clay/40 pl-5 my-8 font-serif text-lg text-forest/70 italic">
               {children}
@@ -68,8 +93,21 @@ export default function Markdown({ children }: { children: string }) {
               {children}
             </code>
           ),
+          /*
+            A fenced block — in posts, mostly small text diagrams. Its lines are
+            as wide as the author drew them, so on a phone the block scrolls
+            sideways inside itself rather than pushing the page wider. Focusable,
+            so that scroll can be reached from a keyboard too.
+
+            The `code` inside it is the same element inline code uses, and would
+            otherwise pick up inline code's tint and dark text on this dark
+            background; the child selectors put it back to plain text.
+          */
           pre: ({ children }) => (
-            <pre className="bg-forest text-cream rounded-xl p-5 mb-6 overflow-x-auto text-sm">
+            <pre
+              tabIndex={0}
+              className="bg-forest text-cream rounded-xl p-5 mb-6 max-w-full overflow-x-auto text-sm leading-snug [&>code]:bg-transparent [&>code]:text-cream [&>code]:p-0 [&>code]:rounded-none [&>code]:text-[1em]"
+            >
               {children}
             </pre>
           ),

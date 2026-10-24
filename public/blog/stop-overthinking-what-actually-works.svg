@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-labelledby="t">
+  <title id="t">A line looping over and over itself inside a faint frame, then leaving the frame as one calm straight stroke</title>
+  <!--
+    "How to stop overthinking: what actually works."
+    The post's argument is that fighting the loop does not end it; containing it
+    does. So the loop is not erased: it keeps going round, inside a frame, the
+    way worry time holds it. And the same line carries on out of the frame,
+    straight and unhurried, to somewhere it can stop.
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f3ed"/>
+      <stop offset="100%" stop-color="#ece4d6"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c17f5e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c17f5e" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      /* The dash pattern is 14 + 12 = 26 units, so shifting by 26 loops seamlessly. */
+      .coil { stroke-dasharray: 14 12; animation: round 1.6s linear infinite; }
+      @keyframes round { to { stroke-dashoffset: -26; } }
+      .rest { transform-origin: 960px 380px; animation: rest 7s ease-in-out infinite; }
+      @keyframes rest {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50%      { opacity: 1;   transform: scale(1.12); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .coil, .rest { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#ground)"/>
+
+  <!-- The frame: the loop is held, not fought. -->
+  <rect x="226" y="246" width="448" height="184" rx="36" fill="none" stroke="#8a9e8c"
+        stroke-opacity="0.45" stroke-width="2.5" stroke-dasharray="6 10"/>
+
+  <!-- In, round and round, and out. -->
+  <g fill="none" stroke="#2c3a2e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 380H300"/>
+    <path class="coil" transform="translate(0 40)" d="M300 340 L293 339 L286 337 L279 334 L273 330 L268 325 L264 318 L261 311 L260 304 L260 296 L261 288 L263 280 L267 272 L273 264 L279 257 L287 251 L296 246 L306 241 L316 238 L327 236 L338 236 L348 236 L359 238 L369 241 L379 246 L388 251 L396 257 L402 264 L408 272 L412 280 L414 288 L415 296 L415 304 L414 311 L411 318 L407 325 L402 330 L396 334 L389 337 L382 339 L375 340 L368 339 L361 337 L354 334 L348 330 L343 325 L339 318 L336 311 L335 304 L335 296 L336 288 L338 280 L342 272 L348 264 L354 257 L362 251 L371 246 L381 241 L391 238 L402 236 L412 236 L423 236 L434 238 L444 241 L454 246 L463 251 L471 257 L477 264 L483 272 L487 280 L489 288 L490 296 L490 304 L489 311 L486 318 L482 325 L477 330 L471 334 L464 337 L457 339 L450 340 L443 339 L436 337 L429 334 L423 330 L418 325 L414 318 L411 311 L410 304 L410 296 L411 288 L413 280 L417 272 L423 264 L429 257 L437 251 L446 246 L456 241 L466 238 L477 236 L487 236 L498 236 L509 238 L519 241 L529 246 L538 251 L546 257 L552 264 L558 272 L562 280 L564 288 L565 296 L565 304 L564 311 L561 318 L557 325 L552 330 L546 334 L539 337 L532 339 L525 340 L518 339 L511 337 L504 334 L498 330 L493 325 L489 318 L486 311 L485 304 L485 296 L486 288 L488 280 L492 272 L498 264 L504 257 L512 251 L521 246 L531 241 L541 238 L552 236 L562 236 L573 236 L584 238 L594 241 L604 246 L613 251 L621 257 L627 264 L633 272 L637 280 L639 288 L640 296 L640 304 L639 311 L636 318 L632 325 L627 330 L621 334 L614 337 L607 339 L600 340"/>
+    <path d="M600 380H946"/>
+  </g>
+
+  <!-- Where it can stop. -->
+  <g class="rest"><circle cx="960" cy="380" r="56" fill="url(#warm)"/></g>
+  <circle cx="960" cy="380" r="14" fill="#c17f5e"/>
+
+  <g fill="#8a9e8c" opacity="0.45">
+    <circle cx="214" cy="190" r="3.5"/>
+    <circle cx="1010" cy="226" r="2.5"/>
+    <circle cx="820" cy="500" r="3.5"/>
+  </g>
+
+  <line x1="120" y1="580" x2="1080" y2="580" stroke="#8a9e8c" stroke-opacity="0.22" stroke-width="1.5"/>
+</svg>

@@ -926,10 +926,15 @@ describe("the sliding scale is quoted consistently", () => {
     // Written for readers outside India, who may be quoted a different scale
     // for their country than the rupee one the token resolves to. The intake
     // form shows them the rate that applies; the post deliberately names none.
-    const writtenForReadersAbroad = new Set(["study-abroad-reality-indian-students"]);
+    // And an exam guide is about mentoring, which has its own price rather than
+    // the sliding scale, so it names neither.
+    const quotesNoRate = new Set([
+      "study-abroad-reality-indian-students",
+      "ugc-net-psychology-preparation",
+    ]);
     for (const post of STARTER_POSTS) {
       expect(post.content, post.slug).not.toMatch(/₹\s*\d/);
-      if (writtenForReadersAbroad.has(post.slug)) {
+      if (quotesNoRate.has(post.slug)) {
         expect(post.content, post.slug).not.toContain("{{rate.");
         continue;
       }
