@@ -164,6 +164,10 @@ export default function IntakeFormModal({
   const [data, setData] = useState<IntakeData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  // The form is saved and the booking page is on screen. Only ever true when a
+  // booking link is configured; without one the form just confirms and closes.
+  const [submitted, setSubmitted] = useState(false);
+  const [booked, setBooked] = useState(false);
   const [error, setError] = useState("");
   const [direction, setDirection] = useState(1);
   const [embedSrc, setEmbedSrc] = useState("");
@@ -175,18 +179,19 @@ export default function IntakeFormModal({
   const schedulingEnabled = provider !== null;
 
   // ─── Step definitions ─────────────────────────────
-  // The scheduling step only exists once a booking link is configured, so the
-  // rest of the flow is addressed by id rather than by a fixed index.
+  // Booking is deliberately not a step. It used to sit second, before the
+  // questions, so anyone could take a slot and close the form, leaving a
+  // booking with nothing to prepare from. The booking page now opens only after
+  // the form has been saved, on the screen that follows "Submit".
   const steps = useMemo(
     () => [
       { id: "intro", title: "Welcome" },
-      ...(schedulingEnabled ? [{ id: "schedule", title: "Schedule" }] : []),
       { id: "personal", title: "About You" },
       { id: "contact", title: "Contact" },
       { id: "concerns", title: "Your Concerns" },
       { id: "preferences", title: "Preferences" },
     ],
-    [schedulingEnabled]
+    []
   );
   const currentStep = steps[Math.min(step, steps.length - 1)].id;
   const isLastStep = step === steps.length - 1;
@@ -226,14 +231,13 @@ export default function IntakeFormModal({
   }, [calendlyUrl, schedulingEnabled]);
 
   // Both providers announce a completed booking to the parent frame, so the
-  // step can mark itself done rather than asking the person to self-report.
-  // The manual confirm below stays regardless: an announcement that never
-  // arrives must not be the difference between a booking counting and not.
+  // screen can say so rather than asking the person to self-report. Display
+  // only: the form is already saved by the time the booking page is shown.
   useEffect(() => {
     if (!schedulingEnabled) return;
     const onMessage = (e: MessageEvent) => {
       if (!isBookingConfirmation(calendlyUrl, e.origin, e.data)) return;
-      setData((d) => ({ ...d, scheduling: "booked" }));
+      setBooked(true);
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
@@ -316,9 +320,6 @@ export default function IntakeFormModal({
         setError("Please describe your concerns");
         return;
       }
-    } else if (currentStep === "schedule" && !data.scheduling) {
-      // Scheduling is optional — moving on simply records that it was skipped.
-      update("scheduling", "skipped");
     }
     setDirection(1);
     setStep((s) => Math.min(s + 1, steps.length - 1));
@@ -376,6 +377,13 @@ export default function IntakeFormModal({
       }
       setIsSuccess(true);
       track("intake_submitted");
+      if (schedulingEnabled) {
+        // Saved. Only now is the booking page shown, so a slot can never be
+        // taken without the details that go with it. No auto-close here: the
+        // person is choosing a time.
+        setSubmitted(true);
+        return;
+      }
       setTimeout(() => {
         setIsSuccess(false);
         setData(initialData);
@@ -399,17 +407,32 @@ export default function IntakeFormModal({
       setError("");
       setFieldErrors({});
       setData(initialData);
+      setIsSuccess(false);
+      setSubmitted(false);
+      setBooked(false);
       onClose();
     }
   };
 
+  /*
+    A stray tap outside the dialog, or Escape, must not end the booking screen.
+    The form is already saved there, and closing resets the modal to an empty
+    form: the only way back to a slot would be to fill it in and submit again,
+    leaving a duplicate intake. The Close and X buttons stay as the deliberate
+    way out.
+  */
+  const handleOutsideClose = () => {
+    if (submitted && !booked) return;
+    handleClose();
+  };
+
   // Escape closes the dialog, matching the click-outside affordance. Rebound
-  // every render so it always sees the current `handleClose`, which refuses to
-  // close mid-submit.
+  // every render so it always sees the current `handleOutsideClose`, which
+  // refuses to close mid-submit and while a time is being chosen.
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
+      if (e.key === "Escape") handleOutsideClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -430,7 +453,7 @@ export default function IntakeFormModal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-forest/70 backdrop-blur-md"
-          onClick={handleClose}
+          onClick={handleOutsideClose}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -442,7 +465,7 @@ export default function IntakeFormModal({
             aria-modal="true"
             aria-labelledby="intake-title"
             className={`relative w-full max-h-[90vh] overflow-y-auto bg-cream rounded-3xl shadow-2xl shadow-forest/40 transition-[max-width] duration-300 ${
-              currentStep === "schedule" ? "max-w-2xl" : "max-w-lg"
+              submitted ? "max-w-2xl" : "max-w-lg"
             }`}
           >
             {/* Names the dialog for screen readers on every step — the visible
@@ -465,12 +488,75 @@ export default function IntakeFormModal({
             <div className="absolute top-0 left-0 right-0 h-1 bg-sage/20 rounded-t-3xl overflow-hidden">
               <motion.div
                 className="h-full bg-clay"
-                animate={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                animate={{
+                  width: `${submitted ? 100 : ((step + 1) / steps.length) * 100}%`,
+                }}
                 transition={{ duration: 0.4, ease: "easeOut" as const }}
               />
             </div>
 
             <div className="p-8 pt-10">
+              {submitted ? (
+                /*
+                  Shown only once the form is saved. The booking page is mounted
+                  here and nowhere before it, so there is no way to reach a slot
+                  from inside the form without having sent the details first.
+                */
+                <div aria-live="polite">
+                  <div className="w-12 h-12 bg-forest rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-6 h-6 text-cream" />
+                  </div>
+                  <h3 className="font-serif text-xl font-semibold text-forest text-center mb-2">
+                    Your form is in
+                  </h3>
+                  <p className="font-sans text-xs text-forest/50 text-center mb-5">
+                    Thank you. I&apos;ll read it before we meet. Pick a time that
+                    suits you below, or close this and I&apos;ll reach out to
+                    find one.
+                  </p>
+
+                  {booked ? (
+                    <div className="bg-forest/5 rounded-2xl p-8 text-center">
+                      <div className="w-12 h-12 bg-forest rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CalendarDays className="w-6 h-6 text-cream" />
+                      </div>
+                      <p className="font-serif text-lg font-semibold text-forest mb-1">
+                        Slot booked
+                      </p>
+                      <p className="font-sans text-xs text-forest/50">
+                        You&apos;ll get a calendar invite by email.
+                      </p>
+                    </div>
+                  ) : embedSrc ? (
+                    <div className="rounded-2xl overflow-hidden border-2 border-sage/20 bg-white">
+                      <iframe
+                        src={embedSrc}
+                        title="Schedule a session"
+                        className="w-full h-[420px] border-0"
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-forest/5 rounded-2xl p-8 text-center">
+                      <CalendarDays className="w-8 h-8 text-forest/40 mx-auto mb-3" />
+                      <p className="font-sans text-xs text-forest/50">
+                        Scheduling is unavailable right now. Your form is saved,
+                        and I&apos;ll reach out to fix a time.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-center mt-6">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      className="font-sans text-sm font-medium bg-forest text-cream px-6 py-3 rounded-full hover:bg-forest-deep transition-colors shadow-md"
+                    >
+                      {booked ? "Done" : "Close — I'll pick a time later"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              <>
               {/* Step indicator */}
               <div className="flex items-center gap-2 mb-6">
                 {steps.map((s, i) => (
@@ -531,63 +617,6 @@ export default function IntakeFormModal({
                           <p className="font-sans text-xs text-forest/40 text-center italic">
                             {copy.footnote}
                           </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Schedule — optional, only when a booking link is set */}
-                    {currentStep === "schedule" && (
-                      <div>
-                        <h3 className="font-serif text-xl font-semibold text-forest mb-2">
-                          Want to pick a time first?
-                        </h3>
-                        <p className="font-sans text-xs text-forest/50 mb-5">
-                          Entirely optional. Book a slot now if you already know what
-                          suits you — or skip this and we&apos;ll find a time together
-                          over WhatsApp after I read your form.
-                        </p>
-
-                        {data.scheduling === "booked" ? (
-                          <div className="bg-forest/5 rounded-2xl p-8 text-center">
-                            <div className="w-12 h-12 bg-forest rounded-full flex items-center justify-center mx-auto mb-4">
-                              <Check className="w-6 h-6 text-cream" />
-                            </div>
-                            <p className="font-serif text-lg font-semibold text-forest mb-1">
-                              Slot booked
-                            </p>
-                            <p className="font-sans text-xs text-forest/50">
-                              You&apos;ll get a calendar invite by email. Continue with
-                              the form so I know what to prepare for.
-                            </p>
-                          </div>
-                        ) : embedSrc ? (
-                          <div className="rounded-2xl overflow-hidden border-2 border-sage/20 bg-white">
-                            <iframe
-                              src={embedSrc}
-                              title="Schedule a session"
-                              className="w-full h-[420px] border-0"
-                            />
-                          </div>
-                        ) : (
-                          <div className="bg-forest/5 rounded-2xl p-8 text-center">
-                            <CalendarDays className="w-8 h-8 text-forest/40 mx-auto mb-3" />
-                            <p className="font-sans text-xs text-forest/50">
-                              Scheduling is unavailable right now — carry on with the
-                              form and I&apos;ll reach out to fix a time.
-                            </p>
-                          </div>
-                        )}
-
-                        {data.scheduling !== "booked" && embedSrc && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              update("scheduling", "booked");
-                            }}
-                            className="font-sans text-xs text-forest/45 hover:text-forest underline underline-offset-2 mt-3 mx-auto block transition-colors"
-                          >
-                            I&apos;ve already booked a slot
-                          </button>
                         )}
                       </div>
                     )}
@@ -1010,11 +1039,7 @@ export default function IntakeFormModal({
                     onClick={next}
                     className="font-sans text-sm font-medium bg-forest text-cream px-6 py-3 rounded-full flex items-center gap-2 hover:bg-forest-deep transition-colors shadow-md"
                   >
-                    {currentStep === "intro"
-                      ? "Begin"
-                      : currentStep === "schedule" && data.scheduling !== "booked"
-                        ? "Skip for now"
-                        : "Continue"}
+                    {currentStep === "intro" ? "Begin" : "Continue"}
                     <ChevronRight className="w-4 h-4" />
                   </motion.button>
                 ) : (
@@ -1037,6 +1062,8 @@ export default function IntakeFormModal({
                   </motion.button>
                 )}
               </div>
+              </>
+              )}
             </div>
           </motion.div>
         </motion.div>
