@@ -238,7 +238,7 @@ export async function POST(req: Request) {
             ${
               booked
                 ? "Your slot is confirmed — the calendar invite is in your inbox. I'll read through your form before we meet."
-                : "I'll reach out to you within <strong>24–48 hours</strong> to discuss next steps and schedule your first session."
+                : "If you've booked a slot, the calendar invite arrives separately. If not, I'll reach out to you within <strong>24–48 hours</strong> to discuss next steps and schedule your first session."
             }
           </p>
           <p style="font-size: 15px; line-height: 1.7; opacity: 0.8; margin: 0;">
@@ -279,7 +279,7 @@ export async function POST(req: Request) {
                 ? "Slot booked"
                 : data.scheduling === "skipped"
                   ? "Skipped — needs a time"
-                  : "—"
+                  : "Offered after the form — a booking, if made, arrives from the calendar"
             }</td></tr>
           </table>
         </div>
