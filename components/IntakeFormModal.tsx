@@ -414,13 +414,25 @@ export default function IntakeFormModal({
     }
   };
 
+  /*
+    A stray tap outside the dialog, or Escape, must not end the booking screen.
+    The form is already saved there, and closing resets the modal to an empty
+    form: the only way back to a slot would be to fill it in and submit again,
+    leaving a duplicate intake. The Close and X buttons stay as the deliberate
+    way out.
+  */
+  const handleOutsideClose = () => {
+    if (submitted && !booked) return;
+    handleClose();
+  };
+
   // Escape closes the dialog, matching the click-outside affordance. Rebound
-  // every render so it always sees the current `handleClose`, which refuses to
-  // close mid-submit.
+  // every render so it always sees the current `handleOutsideClose`, which
+  // refuses to close mid-submit and while a time is being chosen.
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
+      if (e.key === "Escape") handleOutsideClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -441,7 +453,7 @@ export default function IntakeFormModal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-forest/70 backdrop-blur-md"
-          onClick={handleClose}
+          onClick={handleOutsideClose}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 30 }}

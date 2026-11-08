@@ -45,4 +45,12 @@ describe("the booking page follows a saved form", () => {
     expect(source.match(/setBooked\(true\)/g)).toHaveLength(1);
     expect(source).toContain("isBookingConfirmation(calendlyUrl, e.origin, e.data)");
   });
+
+  it("is not lost to a stray tap outside the dialog or Escape", () => {
+    // Closing resets the form, so dismissing the booking screen by accident
+    // would mean refilling and resubmitting: a duplicate intake.
+    expect(source).toMatch(/onClick=\{handleOutsideClose\}/);
+    expect(source).toMatch(/e\.key === "Escape"\) handleOutsideClose\(\)/);
+    expect(source).toMatch(/if \(submitted && !booked\) return;/);
+  });
 });
